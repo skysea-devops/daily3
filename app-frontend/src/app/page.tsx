@@ -1,25 +1,27 @@
+import Link from "next/link";
+
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-white">
       <section className="mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center px-6 text-center">
-        <h1 className="text-6xl font-bold tracking-tight">
-          Daily3
-        </h1>
+        <h1 className="text-6xl font-bold tracking-tight">Daily3</h1>
 
         <p className="mt-6 max-w-2xl text-xl text-gray-600">
-          Choose 3 interests.
-          Get 3 high-quality articles every day.
-          No information overload.
+          Choose 3 interests. Get 3 high-quality articles every day. No
+          information overload.
         </p>
 
         <div className="mt-10 flex gap-4">
-          <button className="rounded-xl bg-black px-6 py-3 text-white">
+          <Link
+            href="/onboarding"
+            className="rounded-xl bg-black px-6 py-3 text-white"
+          >
             Get Started
-          </button>
+          </Link>
 
-          <button className="rounded-xl border px-6 py-3">
-            Learn More
-          </button>
+          <Link href="/dashboard" className="rounded-xl border px-6 py-3">
+            View Demo
+          </Link>
         </div>
       </section>
     </main>
