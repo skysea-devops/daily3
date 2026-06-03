@@ -1,8 +1,10 @@
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-white">
+      <Navbar />
       <section className="mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center px-6 text-center">
         <h1 className="text-6xl font-bold tracking-tight">Daily3</h1>
 

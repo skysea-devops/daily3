@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Navbar from "@/components/Navbar";
 
 const categories = [
   "Cloud Computing",
@@ -38,15 +39,21 @@ export default function OnboardingPage() {
   }
 
   function continueToDashboard() {
-    if (selectedCategories.length !== 3) {
-      return;
-    }
-
-    router.push("/dashboard");
+  if (selectedCategories.length !== 3) {
+    return;
   }
+
+  localStorage.setItem(
+    "daily3-categories",
+    JSON.stringify(selectedCategories)
+  );
+
+  router.push("/dashboard");
+}
 
   return (
     <main className="min-h-screen bg-white px-6 py-12">
+        <Navbar />
       <section className="mx-auto max-w-4xl">
         <p className="text-sm font-medium text-gray-500">Step 1 of 1</p>
 
