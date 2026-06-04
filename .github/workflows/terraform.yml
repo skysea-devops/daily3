@@ -9,7 +9,7 @@ on:
 
   push:
     branches:
-      - dev
+      - main
     paths:
       - "infra/terraform/**"
 
