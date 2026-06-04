@@ -20,23 +20,7 @@ resource "aws_cognito_user_pool" "main" {
   }
 }
 
-resource "aws_cognito_identity_provider" "google" {
-  user_pool_id  = aws_cognito_user_pool.main.id
-  provider_name = "Google"
-  provider_type = "Google"
 
-  provider_details = {
-    client_id        = var.google_client_id
-    client_secret    = var.google_client_secret
-    authorize_scopes = "openid email profile"
-  }
-
-  attribute_mapping = {
-    email    = "email"
-    username = "sub"
-    name     = "name"
-  }
-}
 
 resource "aws_cognito_user_pool_client" "web" {
   name         = "${var.project_name}-${var.environment}-web-client"
@@ -46,7 +30,7 @@ resource "aws_cognito_user_pool_client" "web" {
 
   supported_identity_providers = [
     "COGNITO",
-    "Google"
+
   ]
 
   callback_urls = [
@@ -75,10 +59,7 @@ resource "aws_cognito_user_pool_client" "web" {
 
   prevent_user_existence_errors = "ENABLED"
 
-  depends_on = [
-    aws_cognito_identity_provider.google
-  ]
-}
+
 
 resource "aws_cognito_user_pool_domain" "main" {
   domain       = "${var.project_name}-${var.environment}-auth"
