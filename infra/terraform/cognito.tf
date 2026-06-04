@@ -20,8 +20,6 @@ resource "aws_cognito_user_pool" "main" {
   }
 }
 
-
-
 resource "aws_cognito_user_pool_client" "web" {
   name         = "${var.project_name}-${var.environment}-web-client"
   user_pool_id = aws_cognito_user_pool.main.id
@@ -29,8 +27,7 @@ resource "aws_cognito_user_pool_client" "web" {
   generate_secret = false
 
   supported_identity_providers = [
-    "COGNITO",
-
+    "COGNITO"
   ]
 
   callback_urls = [
@@ -42,8 +39,7 @@ resource "aws_cognito_user_pool_client" "web" {
   ]
 
   allowed_oauth_flows_user_pool_client = true
-
-  allowed_oauth_flows = ["code"]
+  allowed_oauth_flows                  = ["code"]
 
   allowed_oauth_scopes = [
     "openid",
@@ -58,8 +54,7 @@ resource "aws_cognito_user_pool_client" "web" {
   ]
 
   prevent_user_existence_errors = "ENABLED"
-
-
+}
 
 resource "aws_cognito_user_pool_domain" "main" {
   domain       = "${var.project_name}-${var.environment}-auth"
