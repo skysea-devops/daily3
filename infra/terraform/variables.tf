@@ -13,3 +13,7 @@ variable "aws_region" {
   default = "eu-central-1"
 }
 
+variable "github_repo" {
+  type    = string
+  default = "skysea-devops/daily3"
+}
