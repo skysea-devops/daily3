@@ -2,7 +2,7 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "TerraformStateAccess",
+      "Sid": "TerraformStateBucket",
       "Effect": "Allow",
       "Action": [
         "s3:ListBucket"
@@ -20,22 +20,10 @@
       "Resource": "arn:aws:s3:::daily3-tfstate/*"
     },
     {
-      "Sid": "CognitoAccess",
+      "Sid": "CognitoManagement",
       "Effect": "Allow",
       "Action": [
         "cognito-idp:*"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Sid": "IamReadOnly",
-      "Effect": "Allow",
-      "Action": [
-        "iam:GetRole",
-        "iam:GetPolicy",
-        "iam:GetPolicyVersion",
-        "iam:ListRolePolicies",
-        "iam:ListAttachedRolePolicies"
       ],
       "Resource": "*"
     }
