@@ -9,8 +9,14 @@
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-          "token.actions.githubusercontent.com:sub": "repo:skysea-devops/daily3:ref:refs/heads/dev"
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+        },
+        "StringLike": {
+          "token.actions.githubusercontent.com:sub": [
+            "repo:skysea-devops/daily3:ref:refs/heads/main",
+            "repo:skysea-devops/daily3:ref:refs/heads/dev",
+            "repo:skysea-devops/daily3:pull_request"
+          ]
         }
       }
     }
