@@ -1,11 +1,17 @@
 name: Terraform Bootstrap
 
 on:
+  pull_request:
+    paths:
+      - "infra/bootstrap/**"
+      - ".github/workflows/terraform-bootstrap.yml"
+
   workflow_dispatch:
 
 permissions:
   id-token: write
   contents: read
+  pull-requests: read
 
 concurrency:
   group: daily3-terraform-bootstrap
@@ -43,5 +49,6 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Terraform Apply Import
+      - name: Terraform Apply
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: terraform apply -auto-approve
