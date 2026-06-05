@@ -8,7 +8,7 @@ resource "aws_cognito_user_pool" "main" {
     name                = "given_name"
     attribute_data_type = "String"
     mutable             = true
-    required            = true
+    required            = false
 
     string_attribute_constraints {
       min_length = 1
@@ -20,7 +20,7 @@ resource "aws_cognito_user_pool" "main" {
     name                = "family_name"
     attribute_data_type = "String"
     mutable             = true
-    required            = true
+    required            = false
 
     string_attribute_constraints {
       min_length = 1
