@@ -10,3 +10,6 @@ output "cognito_domain" {
   value = "https://${aws_cognito_user_pool_domain.main.domain}.auth.${var.aws_region}.amazoncognito.com"
 }
 
+output "users_table_name" {
+  value = aws_dynamodb_table.users.name
+}
