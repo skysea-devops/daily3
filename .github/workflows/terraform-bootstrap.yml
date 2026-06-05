@@ -5,13 +5,6 @@ on:
     paths:
       - "infra/bootstrap/**"
       - ".github/workflows/terraform-bootstrap.yml"
-  push:
-    branches:
-      - dev
-      - main
-    paths:
-      - "infra/bootstrap/**"
-      - ".github/workflows/terraform-bootstrap.yml"
 
   workflow_dispatch:
 
