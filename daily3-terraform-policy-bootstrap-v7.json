@@ -1,0 +1,26 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "TemporaryBootstrapS3FullAccess",
+      "Effect": "Allow",
+      "Action": "s3:*",
+      "Resource": [
+        "arn:aws:s3:::daily3-dev-tfstate",
+        "arn:aws:s3:::daily3-dev-tfstate/*"
+      ]
+    },
+    {
+      "Sid": "TemporaryBootstrapIamFullAccess",
+      "Effect": "Allow",
+      "Action": "iam:*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "CognitoManagement",
+      "Effect": "Allow",
+      "Action": "cognito-idp:*",
+      "Resource": "*"
+    }
+  ]
+}
