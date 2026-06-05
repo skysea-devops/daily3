@@ -2,16 +2,16 @@ name: Terraform Bootstrap
 
 on:
   pull_request:
-    branches:
-      - main
     paths:
-      - "infra/terraform/**"
-
+      - "infra/bootstrap/**"
+      - ".github/workflows/terraform-bootstrap.yml"
   push:
     branches:
+      - dev
       - main
     paths:
-      - "infra/terraform/**"
+      - "infra/bootstrap/**"
+      - ".github/workflows/terraform-bootstrap.yml"
 
   workflow_dispatch:
 

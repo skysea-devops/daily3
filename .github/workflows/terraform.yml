@@ -6,12 +6,14 @@ on:
       - main
     paths:
       - "infra/terraform/**"
+      - ".github/workflows/terraform.yml"
 
   push:
     branches:
       - main
     paths:
       - "infra/terraform/**"
+      - ".github/workflows/terraform.yml"
 
   workflow_dispatch:
 
