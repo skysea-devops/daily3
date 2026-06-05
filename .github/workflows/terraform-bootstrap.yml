@@ -1,11 +1,24 @@
 name: Terraform Bootstrap
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "infra/terraform/**"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "infra/terraform/**"
+
   workflow_dispatch:
 
 permissions:
   id-token: write
   contents: read
+  pull-requests: read
 
 concurrency:
   group: daily3-terraform-bootstrap
