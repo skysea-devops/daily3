@@ -48,3 +48,27 @@ export async function getUserProfile(accessToken: string): Promise<{
 
   return response.json();
 }
+
+export interface ArticleResponse {
+  status:      "ready" | "pending";
+  articles:    import("./types").Article[];
+  generatedAt: string | null;
+}
+
+export async function getDailyArticles(
+  accessToken: string,
+  date?: string
+): Promise<ArticleResponse> {
+  if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+
+  const url = date
+    ? `${API_BASE_URL}/me/articles?date=${date}`
+    : `${API_BASE_URL}/me/articles`;
+
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!response.ok) throw new Error("Failed to fetch articles");
+  return response.json();
+}

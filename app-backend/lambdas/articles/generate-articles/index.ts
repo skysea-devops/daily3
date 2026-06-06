@@ -270,7 +270,7 @@ Respond ONLY with valid JSON (no markdown):
 }`;
 
   const command = new InvokeModelCommand({
-    modelId:     "anthropic.claude-3-haiku-20240307-v1:0",
+    modelId:     "anthropic.claude-haiku-4-5",
     contentType: "application/json",
     accept:      "application/json",
     body: JSON.stringify({

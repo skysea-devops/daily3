@@ -195,7 +195,7 @@ resource "aws_iam_role_policy" "generate_articles_lambda_policy" {
         Sid    = "Bedrock"
         Effect = "Allow"
         Action = ["bedrock:InvokeModel"]
-        Resource = "arn:aws:bedrock:*::foundation-model/anthropic.claude-3-haiku-20240307-v1:0"
+        Resource = "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5"
       },
     ]
   })
@@ -227,4 +227,74 @@ resource "aws_lambda_function" "generate_articles" {
   }
 
   depends_on = [aws_cloudwatch_log_group.generate_articles]
+}
+
+# get-articles Lambda
+
+resource "aws_cloudwatch_log_group" "get_articles" {
+  name              = "/aws/lambda/${var.project_name}-${var.environment}-get-articles"
+  retention_in_days = var.environment == "prod" ? 30 : 14
+}
+
+resource "aws_iam_role" "get_articles_lambda_role" {
+  name = "${var.project_name}-${var.environment}-get-articles-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "get_articles_lambda_policy" {
+  name = "${var.project_name}-${var.environment}-get-articles-policy"
+  role = aws_iam_role.get_articles_lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Logging"
+        Effect = "Allow"
+        Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "${aws_cloudwatch_log_group.get_articles.arn}:*"
+      },
+      {
+        Sid    = "DynamoRead"
+        Effect = "Allow"
+        Action = ["dynamodb:GetItem"]
+        Resource = aws_dynamodb_table.articles.arn
+      },
+    ]
+  })
+}
+
+data "archive_file" "get_articles_lambda_zip" {
+  type        = "zip"
+  source_dir  = "${local.lambda_src_root}/articles/get-articles/dist"
+  output_path = "${path.module}/get-articles.zip"
+}
+
+resource "aws_lambda_function" "get_articles" {
+  function_name    = "${var.project_name}-${var.environment}-get-articles"
+  role             = aws_iam_role.get_articles_lambda_role.arn
+  runtime          = local.lambda_runtime
+  handler          = "index.handler"
+  filename         = data.archive_file.get_articles_lambda_zip.output_path
+  source_code_hash = data.archive_file.get_articles_lambda_zip.output_base64sha256
+  timeout          = local.lambda_timeout
+  memory_size      = local.lambda_memory_size
+
+  environment {
+    variables = {
+      ARTICLES_TABLE_NAME = aws_dynamodb_table.articles.name
+      CORS_ORIGIN         = var.cors_origin
+      NODE_OPTIONS        = "--enable-source-maps"
+    }
+  }
+
+  depends_on = [aws_cloudwatch_log_group.get_articles]
 }
