@@ -55,7 +55,7 @@ const buildOptions = {
   bundle: true,
   platform: "node",
   target: "node20",
-  format: "esm",
+  format: "cjs",
   // AWS SDK v3 ships with Lambda nodejs20.x runtime — keep it external
   external: ["@aws-sdk/*"],
   entryPoints,
