@@ -25,6 +25,7 @@ resource "aws_iam_role" "update_interests_lambda_role" {
   })
 }
 
+
 resource "aws_iam_role_policy" "update_interests_lambda_policy" {
   name = "${var.project_name}-${var.environment}-update-interests-lambda-policy"
   role = aws_iam_role.update_interests_lambda_role.id
