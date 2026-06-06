@@ -4,26 +4,29 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "@/lib/cognito";
+import { useAuth } from "@/lib/auth-context";
+import { RequireGuest } from "@/components/Guards";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const { refreshSession, hasInterests } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     setErrorMessage("");
     setLoading(true);
 
     try {
       await signIn(email, password);
-
-      router.push("/onboarding");
+      await refreshSession();
+      // hasInterests is stale here — read from localStorage directly
+      const saved = localStorage.getItem("daily3-categories");
+      router.push(saved ? "/dashboard" : "/onboarding");
     } catch (error: any) {
       console.error("Sign in error:", error);
       setErrorMessage(error?.message || "Failed to sign in.");
@@ -62,7 +65,7 @@ export default function LoginPage() {
               type="email"
               placeholder="you@example.com"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               required
               className="mt-2 w-full rounded-xl border px-4 py-3 outline-none focus:border-black"
             />
@@ -74,7 +77,7 @@ export default function LoginPage() {
               type="password"
               placeholder="Your password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               required
               className="mt-2 w-full rounded-xl border px-4 py-3 outline-none focus:border-black"
             />
@@ -103,5 +106,13 @@ export default function LoginPage() {
         </p>
       </section>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <RequireGuest>
+      <LoginForm />
+    </RequireGuest>
   );
 }
