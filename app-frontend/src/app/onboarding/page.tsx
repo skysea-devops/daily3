@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import { updateUserInterests } from "@/lib/api";
 
 const categories = [
   "Cloud Computing",
@@ -21,7 +22,9 @@ const categories = [
 
 export default function OnboardingPage() {
   const router = useRouter();
+
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
   function toggleCategory(category: string) {
     if (selectedCategories.includes(category)) {
@@ -38,24 +41,48 @@ export default function OnboardingPage() {
     setSelectedCategories([...selectedCategories, category]);
   }
 
-  function continueToDashboard() {
-  if (selectedCategories.length !== 3) {
-    return;
+  async function continueToDashboard() {
+    if (selectedCategories.length !== 3) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const accessToken = localStorage.getItem("access_token");
+
+      if (!accessToken) {
+        alert("No access token found. Login integration is not completed yet.");
+        return;
+      }
+
+      await updateUserInterests(
+        selectedCategories,
+        accessToken
+      );
+
+      localStorage.setItem(
+        "daily3-categories",
+        JSON.stringify(selectedCategories)
+      );
+
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Failed to save interests:", error);
+      alert("Failed to save interests.");
+    } finally {
+      setLoading(false);
+    }
   }
-
-  localStorage.setItem(
-    "daily3-categories",
-    JSON.stringify(selectedCategories)
-  );
-
-  router.push("/dashboard");
-}
 
   return (
     <main className="min-h-screen bg-white px-6 py-12">
-        <Navbar />
+      <Navbar />
+
       <section className="mx-auto max-w-4xl">
-        <p className="text-sm font-medium text-gray-500">Step 1 of 1</p>
+        <p className="text-sm font-medium text-gray-500">
+          Step 1 of 1
+        </p>
 
         <h1 className="mt-3 text-4xl font-bold">
           Choose your 3 interests
@@ -67,7 +94,8 @@ export default function OnboardingPage() {
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
           {categories.map((category) => {
-            const isSelected = selectedCategories.includes(category);
+            const isSelected =
+              selectedCategories.includes(category);
 
             return (
               <button
@@ -92,10 +120,12 @@ export default function OnboardingPage() {
 
           <button
             onClick={continueToDashboard}
-            disabled={selectedCategories.length !== 3}
+            disabled={
+              selectedCategories.length !== 3 || loading
+            }
             className="rounded-xl bg-black px-6 py-3 text-white disabled:cursor-not-allowed disabled:bg-gray-300"
           >
-            Continue
+            {loading ? "Saving..." : "Continue"}
           </button>
         </div>
       </section>

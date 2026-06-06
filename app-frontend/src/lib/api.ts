@@ -1,0 +1,29 @@
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+export async function updateUserInterests(
+  interests: string[],
+  accessToken: string
+) {
+  if (!API_BASE_URL) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/me/interests`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ interests }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+
+    throw new Error(
+      errorBody?.message || "Failed to update user interests"
+    );
+  }
+
+  return response.json();
+}
