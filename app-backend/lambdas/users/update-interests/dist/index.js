@@ -25,8 +25,11 @@ __export(update_interests_exports, {
 module.exports = __toCommonJS(update_interests_exports);
 var import_client_dynamodb = require("@aws-sdk/client-dynamodb");
 var import_lib_dynamodb = require("@aws-sdk/lib-dynamodb");
+var import_client_lambda = require("@aws-sdk/client-lambda");
 var dynamo = import_lib_dynamodb.DynamoDBDocumentClient.from(new import_client_dynamodb.DynamoDBClient({}));
+var lambda = new import_client_lambda.LambdaClient({});
 var USERS_TABLE_NAME = process.env.USERS_TABLE_NAME;
+var GENERATE_ARTICLES_FN = process.env.GENERATE_ARTICLES_FUNCTION_NAME;
 var CORS_ORIGIN = process.env.CORS_ORIGIN ?? "*";
 var headers = {
   "Content-Type": "application/json",
@@ -37,11 +40,7 @@ var handler = async (event) => {
     const claims = event.requestContext.authorizer.jwt.claims;
     const userId = claims["sub"];
     if (!userId) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ message: "Unauthorized" })
-      };
+      return { statusCode: 401, headers, body: JSON.stringify({ message: "Unauthorized" }) };
     }
     const body = JSON.parse(event.body ?? "{}");
     const { interests } = body;
@@ -65,10 +64,22 @@ var handler = async (event) => {
         }
       })
     );
+    await lambda.send(
+      new import_client_lambda.InvokeCommand({
+        FunctionName: GENERATE_ARTICLES_FN,
+        InvocationType: "Event",
+        // fire-and-forget
+        Payload: Buffer.from(JSON.stringify({ userId, interests }))
+      })
+    );
+    console.log(`Triggered generate-articles for user ${userId}`);
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ message: "Interests updated successfully.", interests })
+      body: JSON.stringify({
+        message: "Interests updated. Articles are being generated.",
+        interests
+      })
     };
   } catch (error) {
     console.error("update-interests error:", error);
