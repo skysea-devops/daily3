@@ -18,6 +18,7 @@ const headers = {
   "Access-Control-Allow-Origin": CORS_ORIGIN,
 };
 
+
 export const handler = async (
   event: APIGatewayProxyEventV2WithJWTAuthorizer
 ): Promise<APIGatewayProxyResultV2> => {
