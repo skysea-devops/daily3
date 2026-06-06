@@ -71,3 +71,30 @@ resource "aws_lambda_permission" "allow_api_gateway_update_interests" {
 
   source_arn = "${aws_apigatewayv2_api.backend.execution_arn}/*/*"
 }
+
+resource "aws_apigatewayv2_integration" "get_profile" {
+  api_id                 = aws_apigatewayv2_api.backend.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.get_profile.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "get_me_profile" {
+  api_id    = aws_apigatewayv2_api.backend.id
+  route_key = "GET /me/profile"
+  target    = "integrations/${aws_apigatewayv2_integration.get_profile.id}"
+
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_lambda_permission" "allow_api_gateway_get_profile" {
+  statement_id  = "AllowExecutionFromApiGatewayGetProfile"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.get_profile.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.backend.execution_arn}/*/*"
+}
+
+
+

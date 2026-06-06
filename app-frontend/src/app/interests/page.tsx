@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { updateUserInterests } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { RequireOnboarding } from "@/components/Guards";
+import { RequireAuth } from "@/components/Guards";
 
 const CATEGORIES = [
   "Cloud Computing",
@@ -22,12 +22,21 @@ const CATEGORIES = [
   "Productivity",
 ];
 
-function OnboardingForm() {
+function InterestsForm() {
   const router = useRouter();
   const { user, markInterestsSaved } = useAuth();
 
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // Pre-select existing interests
+  useEffect(() => {
+    const stored = localStorage.getItem("daily3-categories");
+    if (stored) {
+      setSelected(JSON.parse(stored));
+    }
+  }, []);
 
   function toggleCategory(category: string) {
     if (selected.includes(category)) {
@@ -38,18 +47,18 @@ function OnboardingForm() {
     setSelected([...selected, category]);
   }
 
-  async function continueToDashboard() {
+  async function handleSave() {
     if (selected.length !== 3 || !user) return;
 
     setLoading(true);
+    setSaved(false);
 
     try {
       await updateUserInterests(selected, user.accessToken);
-
       localStorage.setItem("daily3-categories", JSON.stringify(selected));
       markInterestsSaved();
-
-      router.push("/dashboard");
+      setSaved(true);
+      setTimeout(() => router.push("/dashboard"), 800);
     } catch (error) {
       console.error("Failed to save interests:", error);
       alert("Failed to save interests. Please try again.");
@@ -63,12 +72,10 @@ function OnboardingForm() {
       <Navbar />
 
       <section className="mx-auto max-w-4xl">
-        <p className="text-sm font-medium text-gray-500">Step 1 of 1</p>
-
-        <h1 className="mt-3 text-4xl font-bold">Choose your 3 interests</h1>
+        <h1 className="mt-8 text-4xl font-bold">Your interests</h1>
 
         <p className="mt-3 text-gray-600">
-          Daily3 will use these topics to recommend your daily articles.
+          Select exactly 3 topics. Your daily articles will be chosen from these.
         </p>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
@@ -92,16 +99,16 @@ function OnboardingForm() {
         </div>
 
         <div className="mt-8 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Selected: {selected.length}/3
-          </p>
+          <p className="text-sm text-gray-500">Selected: {selected.length}/3</p>
 
           <button
-            onClick={continueToDashboard}
+            onClick={handleSave}
             disabled={selected.length !== 3 || loading}
-            className="rounded-xl bg-black px-6 py-3 text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+            className={`rounded-xl px-6 py-3 text-white transition disabled:cursor-not-allowed disabled:bg-gray-300 ${
+              saved ? "bg-green-600" : "bg-black"
+            }`}
           >
-            {loading ? "Saving..." : "Continue"}
+            {loading ? "Saving..." : saved ? "Saved!" : "Save interests"}
           </button>
         </div>
       </section>
@@ -109,10 +116,10 @@ function OnboardingForm() {
   );
 }
 
-export default function OnboardingPage() {
+export default function InterestsPage() {
   return (
-    <RequireOnboarding>
-      <OnboardingForm />
-    </RequireOnboarding>
+    <RequireAuth>
+      <InterestsForm />
+    </RequireAuth>
   );
 }

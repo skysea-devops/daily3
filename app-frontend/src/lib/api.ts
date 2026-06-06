@@ -27,3 +27,24 @@ export async function updateUserInterests(
 
   return response.json();
 }
+export async function getUserProfile(accessToken: string): Promise<{
+  interests: string[];
+  email: string | null;
+}> {
+  if (!API_BASE_URL) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/me/profile`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch user profile");
+  }
+
+  return response.json();
+}
