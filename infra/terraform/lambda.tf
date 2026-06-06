@@ -5,7 +5,7 @@ locals {
   lambda_src_root    = "${path.module}/../../app-backend/lambdas"
 }
 
-# update-interests Lambda
+# update-interests
 
 resource "aws_cloudwatch_log_group" "update_interests" {
   name              = "/aws/lambda/${var.project_name}-${var.environment}-update-interests"
@@ -33,21 +33,21 @@ resource "aws_iam_role_policy" "update_interests_lambda_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "Logging"
-        Effect = "Allow"
-        Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Sid      = "Logging"
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = "${aws_cloudwatch_log_group.update_interests.arn}:*"
       },
       {
-        Sid    = "DynamoDB"
-        Effect = "Allow"
-        Action = ["dynamodb:UpdateItem", "dynamodb:GetItem"]
+        Sid      = "DynamoDB"
+        Effect   = "Allow"
+        Action   = ["dynamodb:UpdateItem", "dynamodb:GetItem"]
         Resource = aws_dynamodb_table.users.arn
       },
       {
-        Sid    = "InvokeGenerateArticles"
-        Effect = "Allow"
-        Action = ["lambda:InvokeFunction"]
+        Sid      = "InvokeGenerateArticles"
+        Effect   = "Allow"
+        Action   = ["lambda:InvokeFunction"]
         Resource = aws_lambda_function.generate_articles.arn
       },
     ]
@@ -72,17 +72,17 @@ resource "aws_lambda_function" "update_interests" {
 
   environment {
     variables = {
-      USERS_TABLE_NAME             = aws_dynamodb_table.users.name
+      USERS_TABLE_NAME                = aws_dynamodb_table.users.name
       GENERATE_ARTICLES_FUNCTION_NAME = aws_lambda_function.generate_articles.function_name
-      CORS_ORIGIN                  = var.cors_origin
-      NODE_OPTIONS                 = "--enable-source-maps"
+      CORS_ORIGIN                     = var.cors_origin
+      NODE_OPTIONS                    = "--enable-source-maps"
     }
   }
 
   depends_on = [aws_cloudwatch_log_group.update_interests]
 }
 
-# get-profile Lambda
+# get-profile
 
 resource "aws_cloudwatch_log_group" "get_profile" {
   name              = "/aws/lambda/${var.project_name}-${var.environment}-get-profile"
@@ -110,9 +110,9 @@ resource "aws_iam_role_policy" "get_profile_lambda_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "Logging"
-        Effect = "Allow"
-        Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Sid      = "Logging"
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = "${aws_cloudwatch_log_group.get_profile.arn}:*"
       },
       {
@@ -152,7 +152,7 @@ resource "aws_lambda_function" "get_profile" {
   depends_on = [aws_cloudwatch_log_group.get_profile]
 }
 
-# generate-articles Lambda
+# generate-articles
 
 resource "aws_cloudwatch_log_group" "generate_articles" {
   name              = "/aws/lambda/${var.project_name}-${var.environment}-generate-articles"
@@ -180,21 +180,21 @@ resource "aws_iam_role_policy" "generate_articles_lambda_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "Logging"
-        Effect = "Allow"
-        Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Sid      = "Logging"
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = "${aws_cloudwatch_log_group.generate_articles.arn}:*"
       },
       {
-        Sid    = "DynamoReadWrite"
-        Effect = "Allow"
-        Action = ["dynamodb:PutItem", "dynamodb:Query"]
+        Sid      = "DynamoReadWrite"
+        Effect   = "Allow"
+        Action   = ["dynamodb:PutItem", "dynamodb:Query"]
         Resource = aws_dynamodb_table.articles.arn
       },
       {
-        Sid    = "Bedrock"
-        Effect = "Allow"
-        Action = ["bedrock:InvokeModel"]
+        Sid      = "Bedrock"
+        Effect   = "Allow"
+        Action   = ["bedrock:InvokeModel"]
         Resource = "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5"
       },
     ]
@@ -229,7 +229,7 @@ resource "aws_lambda_function" "generate_articles" {
   depends_on = [aws_cloudwatch_log_group.generate_articles]
 }
 
-# get-articles Lambda
+# get-articles
 
 resource "aws_cloudwatch_log_group" "get_articles" {
   name              = "/aws/lambda/${var.project_name}-${var.environment}-get-articles"
@@ -257,15 +257,15 @@ resource "aws_iam_role_policy" "get_articles_lambda_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "Logging"
-        Effect = "Allow"
-        Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Sid      = "Logging"
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = "${aws_cloudwatch_log_group.get_articles.arn}:*"
       },
       {
-        Sid    = "DynamoRead"
-        Effect = "Allow"
-        Action = ["dynamodb:GetItem"]
+        Sid      = "DynamoRead"
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem"]
         Resource = aws_dynamodb_table.articles.arn
       },
     ]
