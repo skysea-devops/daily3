@@ -7,19 +7,61 @@ import { updateUserInterests } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireOnboarding } from "@/components/Guards";
 
-const CATEGORIES = [
-  "Cloud Computing",
-  "DevOps",
-  "Artificial Intelligence",
-  "Cyber Security",
-  "Software Engineering",
-  "Startups",
-  "World Politics",
-  "Business",
-  "Technology",
-  "Economics",
-  "Science",
-  "Productivity",
+export const CATEGORIES: { id: string; label: string; emoji: string; description: string }[] = [
+  {
+    id:          "Cloud & DevOps",
+    label:       "Cloud & DevOps",
+    emoji:       "☁️",
+    description: "AWS, GCP, Azure, CI/CD, infrastructure",
+  },
+  {
+    id:          "Software Engineering",
+    label:       "Software Engineering",
+    emoji:       "🛠️",
+    description: "Architecture, best practices, system design",
+  },
+  {
+    id:          "Cyber Security",
+    label:       "Cyber Security",
+    emoji:       "🔐",
+    description: "Vulnerabilities, privacy, security research",
+  },
+  {
+    id:          "Technology",
+    label:       "Technology",
+    emoji:       "💡",
+    description: "AI, product, innovation, industry trends",
+  },
+  {
+    id:          "World Politics",
+    label:       "World Politics",
+    emoji:       "🌍",
+    description: "Geopolitics, policy, international affairs",
+  },
+  {
+    id:          "Business",
+    label:       "Business",
+    emoji:       "📈",
+    description: "Strategy, leadership, management thinking",
+  },
+  {
+    id:          "Economics",
+    label:       "Economics",
+    emoji:       "💰",
+    description: "Markets, finance, economic trends",
+  },
+  {
+    id:          "Science",
+    label:       "Science",
+    emoji:       "🔬",
+    description: "Research, discoveries, physics, biology",
+  },
+  {
+    id:          "Productivity",
+    label:       "Productivity",
+    emoji:       "⚡",
+    description: "Focus, habits, tools, mental models",
+  },
 ];
 
 function OnboardingForm() {
@@ -29,26 +71,22 @@ function OnboardingForm() {
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  function toggleCategory(category: string) {
-    if (selected.includes(category)) {
-      setSelected(selected.filter((c) => c !== category));
+  function toggleCategory(id: string) {
+    if (selected.includes(id)) {
+      setSelected(selected.filter((c) => c !== id));
       return;
     }
     if (selected.length === 3) return;
-    setSelected([...selected, category]);
+    setSelected([...selected, id]);
   }
 
   async function continueToDashboard() {
     if (selected.length !== 3 || !user) return;
-
     setLoading(true);
-
     try {
       await updateUserInterests(selected, user.accessToken);
-
       localStorage.setItem("daily3-categories", JSON.stringify(selected));
       markInterestsSaved();
-
       router.push("/dashboard");
     } catch (error) {
       console.error("Failed to save interests:", error);
@@ -59,53 +97,67 @@ function OnboardingForm() {
   }
 
   return (
-    <main className="min-h-screen bg-white px-6 py-12">
+    <div className="min-h-screen bg-white">
       <Navbar />
 
-      <section className="mx-auto max-w-4xl">
-        <p className="text-sm font-medium text-gray-500">Step 1 of 1</p>
+      <main className="mx-auto max-w-3xl px-6 py-12">
+        <p className="text-sm font-medium text-gray-400">Step 1 of 1</p>
 
-        <h1 className="mt-3 text-4xl font-bold">Choose your 3 interests</h1>
+        <h1 className="mt-3 text-4xl font-bold tracking-tight">
+          Choose your 3 interests
+        </h1>
 
-        <p className="mt-3 text-gray-600">
-          Daily3 will use these topics to recommend your daily articles.
+        <p className="mt-3 text-gray-500">
+          Daily3 will curate one in-depth article per category, every day.
         </p>
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-          {CATEGORIES.map((category) => {
-            const isSelected = selected.includes(category);
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {CATEGORIES.map((cat) => {
+            const isSelected = selected.includes(cat.id);
+            const isDisabled = !isSelected && selected.length === 3;
 
             return (
               <button
-                key={category}
-                onClick={() => toggleCategory(category)}
-                className={`rounded-2xl border px-5 py-4 text-left transition ${
+                key={cat.id}
+                onClick={() => toggleCategory(cat.id)}
+                disabled={isDisabled}
+                className={`rounded-2xl border p-4 text-left transition-all ${
                   isSelected
                     ? "border-black bg-black text-white"
-                    : "border-gray-200 bg-white text-gray-800 hover:border-black"
+                    : isDisabled
+                    ? "cursor-not-allowed border-gray-100 bg-gray-50 opacity-40"
+                    : "border-gray-200 bg-white hover:border-gray-400"
                 }`}
               >
-                {category}
+                <span className="text-2xl">{cat.emoji}</span>
+                <p className={`mt-2 font-medium ${isSelected ? "text-white" : "text-gray-900"}`}>
+                  {cat.label}
+                </p>
+                <p className={`mt-0.5 text-xs ${isSelected ? "text-gray-300" : "text-gray-400"}`}>
+                  {cat.description}
+                </p>
               </button>
             );
           })}
         </div>
 
         <div className="mt-8 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Selected: {selected.length}/3
+          <p className="text-sm text-gray-400">
+            {selected.length === 3
+              ? "Perfect! Ready to continue."
+              : `Select ${3 - selected.length} more`}
           </p>
 
           <button
             onClick={continueToDashboard}
             disabled={selected.length !== 3 || loading}
-            className="rounded-xl bg-black px-6 py-3 text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+            className="rounded-xl bg-black px-6 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-30"
           >
-            {loading ? "Saving..." : "Continue"}
+            {loading ? "Saving..." : "Continue →"}
           </button>
         </div>
-      </section>
-    </main>
+      </main>
+    </div>
   );
 }
 

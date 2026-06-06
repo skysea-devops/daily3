@@ -6,21 +6,7 @@ import Navbar from "@/components/Navbar";
 import { updateUserInterests } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
-
-const CATEGORIES = [
-  "Cloud Computing",
-  "DevOps",
-  "Artificial Intelligence",
-  "Cyber Security",
-  "Software Engineering",
-  "Startups",
-  "World Politics",
-  "Business",
-  "Technology",
-  "Economics",
-  "Science",
-  "Productivity",
-];
+import { CATEGORIES } from "@/app/onboarding/page";
 
 function InterestsForm() {
   const router = useRouter();
@@ -30,35 +16,32 @@ function InterestsForm() {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Pre-select existing interests
   useEffect(() => {
     const stored = localStorage.getItem("daily3-categories");
-    if (stored) {
-      setSelected(JSON.parse(stored));
-    }
+    if (stored) setSelected(JSON.parse(stored));
   }, []);
 
-  function toggleCategory(category: string) {
-    if (selected.includes(category)) {
-      setSelected(selected.filter((c) => c !== category));
+  function toggleCategory(id: string) {
+    if (selected.includes(id)) {
+      setSelected(selected.filter((c) => c !== id));
+      setSaved(false);
       return;
     }
     if (selected.length === 3) return;
-    setSelected([...selected, category]);
+    setSelected([...selected, id]);
+    setSaved(false);
   }
 
   async function handleSave() {
     if (selected.length !== 3 || !user) return;
-
     setLoading(true);
     setSaved(false);
-
     try {
       await updateUserInterests(selected, user.accessToken);
       localStorage.setItem("daily3-categories", JSON.stringify(selected));
       markInterestsSaved();
       setSaved(true);
-      setTimeout(() => router.push("/dashboard"), 800);
+      setTimeout(() => router.push("/dashboard"), 900);
     } catch (error) {
       console.error("Failed to save interests:", error);
       alert("Failed to save interests. Please try again.");
@@ -68,51 +51,65 @@ function InterestsForm() {
   }
 
   return (
-    <main className="min-h-screen bg-white px-6 py-12">
+    <div className="min-h-screen bg-white">
       <Navbar />
 
-      <section className="mx-auto max-w-4xl">
-        <h1 className="mt-8 text-4xl font-bold">Your interests</h1>
+      <main className="mx-auto max-w-3xl px-6 py-12">
+        <h1 className="text-4xl font-bold tracking-tight">Your interests</h1>
 
-        <p className="mt-3 text-gray-600">
-          Select exactly 3 topics. Your daily articles will be chosen from these.
+        <p className="mt-3 text-gray-500">
+          Select exactly 3 topics. Your daily articles will be refreshed every morning.
         </p>
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-          {CATEGORIES.map((category) => {
-            const isSelected = selected.includes(category);
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {CATEGORIES.map((cat) => {
+            const isSelected = selected.includes(cat.id);
+            const isDisabled = !isSelected && selected.length === 3;
 
             return (
               <button
-                key={category}
-                onClick={() => toggleCategory(category)}
-                className={`rounded-2xl border px-5 py-4 text-left transition ${
+                key={cat.id}
+                onClick={() => toggleCategory(cat.id)}
+                disabled={isDisabled}
+                className={`rounded-2xl border p-4 text-left transition-all ${
                   isSelected
                     ? "border-black bg-black text-white"
-                    : "border-gray-200 bg-white text-gray-800 hover:border-black"
+                    : isDisabled
+                    ? "cursor-not-allowed border-gray-100 bg-gray-50 opacity-40"
+                    : "border-gray-200 bg-white hover:border-gray-400"
                 }`}
               >
-                {category}
+                <span className="text-2xl">{cat.emoji}</span>
+                <p className={`mt-2 font-medium ${isSelected ? "text-white" : "text-gray-900"}`}>
+                  {cat.label}
+                </p>
+                <p className={`mt-0.5 text-xs ${isSelected ? "text-gray-300" : "text-gray-400"}`}>
+                  {cat.description}
+                </p>
               </button>
             );
           })}
         </div>
 
         <div className="mt-8 flex items-center justify-between">
-          <p className="text-sm text-gray-500">Selected: {selected.length}/3</p>
+          <p className="text-sm text-gray-400">
+            {selected.length === 3
+              ? "Ready to save."
+              : `Select ${3 - selected.length} more`}
+          </p>
 
           <button
             onClick={handleSave}
             disabled={selected.length !== 3 || loading}
-            className={`rounded-xl px-6 py-3 text-white transition disabled:cursor-not-allowed disabled:bg-gray-300 ${
+            className={`rounded-xl px-6 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-30 ${
               saved ? "bg-green-600" : "bg-black"
             }`}
           >
-            {loading ? "Saving..." : saved ? "Saved!" : "Save interests"}
+            {loading ? "Saving..." : saved ? "Saved! ✓" : "Save interests"}
           </button>
         </div>
-      </section>
-    </main>
+      </main>
+    </div>
   );
 }
 
