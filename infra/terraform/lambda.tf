@@ -1,27 +1,18 @@
-# ──────────────────────────────────────────────────────────────────────────────
-# Shared Lambda config
-# ──────────────────────────────────────────────────────────────────────────────
-
 locals {
   lambda_runtime     = "nodejs20.x"
   lambda_timeout     = 10
   lambda_memory_size = 256
-  # dist/ folders are built by: cd app-backend && npm run build
   lambda_src_root    = "${path.module}/../../app-backend/lambdas"
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# CloudWatch log groups (created explicitly so retention is controlled)
-# ──────────────────────────────────────────────────────────────────────────────
+# CloudWatch log group for update-interests Lambda
 
 resource "aws_cloudwatch_log_group" "update_interests" {
   name              = "/aws/lambda/${aws_lambda_function.update_interests.function_name}"
   retention_in_days = 14
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# update-interests Lambda
-# ──────────────────────────────────────────────────────────────────────────────
+# IAM role and policy for update-interests Lambda
 
 resource "aws_iam_role" "update_interests_lambda_role" {
   name = "${var.project_name}-${var.environment}-update-interests-lambda-role"
@@ -66,25 +57,25 @@ resource "aws_iam_role_policy" "update_interests_lambda_policy" {
   })
 }
 
+# Build artifact: zip the compiled dist/ output, never raw TypeScript
+
 data "archive_file" "update_interests_lambda_zip" {
   type        = "zip"
-  # Zip only the compiled dist/ output — never raw TypeScript
   source_dir  = "${local.lambda_src_root}/users/update-interests/dist"
   output_path = "${path.module}/update-interests.zip"
 }
 
+# Lambda function
+
 resource "aws_lambda_function" "update_interests" {
-  function_name = "${var.project_name}-${var.environment}-update-interests"
-  role          = aws_iam_role.update_interests_lambda_role.arn
-
-  runtime  = local.lambda_runtime
-  handler  = "index.handler"
-  # ESM bundle — tell Lambda to treat it as an ES module
-  filename = data.archive_file.update_interests_lambda_zip.output_path
+  function_name    = "${var.project_name}-${var.environment}-update-interests"
+  role             = aws_iam_role.update_interests_lambda_role.arn
+  runtime          = local.lambda_runtime
+  handler          = "index.handler"
+  filename         = data.archive_file.update_interests_lambda_zip.output_path
   source_code_hash = data.archive_file.update_interests_lambda_zip.output_base64sha256
-
-  timeout     = local.lambda_timeout
-  memory_size = local.lambda_memory_size
+  timeout          = local.lambda_timeout
+  memory_size      = local.lambda_memory_size
 
   environment {
     variables = {
