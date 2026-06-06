@@ -1,10 +1,39 @@
-import Link from "next/link";
+"use client";
 
+import { FormEvent, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signIn } from "@/lib/cognito";
 
 export default function LoginPage() {
+  const router = useRouter();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setErrorMessage("");
+    setLoading(true);
+
+    try {
+      await signIn(email, password);
+
+      router.push("/onboarding");
+    } catch (error: any) {
+      console.error("Sign in error:", error);
+      setErrorMessage(error?.message || "Failed to sign in.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-6">
-      
       <section className="w-full max-w-md rounded-3xl bg-white p-8 shadow-sm">
         <h1 className="text-3xl font-bold">Welcome back</h1>
 
@@ -26,12 +55,15 @@ export default function LoginPage() {
           <div className="h-px flex-1 bg-gray-200" />
         </div>
 
-        <form className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="text-sm font-medium">Email</label>
             <input
               type="email"
               placeholder="you@example.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
               className="mt-2 w-full rounded-xl border px-4 py-3 outline-none focus:border-black"
             />
           </div>
@@ -40,16 +72,26 @@ export default function LoginPage() {
             <label className="text-sm font-medium">Password</label>
             <input
               type="password"
-              placeholder="••••••••"
+              placeholder="Your password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
               className="mt-2 w-full rounded-xl border px-4 py-3 outline-none focus:border-black"
             />
           </div>
 
+          {errorMessage && (
+            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+              {errorMessage}
+            </p>
+          )}
+
           <button
-            type="button"
-            className="w-full rounded-xl bg-black px-6 py-3 text-white"
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-xl bg-black px-6 py-3 text-white disabled:cursor-not-allowed disabled:bg-gray-300"
           >
-            Sign In
+            {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
