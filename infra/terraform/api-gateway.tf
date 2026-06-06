@@ -96,3 +96,5 @@ resource "aws_lambda_permission" "allow_api_gateway_get_profile" {
   source_arn    = "${aws_apigatewayv2_api.backend.execution_arn}/*/*"
 }
 
+
+
