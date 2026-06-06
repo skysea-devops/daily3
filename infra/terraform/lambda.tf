@@ -25,7 +25,6 @@ resource "aws_iam_role" "update_interests_lambda_role" {
   })
 }
 
-
 resource "aws_iam_role_policy" "update_interests_lambda_policy" {
   name = "${var.project_name}-${var.environment}-update-interests-lambda-policy"
   role = aws_iam_role.update_interests_lambda_role.id
@@ -196,7 +195,7 @@ resource "aws_iam_role_policy" "generate_articles_lambda_policy" {
         Sid      = "Bedrock"
         Effect   = "Allow"
         Action   = ["bedrock:InvokeModel"]
-        Resource = "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5"
+        Resource = "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
       },
     ]
   })
