@@ -1,0 +1,23 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "TemporaryBootstrapFix",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetBucketAcl",
+        "iam:ListRolePolicies",
+        "iam:GetRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:DeleteRolePolicy",
+        "iam:TagRole",
+        "iam:UntagRole",
+        "iam:PassRole",
+        "lambda:*",
+        "apigateway:*",
+        "logs:*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

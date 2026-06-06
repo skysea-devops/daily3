@@ -86,6 +86,7 @@ resource "aws_iam_policy" "github_actions_terraform" {
           "s3:ListBucket",
           "s3:GetBucketVersioning",
           "s3:GetBucketEncryption"
+          "s3:GetBucketAcl",
         ]
 
         Resource = aws_s3_bucket.terraform_state.arn
@@ -140,6 +141,7 @@ resource "aws_iam_policy" "github_actions_terraform" {
           "iam:AttachRolePolicy",
           "iam:DetachRolePolicy",
           "iam:ListAttachedRolePolicies"
+          
         ]
 
         Resource = "arn:aws:iam::117647030196:role/${var.project_name}-${var.environment}-*"
