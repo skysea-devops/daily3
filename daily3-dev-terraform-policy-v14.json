@@ -1,0 +1,19 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "TemporaryBootstrapFix",
+      "Effect": "Allow",
+      "Action": [
+        "s3:*",
+        "iam:*",
+        "lambda:*",
+        "apigateway:*",
+        "logs:*",
+        "cognito-idp:*",
+        "dynamodb:*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
