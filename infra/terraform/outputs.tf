@@ -13,3 +13,7 @@ output "cognito_domain" {
 output "users_table_name" {
   value = aws_dynamodb_table.users.name
 }
+
+output "backend_api_url" {
+  value = aws_apigatewayv2_api.backend.api_endpoint
+}
