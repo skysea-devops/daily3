@@ -8,7 +8,7 @@ locals {
 # CloudWatch log group for update-interests Lambda
 
 resource "aws_cloudwatch_log_group" "update_interests" {
-  name              = "/aws/lambda/${aws_lambda_function.update_interests.function_name}"
+  name              = "/aws/lambda/${var.project_name}-${var.environment}-update-interests"
   retention_in_days = 14
 }
 
