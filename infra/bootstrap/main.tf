@@ -111,6 +111,50 @@ resource "aws_iam_policy" "github_actions_terraform" {
         ]
 
         Resource = "*"
+      },
+      {
+        Sid    = "DynamoDbManagementForDaily3"
+        Effect = "Allow"
+
+        Action = [
+          "dynamodb:*"
+        ]
+
+        Resource = "*"
+      },
+      {
+        Sid    = "IamManagementForDaily3"
+        Effect = "Allow"
+
+        Action = [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:GetRole",
+          "iam:TagRole",
+          "iam:UntagRole",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:GetRolePolicy",
+          "iam:ListRolePolicies",
+          "iam:PassRole",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:ListAttachedRolePolicies"
+        ]
+
+        Resource = "arn:aws:iam::117647030196:role/${var.project_name}-${var.environment}-*"
+      },
+      {
+        Sid    = "LambdaApiGatewayLogsForDaily3"
+        Effect = "Allow"
+
+        Action = [
+          "lambda:*",
+          "apigateway:*",
+          "logs:*"
+        ]
+
+        Resource = "*"
       }
     ]
   })
