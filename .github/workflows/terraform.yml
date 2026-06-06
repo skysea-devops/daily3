@@ -2,10 +2,18 @@ name: Deploy
 
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - main
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/terraform.yml"
+
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches:
+      - main
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/terraform.yml"
 
 permissions:
   id-token: write
