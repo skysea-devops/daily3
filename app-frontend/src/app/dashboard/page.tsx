@@ -7,17 +7,17 @@ import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import type { Article } from "@/lib/types";
 
-// Category emoji map — matches onboarding categories
+// Yeni 9 kategori — onboarding/page.tsx ile senkron
 const CATEGORY_EMOJI: Record<string, string> = {
-  "Cloud & DevOps":       "☁️",
-  "Software Engineering": "🛠️",
-  "Cyber Security":       "🔐",
-  "Technology":           "💡",
-  "World Politics":       "🌍",
-  "Business":             "📈",
-  "Economics":            "💰",
-  "Science":              "🔬",
-  "Productivity":         "⚡",
+  "Software & DevOps": "🛠️",
+  "Technology":        "💡",
+  "World Politics":    "🌍",
+  "Business":         "📈",
+  "Economics":        "💰",
+  "Science":          "🔬",
+  "Productivity":     "⚡",
+  "History":          "🏛️",
+  "Arts & Culture":   "🎭",
 };
 
 function ArticleCard({ article }: { article: Article }) {
@@ -110,7 +110,6 @@ function DashboardContent() {
           setGeneratedAt(data.generatedAt);
           setStatus("ready");
         } else {
-          // Articles still being generated — poll every 5s
           setStatus("pending");
           setTimeout(() => { if (!cancelled) load(); }, 5000);
         }

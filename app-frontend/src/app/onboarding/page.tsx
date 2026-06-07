@@ -9,22 +9,10 @@ import { RequireOnboarding } from "@/components/Guards";
 
 export const CATEGORIES: { id: string; label: string; emoji: string; description: string }[] = [
   {
-    id:          "Cloud & DevOps",
-    label:       "Cloud & DevOps",
-    emoji:       "☁️",
-    description: "AWS, GCP, Azure, CI/CD, infrastructure",
-  },
-  {
-    id:          "Software Engineering",
-    label:       "Software Engineering",
+    id:          "Software & DevOps",
+    label:       "Software & DevOps",
     emoji:       "🛠️",
-    description: "Architecture, best practices, system design",
-  },
-  {
-    id:          "Cyber Security",
-    label:       "Cyber Security",
-    emoji:       "🔐",
-    description: "Vulnerabilities, privacy, security research",
+    description: "Architecture, system design, cloud, CI/CD",
   },
   {
     id:          "Technology",
@@ -61,6 +49,18 @@ export const CATEGORIES: { id: string; label: string; emoji: string; description
     label:       "Productivity",
     emoji:       "⚡",
     description: "Focus, habits, tools, mental models",
+  },
+  {
+    id:          "History",
+    label:       "History",
+    emoji:       "🏛️",
+    description: "Ancient to modern, events, civilizations",
+  },
+  {
+    id:          "Arts & Culture",
+    label:       "Arts & Culture",
+    emoji:       "🎭",
+    description: "Literature, film, music, criticism",
   },
 ];
 

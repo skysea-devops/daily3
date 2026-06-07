@@ -10,70 +10,94 @@ const ARTICLES_TABLE = process.env.ARTICLES_TABLE_NAME!;
 const CORS_ORIGIN    = process.env.CORS_ORIGIN ?? "*";
 
 // ─── RSS source map ───────────────────────────────────────────────────────────
+// Haber ajansları kaldırıldı. Her kategori için ciddi, uzun-form makale
+// üreten kaynaklar seçildi: think tank'lar, akademik dergiler, bağımsız
+// araştırmacı yayınları.
 
 const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
-  "Cloud & DevOps": [
-    { name: "AWS DevOps Blog",  url: "https://aws.amazon.com/blogs/devops/feed/" },
-    { name: "AWS Architecture", url: "https://aws.amazon.com/blogs/architecture/feed/" },
-    { name: "The New Stack",    url: "https://thenewstack.io/feed/" },
-    { name: "Azure Blog",       url: "https://azure.microsoft.com/en-us/blog/feed/" },
-    { name: "GCP Blog",         url: "https://cloudblog.withgoogle.com/rss/" },
-  ],
-  "Software Engineering": [
+
+  "Software & DevOps": [
     { name: "Stack Overflow Blog", url: "https://stackoverflow.blog/feed/" },
     { name: "Martin Fowler",       url: "https://martinfowler.com/feed.atom" },
     { name: "InfoQ",               url: "https://www.infoq.com/feed/" },
-    { name: "Dev.to",              url: "https://dev.to/feed" },
+    { name: "The New Stack",       url: "https://thenewstack.io/feed/" },
+    { name: "AWS Architecture",    url: "https://aws.amazon.com/blogs/architecture/feed/" },
   ],
-  "Cyber Security": [
-    { name: "The Hacker News",      url: "https://feeds.feedburner.com/TheHackersNews" },
-    { name: "Schneier on Security", url: "https://www.schneier.com/feed/atom/" },
-    { name: "Krebs on Security",    url: "https://krebsonsecurity.com/feed/" },
-    { name: "Dark Reading",         url: "https://www.darkreading.com/rss.xml" },
-  ],
+
   "Technology": [
-    { name: "Hacker News",  url: "https://news.ycombinator.com/rss" },
-    { name: "Ars Technica", url: "https://feeds.arstechnica.com/arstechnica/index" },
-    { name: "Wired",        url: "https://www.wired.com/feed/rss" },
-    { name: "The Next Web", url: "https://thenextweb.com/feed/" },
+    { name: "MIT Technology Review", url: "https://www.technologyreview.com/feed/" },
+    { name: "IEEE Spectrum",         url: "https://spectrum.ieee.org/feeds/feed.rss" },
+    { name: "Ars Technica",          url: "https://feeds.arstechnica.com/arstechnica/index" },
+    { name: "ACM Queue",             url: "https://queue.acm.org/rss/feeds/queuecontent.xml" },
+    { name: "Hacker News",           url: "https://news.ycombinator.com/rss" },
   ],
+
   "World Politics": [
-    { name: "BBC World",  url: "https://feeds.bbci.co.uk/news/world/rss.xml" },
-    { name: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml" },
-    { name: "Reuters",    url: "https://feeds.reuters.com/reuters/worldNews" },
+    { name: "Chatham House",               url: "https://www.chathamhouse.org/rss.xml" },
+    { name: "Foreign Affairs",             url: "https://www.foreignaffairs.com/rss.xml" },
+    { name: "War on the Rocks",            url: "https://warontherocks.com/feed/" },
+    { name: "Council on Foreign Relations", url: "https://www.cfr.org/rss/feeds/" },
+    { name: "Al Jazeera",                  url: "https://www.aljazeera.com/xml/rss/all.xml" },
   ],
+
   "Business": [
-    { name: "Harvard Business Review", url: "https://hbr.org/feed" },
+    { name: "Harvard Business Review", url: "http://feeds.hbr.org/harvardbusiness" },
     { name: "MIT Sloan Review",        url: "https://sloanreview.mit.edu/feed/" },
-    { name: "McKinsey Insights",       url: "https://www.mckinsey.com/rss" },
+    { name: "Noema Magazine",          url: "https://www.noemamag.com/feed/" },
+    { name: "Strategy+Business",       url: "https://www.strategy-business.com/rss" },
+    { name: "First Round Review",      url: "https://review.firstround.com/feed.xml" },
   ],
+
   "Economics": [
-    { name: "Reuters Business", url: "https://feeds.reuters.com/reuters/businessNews" },
-    { name: "The Economist",    url: "https://www.economist.com/finance-and-economics/rss.xml" },
-    { name: "Freakonomics",     url: "https://freakonomics.com/feed/" },
+    { name: "Project Syndicate", url: "https://www.project-syndicate.org/rss" },
+    { name: "VoxEU (CEPR)",      url: "https://cepr.org/feed" },
+    { name: "Econlib",           url: "https://www.econlib.org/feed/" },
+    { name: "Noahpinion",        url: "https://www.noahpinion.blog/feed" },
+    { name: "The Economist",     url: "https://www.economist.com/latest/rss.xml" },
   ],
+
   "Science": [
-    { name: "Quanta Magazine", url: "https://www.quantamagazine.org/feed/" },
+    { name: "Quanta Magazine", url: "https://api.quantamagazine.org/feed/" },
+    { name: "Nautilus",        url: "https://nautil.us/feed/" },
+    { name: "Undark",          url: "https://undark.org/feed/" },
+    { name: "Aeon",            url: "https://aeon.co/feed.rss" },
     { name: "Phys.org",        url: "https://phys.org/rss-feed/" },
-    { name: "Science Daily",   url: "https://www.sciencedaily.com/rss/all.xml" },
   ],
+
   "Productivity": [
     { name: "Farnam Street", url: "https://fs.blog/feed/" },
-    { name: "James Clear",   url: "https://jamesclear.com/feed" },
     { name: "Ness Labs",     url: "https://nesslabs.com/feed" },
+    { name: "Psyche (Aeon)", url: "https://psyche.co/feed" },
+    { name: "LessWrong",     url: "https://www.lesswrong.com/feed.xml" },
     { name: "Nir And Far",   url: "https://www.nirandfar.com/feed/" },
+  ],
+
+  "History": [
+    { name: "Aeon",                   url: "https://aeon.co/feed.rss" },
+    { name: "History Today",          url: "https://www.historytoday.com/feed" },
+    { name: "JSTOR Daily",            url: "https://daily.jstor.org/feed/" },
+    { name: "Lapham's Quarterly",     url: "https://www.laphamsquarterly.org/rss.xml" },
+    { name: "The Public Domain Review", url: "https://publicdomainreview.org/rss.xml" },
+  ],
+
+  "Arts & Culture": [
+    { name: "The Paris Review",            url: "https://www.theparisreview.org/feed" },
+    { name: "Literary Hub",               url: "https://lithub.com/feed/" },
+    { name: "LA Review of Books",         url: "https://lareviewofbooks.org/feed/" },
+    { name: "Aeon",                       url: "https://aeon.co/feed.rss" },
+    { name: "The Atlantic",               url: "https://www.theatlantic.com/feed/all/" },
   ],
 };
 
 // ─── RSS fetch & parse ────────────────────────────────────────────────────────
 
 interface RSSItem {
-  title:       string;
-  url:         string;
-  description: string;
-  pubDate:     string;
-  pubTimestamp: number; // Unix ms — for recency sorting
-  sourceName:  string;
+  title:        string;
+  url:          string;
+  description:  string;
+  pubDate:      string;
+  pubTimestamp: number;
+  sourceName:   string;
 }
 
 function extractText(xml: string, tag: string): string {
@@ -93,7 +117,7 @@ function parsePubDate(raw: string): number {
 
 function extractItems(xml: string, sourceName: string): RSSItem[] {
   const itemTag  = xml.includes("<entry") ? "entry" : "item";
-  const segments = xml.split(`<${itemTag}`).slice(1).slice(0, 20); // fetch up to 20
+  const segments = xml.split(`<${itemTag}`).slice(1).slice(0, 20);
 
   return segments
     .map((seg) => {
@@ -138,18 +162,17 @@ async function fetchRSSFeed(source: { name: string; url: string }): Promise<RSSI
   return extractItems(xml, source.name);
 }
 
-// ─── DynamoDB: fetch recent article history (last 7 days) ────────────────────
+// ─── DynamoDB: fetch recent article history ───────────────────────────────────
 
 interface RecentHistory {
-  seenUrls:    Set<string>;  // URLs shown in last 7 days
-  seenSources: Map<string, number>; // sourceName → how many times shown in last 7 days
+  seenUrls:    Set<string>;
+  seenSources: Map<string, number>;
 }
 
 async function fetchRecentHistory(userId: string): Promise<RecentHistory> {
   const seenUrls    = new Set<string>();
   const seenSources = new Map<string, number>();
 
-  // Query last 7 days of article records for this user
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const skStart      = `DATE#${sevenDaysAgo.toISOString().slice(0, 10)}`;
 
@@ -174,7 +197,6 @@ async function fetchRecentHistory(userId: string): Promise<RecentHistory> {
       }
     }
   } catch (err) {
-    // Non-fatal — degrade gracefully
     console.warn("Failed to fetch recent history:", err);
   }
 
@@ -185,14 +207,14 @@ async function fetchRecentHistory(userId: string): Promise<RecentHistory> {
 
 interface ScoredCandidate extends RSSItem {
   freshness: "today" | "recent" | "older";
-  penalised: boolean; // true if URL or source was recently shown
+  penalised: boolean;
 }
 
 function scoreAndFilter(
   items: RSSItem[],
   history: RecentHistory
 ): ScoredCandidate[] {
-  const now     = Date.now();
+  const now       = Date.now();
   const oneDayMs  = 24 * 60 * 60 * 1000;
   const twoDaysMs = 48 * 60 * 60 * 1000;
 
@@ -208,14 +230,13 @@ function scoreAndFilter(
 
       return { ...item, freshness, penalised };
     })
-    .filter((item) => !history.seenUrls.has(item.url)) // hard exclude seen URLs
+    .filter((item) => !history.seenUrls.has(item.url))
     .sort((a, b) => {
-      // Priority: today > recent > older, then penalised sources last
       const freshnessScore = (f: string) => f === "today" ? 2 : f === "recent" ? 1 : 0;
       const diff = freshnessScore(b.freshness) - freshnessScore(a.freshness);
       if (diff !== 0) return diff;
       if (a.penalised !== b.penalised) return a.penalised ? 1 : -1;
-      return b.pubTimestamp - a.pubTimestamp; // newer first within same tier
+      return b.pubTimestamp - a.pubTimestamp;
     });
 }
 
@@ -248,16 +269,17 @@ async function selectBestArticle(
     ? `\nIMPORTANT: The user has recently seen articles from: ${recentSourcesList}. Prefer a different source today if possible.`
     : "";
 
-  const prompt = `You are an editorial assistant for Daily3, a daily article curation app.
+  const prompt = `You are an editorial assistant for Daily3, a daily long-form article curation app for professionals who want to learn deeply.
 
 User interest: "${interest}"
 ${diversityNote}
 
-Select the single best article from the candidates below. Prioritise:
-1. Published TODAY or very recently (marked "today" or "recent") — freshness is critical
-2. A substantive long-form article with depth and insight, not a press release or short news blurb
-3. Source variety — avoid sources marked "[source shown recently]" unless clearly superior
-4. Strong relevance to "${interest}"
+Select the single best LONG-FORM ARTICLE from the candidates below. You must strictly prioritise:
+1. DEPTH over brevity — prefer essays, research summaries, analysis pieces, and think-tank reports. Reject short news items, press releases, and articles under ~800 words.
+2. SUBSTANCE — the piece should contain original analysis, research findings, or expert insight. Not just a summary of events.
+3. Freshness — prefer articles published TODAY or recently (marked "today" or "recent")
+4. Source variety — avoid sources marked "[source shown recently]" unless clearly superior
+5. Strong relevance to "${interest}"
 
 Candidates:
 ${candidateList}
@@ -265,8 +287,8 @@ ${candidateList}
 Respond ONLY with valid JSON (no markdown):
 {
   "selectedIndex": <0-${candidates.length - 1}>,
-  "reason": "<one sentence: why this article is valuable for someone interested in ${interest}>",
-  "readingTime": "<estimated reading time e.g. '6 min read'>"
+  "reason": "<one sentence: what makes this a valuable long-form read for someone interested in ${interest}>",
+  "readingTime": "<estimated reading time e.g. '8 min read'>"
 }`;
 
   const command = new InvokeModelCommand({
@@ -320,17 +342,14 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
 
   console.log(`Generating for user=${userId} interests=${interests.join(", ")}`);
 
-  // Fetch seen URLs + source usage for the last 7 days (single DynamoDB query)
   const history = await fetchRecentHistory(userId);
   console.log(`History: ${history.seenUrls.size} seen URLs, ${history.seenSources.size} sources`);
 
-  // Process all 3 interests in parallel
   const articleResults = await Promise.allSettled(
     interests.map(async (interest): Promise<Article> => {
       const sources = RSS_SOURCES[interest];
       if (!sources) throw new Error(`No RSS sources for interest: ${interest}`);
 
-      // Fetch all sources in parallel
       const feedResults = await Promise.allSettled(sources.map(fetchRSSFeed));
 
       const allItems: RSSItem[] = [];
@@ -346,7 +365,6 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
         throw new Error(`All feeds failed for interest: ${interest}`);
       }
 
-      // Score, deduplicate, and sort by freshness + diversity
       const candidates = scoreAndFilter(allItems, history);
 
       if (candidates.length === 0) {
@@ -358,10 +376,9 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
         `(today: ${candidates.filter(c => c.freshness === "today").length})`
       );
 
-      // Bedrock picks the best one
-      const top10      = candidates.slice(0, 10); // send top 10 to Bedrock
-      const selection  = await selectBestArticle(top10, interest, history);
-      const chosen     = top10[Math.min(selection.selectedIndex, top10.length - 1)];
+      const top10     = candidates.slice(0, 10);
+      const selection = await selectBestArticle(top10, interest, history);
+      const chosen    = top10[Math.min(selection.selectedIndex, top10.length - 1)];
 
       return {
         category:    interest,
