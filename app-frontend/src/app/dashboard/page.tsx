@@ -7,21 +7,21 @@ import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import type { Article } from "@/lib/types";
 
-// Category emoji map — matches onboarding categories
-const CATEGORY_EMOJI: Record<string, string> = {
-  "Cloud & DevOps":       "☁️",
-  "Software Engineering": "🛠️",
-  "Cyber Security":       "🔐",
-  "Technology":           "💡",
-  "World Politics":       "🌍",
-  "Business":             "📈",
-  "Economics":            "💰",
-  "Science":              "🔬",
-  "Productivity":         "⚡",
+// Yeni 9 kategori — onboarding/page.tsx ile senkron
+const CATEGORIES: Record<string, string> = {
+  "Software & DevOps": "🛠️",
+  "Technology":        "💡",
+  "World Politics":    "🌍",
+  "Business":         "📈",
+  "Economics":        "💰",
+  "Science":          "🔬",
+  "Productivity":     "⚡",
+  "History":          "🏛️",
+  "Arts & Culture":   "🎭",
 };
 
 function ArticleCard({ article }: { article: Article }) {
-  const emoji = CATEGORY_EMOJI[article.category] ?? "📄";
+  const emoji = CATEGORIES[article.category] ?? "📄";
 
   return (
     <article className="rounded-3xl border border-gray-200 bg-white p-6">
@@ -65,7 +65,7 @@ function ArticleCard({ article }: { article: Article }) {
 }
 
 function PendingCard({ category }: { category: string }) {
-  const emoji = CATEGORY_EMOJI[category] ?? "📄";
+  const emoji = CATEGORIES[category] ?? "📄";
   return (
     <article className="rounded-3xl border border-dashed border-gray-200 bg-gray-50 p-6">
       <div className="flex items-center gap-3">
@@ -110,7 +110,6 @@ function DashboardContent() {
           setGeneratedAt(data.generatedAt);
           setStatus("ready");
         } else {
-          // Articles still being generated — poll every 5s
           setStatus("pending");
           setTimeout(() => { if (!cancelled) load(); }, 5000);
         }
@@ -150,7 +149,7 @@ function DashboardContent() {
                 key={interest}
                 className="rounded-full bg-white border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600"
               >
-                {CATEGORY_EMOJI[interest]} {interest}
+                {CATEGORIES[interest]} {interest}
               </span>
             ))}
           </div>
