@@ -41,7 +41,7 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
 
   "Business": [
-    { name: "Harvard Business Review", url: "http://feeds.hbr.org/harvardbusiness" },
+    { name: "Ness Labs",               url: "https://nesslabs.com/feed" },
     { name: "MIT Sloan Review",        url: "https://sloanreview.mit.edu/feed/" },
     { name: "Noema Magazine",          url: "https://www.noemamag.com/feed/" },
     { name: "Strategy+Business",       url: "https://www.strategy-business.com/rss" },
