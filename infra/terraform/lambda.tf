@@ -194,7 +194,6 @@ resource "aws_iam_role_policy" "generate_articles_lambda_policy" {
         Resource = aws_dynamodb_table.articles.arn
       },
       {
-        # inference-profile ARN'ında account ID zorunlu (account-scoped resource)
         Sid    = "BedrockCrossRegionProfile"
         Effect = "Allow"
         Action = ["bedrock:InvokeModel"]
@@ -203,8 +202,6 @@ resource "aws_iam_role_policy" "generate_articles_lambda_policy" {
         ]
       },
       {
-        # foundation-model ARN'larında account ID olmaz (:: boş kalır)
-        # Bedrock cross-region routing'i arka planda bu wiildcard ile  EU region'larına dağıtır
         Sid    = "BedrockFoundationModels"
         Effect = "Allow"
         Action = ["bedrock:InvokeModel"]
@@ -278,10 +275,22 @@ resource "aws_iam_role_policy" "get_articles_lambda_policy" {
         Resource = "${aws_cloudwatch_log_group.get_articles.arn}:*"
       },
       {
-        Sid      = "DynamoRead"
+        Sid      = "DynamoReadArticles"
         Effect   = "Allow"
         Action   = ["dynamodb:GetItem"]
         Resource = aws_dynamodb_table.articles.arn
+      },
+      {
+        Sid      = "DynamoReadUsers"
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem"]
+        Resource = aws_dynamodb_table.users.arn
+      },
+      {
+        Sid      = "InvokeGenerateArticles"
+        Effect   = "Allow"
+        Action   = ["lambda:InvokeFunction"]
+        Resource = aws_lambda_function.generate_articles.arn
       },
     ]
   })
@@ -305,12 +314,13 @@ resource "aws_lambda_function" "get_articles" {
 
   environment {
     variables = {
-      ARTICLES_TABLE_NAME = aws_dynamodb_table.articles.name
-      CORS_ORIGIN         = var.cors_origin
-      NODE_OPTIONS        = "--enable-source-maps"
+      ARTICLES_TABLE_NAME             = aws_dynamodb_table.articles.name
+      USERS_TABLE_NAME                = aws_dynamodb_table.users.name
+      GENERATE_ARTICLES_FUNCTION_NAME = aws_lambda_function.generate_articles.function_name
+      CORS_ORIGIN                     = var.cors_origin
+      NODE_OPTIONS                    = "--enable-source-maps"
     }
   }
 
   depends_on = [aws_cloudwatch_log_group.get_articles]
 }
-
