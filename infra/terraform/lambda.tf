@@ -7,7 +7,7 @@ locals {
 
 data "aws_caller_identity" "current" {}
 
-# update-interests
+# ─── update-interests ─────────────────────────────────────────────────────────
 
 resource "aws_cloudwatch_log_group" "update_interests" {
   name              = "/aws/lambda/${var.project_name}-${var.environment}-update-interests"
@@ -84,7 +84,7 @@ resource "aws_lambda_function" "update_interests" {
   depends_on = [aws_cloudwatch_log_group.update_interests]
 }
 
-# get-profile
+# ─── get-profile ──────────────────────────────────────────────────────────────
 
 resource "aws_cloudwatch_log_group" "get_profile" {
   name              = "/aws/lambda/${var.project_name}-${var.environment}-get-profile"
@@ -154,7 +154,7 @@ resource "aws_lambda_function" "get_profile" {
   depends_on = [aws_cloudwatch_log_group.get_profile]
 }
 
-# generate-articles
+# ─── generate-articles ────────────────────────────────────────────────────────
 
 resource "aws_cloudwatch_log_group" "generate_articles" {
   name              = "/aws/lambda/${var.project_name}-${var.environment}-generate-articles"
@@ -241,7 +241,7 @@ resource "aws_lambda_function" "generate_articles" {
   depends_on = [aws_cloudwatch_log_group.generate_articles]
 }
 
-# get-articles
+# ─── get-articles ─────────────────────────────────────────────────────────────
 
 resource "aws_cloudwatch_log_group" "get_articles" {
   name              = "/aws/lambda/${var.project_name}-${var.environment}-get-articles"
@@ -323,4 +323,101 @@ resource "aws_lambda_function" "get_articles" {
   }
 
   depends_on = [aws_cloudwatch_log_group.get_articles]
+}
+
+# ─── daily-trigger ────────────────────────────────────────────────────────────
+
+resource "aws_cloudwatch_log_group" "daily_trigger" {
+  name              = "/aws/lambda/${var.project_name}-${var.environment}-daily-trigger"
+  retention_in_days = var.environment == "prod" ? 30 : 14
+}
+
+resource "aws_iam_role" "daily_trigger_lambda_role" {
+  name = "${var.project_name}-${var.environment}-daily-trigger-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "daily_trigger_lambda_policy" {
+  name = "${var.project_name}-${var.environment}-daily-trigger-policy"
+  role = aws_iam_role.daily_trigger_lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "Logging"
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "${aws_cloudwatch_log_group.daily_trigger.arn}:*"
+      },
+      {
+        Sid      = "DynamoScanUsers"
+        Effect   = "Allow"
+        Action   = ["dynamodb:Scan"]
+        Resource = aws_dynamodb_table.users.arn
+      },
+      {
+        Sid      = "InvokeGenerateArticles"
+        Effect   = "Allow"
+        Action   = ["lambda:InvokeFunction"]
+        Resource = aws_lambda_function.generate_articles.arn
+      },
+    ]
+  })
+}
+
+data "archive_file" "daily_trigger_lambda_zip" {
+  type        = "zip"
+  source_dir  = "${local.lambda_src_root}/articles/daily-trigger/dist"
+  output_path = "${path.module}/daily-trigger.zip"
+}
+
+resource "aws_lambda_function" "daily_trigger" {
+  function_name    = "${var.project_name}-${var.environment}-daily-trigger"
+  role             = aws_iam_role.daily_trigger_lambda_role.arn
+  runtime          = local.lambda_runtime
+  handler          = "index.handler"
+  filename         = data.archive_file.daily_trigger_lambda_zip.output_path
+  source_code_hash = data.archive_file.daily_trigger_lambda_zip.output_base64sha256
+  timeout          = 300  # 5 dakika — çok kullanıcı olabilir
+  memory_size      = 256
+
+  environment {
+    variables = {
+      USERS_TABLE_NAME                = aws_dynamodb_table.users.name
+      GENERATE_ARTICLES_FUNCTION_NAME = aws_lambda_function.generate_articles.function_name
+      NODE_OPTIONS                    = "--enable-source-maps"
+    }
+  }
+
+  depends_on = [aws_cloudwatch_log_group.daily_trigger]
+}
+
+# EventBridge: her gün 07:00 Türkiye saati = 04:00 UTC
+resource "aws_cloudwatch_event_rule" "daily_07_00" {
+  name                = "${var.project_name}-${var.environment}-daily-07-00"
+  description         = "Triggers daily article generation at 07:00 Turkey time (04:00 UTC)"
+  schedule_expression = "cron(0 4 * * ? *)"
+}
+
+resource "aws_cloudwatch_event_target" "daily_trigger_target" {
+  rule      = aws_cloudwatch_event_rule.daily_07_00.name
+  target_id = "daily-trigger-lambda"
+  arn       = aws_lambda_function.daily_trigger.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge" {
+  statement_id  = "AllowEventBridgeInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.daily_trigger.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.daily_07_00.arn
 }
