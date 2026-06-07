@@ -8,7 +8,7 @@ import { RequireAuth } from "@/components/Guards";
 import type { Article } from "@/lib/types";
 
 // Yeni 9 kategori — onboarding/page.tsx ile senkron
-const CATEGORY_EMOJI: Record<string, string> = {
+const CATEGORIES: Record<string, string> = {
   "Software & DevOps": "🛠️",
   "Technology":        "💡",
   "World Politics":    "🌍",
@@ -21,7 +21,7 @@ const CATEGORY_EMOJI: Record<string, string> = {
 };
 
 function ArticleCard({ article }: { article: Article }) {
-  const emoji = CATEGORY_EMOJI[article.category] ?? "📄";
+  const emoji = CATEGORIES[article.category] ?? "📄";
 
   return (
     <article className="rounded-3xl border border-gray-200 bg-white p-6">
@@ -65,7 +65,7 @@ function ArticleCard({ article }: { article: Article }) {
 }
 
 function PendingCard({ category }: { category: string }) {
-  const emoji = CATEGORY_EMOJI[category] ?? "📄";
+  const emoji = CATEGORIES[category] ?? "📄";
   return (
     <article className="rounded-3xl border border-dashed border-gray-200 bg-gray-50 p-6">
       <div className="flex items-center gap-3">
@@ -149,7 +149,7 @@ function DashboardContent() {
                 key={interest}
                 className="rounded-full bg-white border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600"
               >
-                {CATEGORY_EMOJI[interest]} {interest}
+                {CATEGORIES[interest]} {interest}
               </span>
             ))}
           </div>

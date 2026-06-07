@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import { updateUserInterests } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
-import { CATEGORIES } from "@/app/dashboard/page";
+import { CATEGORIES } from "@/app/onboarding/page";
 
 function InterestsForm() {
   const router = useRouter();
