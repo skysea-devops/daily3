@@ -165,7 +165,7 @@ resource "aws_lambda_function" "get_profile" {
 # ==============================================================================
 # generate-articles
 # Tetikleyici: update-interests veya daily-trigger'dan async invoke
-# RSS'ten makale ceker, Bedrock ile secim yapar, DynamoDB'e yazar
+# RSS'ten makale ceker, Bedrock ile secim yapar, DynamoDB'e yazar, SES ile email gonderir
 # ==============================================================================
 
 resource "aws_cloudwatch_log_group" "generate_articles" {
@@ -200,10 +200,16 @@ resource "aws_iam_role_policy" "generate_articles_lambda_policy" {
         Resource = "${aws_cloudwatch_log_group.generate_articles.arn}:*"
       },
       {
-        Sid      = "DynamoReadWrite"
+        Sid      = "DynamoWriteArticles"
         Effect   = "Allow"
         Action   = ["dynamodb:PutItem", "dynamodb:Query"]
         Resource = aws_dynamodb_table.articles.arn
+      },
+      {
+        Sid      = "DynamoReadUsers"
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem"]
+        Resource = aws_dynamodb_table.users.arn
       },
       {
         Sid    = "BedrockCrossRegionProfile"
@@ -220,6 +226,12 @@ resource "aws_iam_role_policy" "generate_articles_lambda_policy" {
         Resource = [
           "arn:aws:bedrock:eu-*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
         ]
+      },
+      {
+        Sid      = "SESsendEmail"
+        Effect   = "Allow"
+        Action   = ["ses:SendEmail", "ses:SendRawEmail"]
+        Resource = "*"
       },
     ]
   })
@@ -244,6 +256,8 @@ resource "aws_lambda_function" "generate_articles" {
   environment {
     variables = {
       ARTICLES_TABLE_NAME = aws_dynamodb_table.articles.name
+      USERS_TABLE_NAME    = aws_dynamodb_table.users.name
+      SES_FROM_EMAIL      = var.ses_from_email
       CORS_ORIGIN         = var.cors_origin
       BEDROCK_REGION      = var.aws_region
       NODE_OPTIONS        = "--enable-source-maps"
