@@ -191,11 +191,26 @@ resource "aws_iam_role_policy" "generate_articles_lambda_policy" {
         Action   = ["dynamodb:PutItem", "dynamodb:Query"]
         Resource = aws_dynamodb_table.articles.arn
       },
+      # Cross-region inference profile için iki ayrı izin gerekiyor:
+      # 1) inference-profile ARN'ı invoke edebilmek
+      # 2) Bedrock'un arka planda yönlendirdiği EU region'larındaki foundation-model'lara erişim
       {
-        Sid      = "Bedrock"
-        Effect   = "Allow"
-        Action   = ["bedrock:InvokeModel"]
-        Resource = "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+        Sid    = "BedrockInferenceProfile"
+        Effect = "Allow"
+        Action = ["bedrock:InvokeModel"]
+        Resource = [
+          "arn:aws:bedrock:eu-central-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
+          "arn:aws:bedrock:eu-west-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
+          "arn:aws:bedrock:eu-west-3::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
+        ]
+      },
+      {
+        Sid    = "BedrockCrossRegionProfile"
+        Effect = "Allow"
+        Action = ["bedrock:InvokeModel"]
+        Resource = [
+          "arn:aws:bedrock:eu-central-1::inference-profile/eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+        ]
       },
     ]
   })
@@ -298,3 +313,4 @@ resource "aws_lambda_function" "get_articles" {
 
   depends_on = [aws_cloudwatch_log_group.get_articles]
 }
+
