@@ -5,6 +5,8 @@ locals {
   lambda_src_root    = "${path.module}/../../app-backend/lambdas"
 }
 
+data "aws_caller_identity" "current" {}
+
 # update-interests
 
 resource "aws_cloudwatch_log_group" "update_interests" {
@@ -191,28 +193,18 @@ resource "aws_iam_role_policy" "generate_articles_lambda_policy" {
         Action   = ["dynamodb:PutItem", "dynamodb:Query"]
         Resource = aws_dynamodb_table.articles.arn
       },
-      # Cross-region inference profile için iki ayrı izin gerekiyor:
-      # 1) inference-profile ARN'ı invoke edebilmek
-      # 2) Bedrock'un arka planda yönlendirdiği EU region'larındaki foundation-model'lara erişim
       {
-        Sid    = "BedrockInferenceProfile"
-        Effect = "Allow"
-        Action = ["bedrock:InvokeModel"]
-        Resource = [
-          "arn:aws:bedrock:eu-central-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
-          "arn:aws:bedrock:eu-west-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
-          "arn:aws:bedrock:eu-west-3::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
-        ]
-      },
-      {
+        # inference-profile ARN'ında account ID zorunlu (account-scoped resource)
         Sid    = "BedrockCrossRegionProfile"
         Effect = "Allow"
         Action = ["bedrock:InvokeModel"]
         Resource = [
-          "arn:aws:bedrock:eu-central-1:117647030196:inference-profile/eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+          "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/eu.anthropic.claude-haiku-4-5-20251001-v1:0",
         ]
       },
       {
+        # foundation-model ARN'larında account ID olmaz (:: boş kalır)
+        # Bedrock cross-region routing'i arka planda bu 3 EU region'ına dağıtır
         Sid    = "BedrockFoundationModels"
         Effect = "Allow"
         Action = ["bedrock:InvokeModel"]
@@ -323,4 +315,3 @@ resource "aws_lambda_function" "get_articles" {
 
   depends_on = [aws_cloudwatch_log_group.get_articles]
 }
-
