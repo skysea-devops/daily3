@@ -7,8 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import type { Article } from "@/lib/types";
 
-// Yeni 9 kategori — onboarding/page.tsx ile senkron
-const CATEGORIES: Record<string, string> = {
+const CATEGORY_EMOJI: Record<string, string> = {
   "Software & DevOps": "🛠️",
   "Technology":        "💡",
   "World Politics":    "🌍",
@@ -21,7 +20,7 @@ const CATEGORIES: Record<string, string> = {
 };
 
 function ArticleCard({ article }: { article: Article }) {
-  const emoji = CATEGORIES[article.category] ?? "📄";
+  const emoji = CATEGORY_EMOJI[article.category] ?? "📄";
 
   return (
     <article className="rounded-3xl border border-gray-200 bg-white p-6">
@@ -65,7 +64,7 @@ function ArticleCard({ article }: { article: Article }) {
 }
 
 function PendingCard({ category }: { category: string }) {
-  const emoji = CATEGORIES[category] ?? "📄";
+  const emoji = CATEGORY_EMOJI[category] ?? "📄";
   return (
     <article className="rounded-3xl border border-dashed border-gray-200 bg-gray-50 p-6">
       <div className="flex items-center gap-3">
@@ -100,12 +99,35 @@ function DashboardContent() {
     let cancelled = false;
 
     async function load() {
+      // Interests yeni değiştiyse pending'e zorla — eski makaleleri gösterme
+      const invalidated = localStorage.getItem("daily3-articles-invalidated");
+      if (invalidated) {
+        localStorage.removeItem("daily3-articles-invalidated");
+        setStatus("pending");
+        setTimeout(() => { if (!cancelled) load(); }, 3000);
+        return;
+      }
+
       try {
         const data = await getDailyArticles(user!.accessToken);
 
         if (cancelled) return;
 
         if (data.status === "ready" && data.articles.length > 0) {
+          // Eğer makalelerin kategorisi localStorage'daki interests ile eşleşmiyorsa
+          // yeni makaleler henüz gelmemiş — polling'e devam et
+          const storedRaw = localStorage.getItem("daily3-categories");
+          const storedInterests: string[] = storedRaw ? JSON.parse(storedRaw) : [];
+          const articleCategories = data.articles.map((a: Article) => a.category);
+          const isStale = storedInterests.length > 0 &&
+            !storedInterests.every((i) => articleCategories.includes(i));
+
+          if (isStale) {
+            setStatus("pending");
+            setTimeout(() => { if (!cancelled) load(); }, 3000);
+            return;
+          }
+
           setArticles(data.articles);
           setGeneratedAt(data.generatedAt);
           setStatus("ready");
@@ -149,7 +171,7 @@ function DashboardContent() {
                 key={interest}
                 className="rounded-full bg-white border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600"
               >
-                {CATEGORIES[interest]} {interest}
+                {CATEGORY_EMOJI[interest]} {interest}
               </span>
             ))}
           </div>
@@ -200,7 +222,7 @@ function DashboardContent() {
           <div className="rounded-2xl bg-red-50 border border-red-100 px-5 py-4">
             <p className="text-sm font-medium text-red-700">Failed to load articles.</p>
             <button
-              onClick={() => { setStatus("loading"); }}
+              onClick={() => setStatus("loading")}
               className="mt-2 text-xs text-red-500 underline"
             >
               Try again
