@@ -34,3 +34,9 @@ variable "cors_allowed_origins" {
   type        = list(string)
   default     = ["*"]
 }
+
+variable "ses_from_email" {
+  description = "Verified SES email address for sending daily digest notifications"
+  type        = string
+  default     = "igokdeniz80@gmail.com"
+}

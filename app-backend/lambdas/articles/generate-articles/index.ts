@@ -1,18 +1,19 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, PutCommand, QueryCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { Article, DailyArticles, Keys } from "../../../shared/types";
 
 const dynamo  = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const bedrock = new BedrockRuntimeClient({ region: process.env.AWS_REGION });
+const ses     = new SESClient({ region: process.env.AWS_REGION });
 
 const ARTICLES_TABLE = process.env.ARTICLES_TABLE_NAME!;
+const USERS_TABLE    = process.env.USERS_TABLE_NAME!;
+const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL!;
 const CORS_ORIGIN    = process.env.CORS_ORIGIN ?? "*";
 
 // ─── RSS source map ───────────────────────────────────────────────────────────
-// Haber ajansları kaldırıldı. Her kategori için ciddi, uzun-form makale
-// üreten kaynaklar seçildi: think tank'lar, akademik dergiler, bağımsız
-// araştırmacı yayınları.
 
 const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
 
@@ -33,27 +34,27 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
 
   "World Politics": [
-    { name: "Chatham House",               url: "https://www.chathamhouse.org/rss.xml" },
-    { name: "Foreign Affairs",             url: "https://www.foreignaffairs.com/rss.xml" },
-    { name: "War on the Rocks",            url: "https://warontherocks.com/feed/" },
-    { name: "Council on Foreign Relations", url: "https://feeds.cfr.org/publication/twnw }," },
-    { name: "Al Jazeera",                  url: "https://www.aljazeera.com/xml/rss/all.xml" },
+    { name: "Chatham House",                url: "https://www.chathamhouse.org/rss.xml" },
+    { name: "Foreign Affairs",              url: "https://www.foreignaffairs.com/rss.xml" },
+    { name: "War on the Rocks",             url: "https://warontherocks.com/feed/" },
+    { name: "Council on Foreign Relations", url: "https://feeds.cfr.org/publication/twnw" },
+    { name: "Al Jazeera",                   url: "https://www.aljazeera.com/xml/rss/all.xml" },
   ],
 
   "Business": [
-    { name: "Ness Labs",               url: "https://nesslabs.com/feed" },
-    { name: "MIT Sloan Review",        url: "https://sloanreview.mit.edu/feed/" },
-    { name: "Noema Magazine",          url: "https://www.noemamag.com/feed/" },
-    { name: "Strategy+Business",       url: "https://www.strategy-business.com/rss" },
-    { name: "First Round Review",      url: "https://review.firstround.com/feed.xml" },
+    { name: "Ness Labs",          url: "https://nesslabs.com/feed" },
+    { name: "MIT Sloan Review",   url: "https://sloanreview.mit.edu/feed/" },
+    { name: "Noema Magazine",     url: "https://www.noemamag.com/feed/" },
+    { name: "Strategy+Business",  url: "https://www.strategy-business.com/rss" },
+    { name: "First Round Review", url: "https://review.firstround.com/feed.xml" },
   ],
 
   "Economics": [
-      { name: "VoxEU (CEPR)",        url: "https://cepr.org/feed" },
-      { name: "Econlib",             url: "https://www.econlib.org/feed/" },
-      { name: "Noahpinion",          url: "https://www.noahpinion.blog/feed" },
-      { name: "Marginal Revolution", url: "https://marginalrevolution.com/feed" },
-      { name: "IMF Blog",            url: "https://www.imf.org/en/Blogs/rss" },
+    { name: "VoxEU (CEPR)",       url: "https://cepr.org/feed" },
+    { name: "Econlib",            url: "https://www.econlib.org/feed/" },
+    { name: "Noahpinion",         url: "https://www.noahpinion.blog/feed" },
+    { name: "Marginal Revolution", url: "https://marginalrevolution.com/feed" },
+    { name: "IMF Blog",           url: "https://www.imf.org/en/Blogs/rss" },
   ],
 
   "Science": [
@@ -73,19 +74,19 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
 
   "History": [
-    { name: "Aeon",                   url: "https://aeon.co/feed.rss" },
-    { name: "History Today",          url: "https://www.historytoday.com/feed" },
-    { name: "JSTOR Daily",            url: "https://daily.jstor.org/feed/" },
-    { name: "Lapham's Quarterly",     url: "https://www.laphamsquarterly.org/rss.xml" },
+    { name: "Aeon",                     url: "https://aeon.co/feed.rss" },
+    { name: "History Today",            url: "https://www.historytoday.com/feed" },
+    { name: "JSTOR Daily",              url: "https://daily.jstor.org/feed/" },
+    { name: "Lapham's Quarterly",       url: "https://www.laphamsquarterly.org/rss.xml" },
     { name: "The Public Domain Review", url: "https://publicdomainreview.org/rss.xml" },
   ],
 
   "Arts & Culture": [
-    { name: "Literary Hub (Arts)",         url: "https://lithub.com/category/newsandculture/art-and-photography/feed/" },
-    { name: "Literary Hub (Books)",        url: "https://lithub.com/category/bookmarks/excerpts-and-writings/feed/" },
-    { name: "LA Review of Books",          url: "https://lareviewofbooks.org/feed/" },
-    { name: "Aeon",                        url: "https://aeon.co/feed.rss" },
-    { name: "Smithsonian Magazine",        url: "https://www.smithsonianmag.com/rss/latest_articles/" },
+    { name: "Literary Hub (Arts)",  url: "https://lithub.com/category/newsandculture/art-and-photography/feed/" },
+    { name: "Literary Hub (Books)", url: "https://lithub.com/category/bookmarks/excerpts-and-writings/feed/" },
+    { name: "LA Review of Books",   url: "https://lareviewofbooks.org/feed/" },
+    { name: "Aeon",                 url: "https://aeon.co/feed.rss" },
+    { name: "Smithsonian Magazine", url: "https://www.smithsonianmag.com/rss/latest_articles/" },
   ],
 };
 
@@ -203,12 +204,184 @@ async function fetchRecentHistory(userId: string): Promise<RecentHistory> {
   return { seenUrls, seenSources };
 }
 
+// ─── DynamoDB: fetch user email ───────────────────────────────────────────────
+
+async function fetchUserEmail(userId: string): Promise<string | null> {
+  try {
+    const result = await dynamo.send(
+      new GetCommand({
+        TableName: USERS_TABLE,
+        Key: {
+          PK: Keys.userPK(userId),
+          SK: "PROFILE",
+        },
+        ProjectionExpression: "email",
+      })
+    );
+    return (result.Item?.email as string) ?? null;
+  } catch (err) {
+    console.warn("Failed to fetch user email:", err);
+    return null;
+  }
+}
+
+// ─── SES: send daily digest email ─────────────────────────────────────────────
+
+const CATEGORY_EMOJI: Record<string, string> = {
+  "Software & DevOps": "🛠️",
+  "Technology":        "💡",
+  "World Politics":    "🌍",
+  "Business":         "📈",
+  "Economics":        "💰",
+  "Science":          "🔬",
+  "Productivity":     "⚡",
+  "History":          "🏛️",
+  "Arts & Culture":   "🎭",
+};
+
+function buildEmailHtml(articles: Article[]): string {
+  const today = new Date().toLocaleDateString("en-GB", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+
+  const articleCards = articles
+    .filter((a) => a.url && a.url !== "https://news.ycombinator.com")
+    .map((a) => {
+      const emoji = CATEGORY_EMOJI[a.category] ?? "📄";
+      return `
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;">
+        <tr>
+          <td style="padding:24px;background:#ffffff;">
+            <p style="margin:0 0 4px 0;font-size:13px;color:#6b7280;">
+              ${emoji} ${a.category}
+            </p>
+            <p style="margin:0 0 2px 0;font-size:12px;color:#9ca3af;">
+              ${a.source} · ${a.readingTime}
+            </p>
+            <h2 style="margin:12px 0 8px 0;font-size:18px;line-height:1.4;color:#111827;">
+              ${a.title}
+            </h2>
+            <p style="margin:0 0 16px 0;font-size:14px;line-height:1.6;color:#4b5563;">
+              ${a.summary}
+            </p>
+            <table cellpadding="0" cellspacing="0" style="margin-bottom:16px;background:#f9fafb;border-radius:10px;">
+              <tr>
+                <td style="padding:12px 16px;">
+                  <p style="margin:0 0 4px 0;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;">Why this article?</p>
+                  <p style="margin:0;font-size:13px;color:#374151;">${a.reason}</p>
+                </td>
+              </tr>
+            </table>
+            <a href="${a.url}" style="display:inline-block;padding:10px 20px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:500;">
+              Read article →
+            </a>
+          </td>
+        </tr>
+      </table>`;
+    })
+    .join("");
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="padding:40px 20px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:0 0 32px 0;">
+              <h1 style="margin:0 0 4px 0;font-size:28px;font-weight:700;color:#111827;">Daily3</h1>
+              <p style="margin:0;font-size:14px;color:#6b7280;">${today}</p>
+              <p style="margin:8px 0 0 0;font-size:15px;color:#374151;">
+                Your three carefully selected articles for today are ready.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Articles -->
+          <tr>
+            <td>${articleCards}</td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 0 0 0;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">
+                Daily3 · Your daily reading digest<br>
+                New articles arrive every morning at 07:00.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+function buildEmailText(articles: Article[]): string {
+  const today = new Date().toLocaleDateString("en-GB", {
+    weekday: "long", day: "numeric", month: "long",
+  });
+
+  const lines = articles
+    .filter((a) => a.url && a.url !== "https://news.ycombinator.com")
+    .map((a) =>
+      `${a.category} — ${a.source}\n${a.title}\n${a.reason}\n${a.url}`
+    )
+    .join("\n\n---\n\n");
+
+  return `Daily3 — ${today}\n\nYour three articles for today:\n\n${lines}\n\nNew articles arrive every morning at 07:00.`;
+}
+
+async function sendDailyEmail(toEmail: string, articles: Article[]): Promise<void> {
+  const realArticles = articles.filter(
+    (a) => a.url && a.url !== "https://news.ycombinator.com"
+  );
+
+  // Tüm makaleler fallback ise email gönderme
+  if (realArticles.length === 0) {
+    console.warn(`No real articles to email for ${toEmail}, skipping`);
+    return;
+  }
+
+  const today = new Date().toLocaleDateString("en-GB", {
+    day: "numeric", month: "long",
+  });
+
+  await ses.send(
+    new SendEmailCommand({
+      Source:      SES_FROM_EMAIL,
+      Destination: { ToAddresses: [toEmail] },
+      Message: {
+        Subject: {
+          Data:    `Your Daily3 for ${today} is ready`,
+          Charset: "UTF-8",
+        },
+        Body: {
+          Html: { Data: buildEmailHtml(articles), Charset: "UTF-8" },
+          Text: { Data: buildEmailText(articles), Charset: "UTF-8" },
+        },
+      },
+    })
+  );
+
+  console.log(`Email sent to ${toEmail}`);
+}
+
 // ─── Filter & rank candidates ─────────────────────────────────────────────────
 
 interface ScoredCandidate extends RSSItem {
   freshness: "today" | "recent" | "older";
   penalised: boolean;
 }
+
+const ROUNDUP_PATTERNS = /\b(weekly|roundup|link list|best of|this week in|top \d+)\b/i;
 
 function scoreAndFilter(
   items: RSSItem[],
@@ -231,6 +404,7 @@ function scoreAndFilter(
       return { ...item, freshness, penalised };
     })
     .filter((item) => !history.seenUrls.has(item.url))
+    .filter((item) => !ROUNDUP_PATTERNS.test(item.title))
     .sort((a, b) => {
       const freshnessScore = (f: string) => f === "today" ? 2 : f === "recent" ? 1 : 0;
       const diff = freshnessScore(b.freshness) - freshnessScore(a.freshness);
@@ -331,6 +505,7 @@ function fallbackArticle(interest: string): Article {
 interface GenerateEvent {
   userId:    string;
   interests: string[];
+  userEmail?: string; // daily-trigger'dan direk geçilebilir, yoksa DynamoDB'den çekilir
 }
 
 export const handler = async (event: GenerateEvent): Promise<void> => {
@@ -399,6 +574,7 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
     return fallbackArticle(interests[i]);
   });
 
+  // DynamoDB'e yaz
   const now  = new Date();
   const item: DailyArticles = {
     PK:          Keys.userPK(userId),
@@ -410,4 +586,19 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
 
   await dynamo.send(new PutCommand({ TableName: ARTICLES_TABLE, Item: item }));
   console.log(`Wrote ${articles.length} articles for user=${userId} date=${Keys.dateSK(now)}`);
+
+  // Email gönder — SES_FROM_EMAIL tanımlıysa
+  if (SES_FROM_EMAIL) {
+    const userEmail = event.userEmail ?? await fetchUserEmail(userId);
+    if (userEmail) {
+      try {
+        await sendDailyEmail(userEmail, articles);
+      } catch (err) {
+        // Email hatası makale üretimini engellemesin
+        console.error("Failed to send email notification:", err);
+      }
+    } else {
+      console.warn(`No email found for user=${userId}, skipping notification`);
+    }
+  }
 };
