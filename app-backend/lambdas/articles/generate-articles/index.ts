@@ -81,11 +81,11 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
 
   "Arts & Culture": [
-    { name: "The Paris Review",            url: "https://www.theparisreview.org/feed" },
-    { name: "Literary Hub",               url: "https://lithub.com/feed/" },
-    { name: "LA Review of Books",         url: "https://lareviewofbooks.org/feed/" },
-    { name: "Aeon",                       url: "https://aeon.co/feed.rss" },
-    { name: "The Atlantic",               url: "https://www.theatlantic.com/feed/all/" },
+    { name: "Literary Hub (Arts)",         url: "https://lithub.com/category/newsandculture/art-and-photography/feed/" },
+    { name: "Literary Hub (Books)",        url: "https://lithub.com/category/bookmarks/excerpts-and-writings/feed/" },
+    { name: "LA Review of Books",          url: "https://lareviewofbooks.org/feed/" },
+    { name: "Aeon",                        url: "https://aeon.co/feed.rss" },
+    { name: "Smithsonian Magazine",        url: "https://www.smithsonianmag.com/rss/latest_articles/" },
   ],
 };
 
