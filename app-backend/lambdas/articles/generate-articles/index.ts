@@ -49,11 +49,11 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
 
   "Economics": [
-    { name: "Project Syndicate", url: "https://www.project-syndicate.org/rss" },
-    { name: "VoxEU (CEPR)",      url: "https://cepr.org/feed" },
-    { name: "Econlib",           url: "https://www.econlib.org/feed/" },
-    { name: "Noahpinion",        url: "https://www.noahpinion.blog/feed" },
-    { name: "The Economist",     url: "https://www.economist.com/latest/rss.xml" },
+      { name: "VoxEU (CEPR)",        url: "https://cepr.org/feed" },
+      { name: "Econlib",             url: "https://www.econlib.org/feed/" },
+      { name: "Noahpinion",          url: "https://www.noahpinion.blog/feed" },
+      { name: "Marginal Revolution", url: "https://marginalrevolution.com/feed" },
+      { name: "IMF Blog",            url: "https://www.imf.org/en/Blogs/rss" },
   ],
 
   "Science": [
