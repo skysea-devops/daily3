@@ -313,3 +313,4 @@ resource "aws_lambda_function" "get_articles" {
 
   depends_on = [aws_cloudwatch_log_group.get_articles]
 }
+
