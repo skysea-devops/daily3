@@ -39,6 +39,8 @@ function InterestsForm() {
     try {
       await updateUserInterests(selected, user.accessToken);
       localStorage.setItem("daily3-categories", JSON.stringify(selected));
+      // Dashboard'a interests değişti sinyali — eski makaleleri gösterme
+      localStorage.setItem("daily3-articles-invalidated", "true");
       markInterestsSaved();
       setSaved(true);
       setTimeout(() => router.push("/dashboard"), 900);

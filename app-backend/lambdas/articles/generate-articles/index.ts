@@ -36,7 +36,7 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Chatham House",               url: "https://www.chathamhouse.org/rss.xml" },
     { name: "Foreign Affairs",             url: "https://www.foreignaffairs.com/rss.xml" },
     { name: "War on the Rocks",            url: "https://warontherocks.com/feed/" },
-    { name: "Council on Foreign Relations", url: "https://www.cfr.org/rss/feeds/" },
+    { name: "Council on Foreign Relations", url: "https://feeds.cfr.org/publication/twnw }," },
     { name: "Al Jazeera",                  url: "https://www.aljazeera.com/xml/rss/all.xml" },
   ],
 
