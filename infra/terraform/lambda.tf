@@ -7,7 +7,11 @@ locals {
 
 data "aws_caller_identity" "current" {}
 
-# ─── update-interests ─────────────────────────────────────────────────────────
+# ==============================================================================
+# update-interests
+# Tetikleyici: PUT /me/interests
+# Kullanici interestlerini DynamoDB'e kaydeder, generate-articles'i async invoke eder
+# ==============================================================================
 
 resource "aws_cloudwatch_log_group" "update_interests" {
   name              = "/aws/lambda/${var.project_name}-${var.environment}-update-interests"
@@ -84,7 +88,11 @@ resource "aws_lambda_function" "update_interests" {
   depends_on = [aws_cloudwatch_log_group.update_interests]
 }
 
-# ─── get-profile ──────────────────────────────────────────────────────────────
+# ==============================================================================
+# get-profile
+# Tetikleyici: GET /me/profile
+# Sign-in sonrasi interests'i DynamoDB'den cekip frontend'e doner
+# ==============================================================================
 
 resource "aws_cloudwatch_log_group" "get_profile" {
   name              = "/aws/lambda/${var.project_name}-${var.environment}-get-profile"
@@ -154,7 +162,11 @@ resource "aws_lambda_function" "get_profile" {
   depends_on = [aws_cloudwatch_log_group.get_profile]
 }
 
-# ─── generate-articles ────────────────────────────────────────────────────────
+# ==============================================================================
+# generate-articles
+# Tetikleyici: update-interests veya daily-trigger'dan async invoke
+# RSS'ten makale ceker, Bedrock ile secim yapar, DynamoDB'e yazar
+# ==============================================================================
 
 resource "aws_cloudwatch_log_group" "generate_articles" {
   name              = "/aws/lambda/${var.project_name}-${var.environment}-generate-articles"
@@ -241,7 +253,11 @@ resource "aws_lambda_function" "generate_articles" {
   depends_on = [aws_cloudwatch_log_group.generate_articles]
 }
 
-# ─── get-articles ─────────────────────────────────────────────────────────────
+# ==============================================================================
+# get-articles
+# Tetikleyici: GET /me/articles
+# Bugunku makaleleri doner. Stale ise generate-articles'i yeniden tetikler.
+# ==============================================================================
 
 resource "aws_cloudwatch_log_group" "get_articles" {
   name              = "/aws/lambda/${var.project_name}-${var.environment}-get-articles"
@@ -325,7 +341,11 @@ resource "aws_lambda_function" "get_articles" {
   depends_on = [aws_cloudwatch_log_group.get_articles]
 }
 
-# ─── daily-trigger ────────────────────────────────────────────────────────────
+# ==============================================================================
+# daily-trigger
+# Tetikleyici: EventBridge her gun 04:00 UTC (07:00 Turkiye)
+# Tum kullanicilari scan eder, her biri icin generate-articles'i async invoke eder
+# ==============================================================================
 
 resource "aws_cloudwatch_log_group" "daily_trigger" {
   name              = "/aws/lambda/${var.project_name}-${var.environment}-daily-trigger"
@@ -387,7 +407,7 @@ resource "aws_lambda_function" "daily_trigger" {
   handler          = "index.handler"
   filename         = data.archive_file.daily_trigger_lambda_zip.output_path
   source_code_hash = data.archive_file.daily_trigger_lambda_zip.output_base64sha256
-  timeout          = 300  # 5 dakika — çok kullanıcı olabilir
+  timeout          = 300
   memory_size      = 256
 
   environment {
@@ -401,7 +421,7 @@ resource "aws_lambda_function" "daily_trigger" {
   depends_on = [aws_cloudwatch_log_group.daily_trigger]
 }
 
-# EventBridge: her gün 07:00 Türkiye saati = 04:00 UTC
+# EventBridge: her gun 07:00 Turkiye saati = 04:00 UTC
 resource "aws_cloudwatch_event_rule" "daily_07_00" {
   name                = "${var.project_name}-${var.environment}-daily-07-00"
   description         = "Triggers daily article generation at 07:00 Turkey time (04:00 UTC)"
