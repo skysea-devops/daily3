@@ -209,7 +209,17 @@ resource "aws_iam_role_policy" "generate_articles_lambda_policy" {
         Effect = "Allow"
         Action = ["bedrock:InvokeModel"]
         Resource = [
-          "arn:aws:bedrock:eu-central-1::inference-profile/eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+          "arn:aws:bedrock:eu-central-1:117647030196:inference-profile/eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+        ]
+      },
+      {
+        Sid    = "BedrockFoundationModels"
+        Effect = "Allow"
+        Action = ["bedrock:InvokeModel"]
+        Resource = [
+          "arn:aws:bedrock:eu-central-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
+          "arn:aws:bedrock:eu-west-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
+          "arn:aws:bedrock:eu-west-3::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
         ]
       },
     ]
