@@ -204,14 +204,12 @@ resource "aws_iam_role_policy" "generate_articles_lambda_policy" {
       },
       {
         # foundation-model ARN'larında account ID olmaz (:: boş kalır)
-        # Bedrock cross-region routing'i arka planda bu 3 EU region'ına dağıtır
+        # Bedrock cross-region routing'i arka planda bu wiildcard ile  EU region'larına dağıtır
         Sid    = "BedrockFoundationModels"
         Effect = "Allow"
         Action = ["bedrock:InvokeModel"]
         Resource = [
-          "arn:aws:bedrock:eu-central-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
-          "arn:aws:bedrock:eu-west-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
-          "arn:aws:bedrock:eu-west-3::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
+          "arn:aws:bedrock:eu-*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
         ]
       },
     ]
