@@ -53,7 +53,7 @@ export const handler = async (
         TableName: USERS_TABLE_NAME,
         Key: { PK: `USER#${userId}`, SK: "PROFILE" },
         UpdateExpression:
-          "SET interests = :interests, updatedAt = :now, email = if_not_exists(email, :email)",
+          "SET interests = :interests, updatedAt = :now, email = :email",
         ExpressionAttributeValues: {
           ":interests": interests,
           ":now":       now,
