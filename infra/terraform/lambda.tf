@@ -49,6 +49,12 @@ resource "aws_iam_role_policy" "update_interests_lambda_policy" {
         Resource = aws_dynamodb_table.users.arn
       },
       {
+        Sid      = "DynamoReadArticles"
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem"]
+        Resource = aws_dynamodb_table.articles.arn
+      },
+      {
         Sid      = "InvokeGenerateArticles"
         Effect   = "Allow"
         Action   = ["lambda:InvokeFunction"]
@@ -77,8 +83,10 @@ resource "aws_lambda_function" "update_interests" {
   environment {
     variables = {
       USERS_TABLE_NAME                = aws_dynamodb_table.users.name
+      ARTICLES_TABLE_NAME             = aws_dynamodb_table.articles.name
       GENERATE_ARTICLES_FUNCTION_NAME = aws_lambda_function.generate_articles.function_name
       CORS_ORIGIN                     = var.cors_origin
+      DEVELOPER_USER_IDS              = var.developer_user_ids
       NODE_OPTIONS                    = "--enable-source-maps"
     }
   }

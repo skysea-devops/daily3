@@ -40,3 +40,8 @@ variable "ses_from_email" {
   type        = string
   default     = "igokdeniz80@gmail.com"
 }
+variable "developer_user_ids" {
+  description = "Comma-separated list of Cognito user IDs (sub) that bypass the daily generate limit"
+  type        = string
+  default     = ""
+}
