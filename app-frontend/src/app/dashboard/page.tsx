@@ -22,6 +22,88 @@ const CATEGORY_EMOJI: Record<string, string> = {
   "Environment":      "🌿",
 };
 
+// Kaynak adı → domain map (Clearbit Logo API için)
+const SOURCE_DOMAIN: Record<string, string> = {
+  "Stack Overflow Blog":         "stackoverflow.blog",
+  "Martin Fowler":               "martinfowler.com",
+  "InfoQ":                       "infoq.com",
+  "The New Stack":               "thenewstack.io",
+  "AWS Architecture":            "aws.amazon.com",
+  "MIT Technology Review":       "technologyreview.com",
+  "IEEE Spectrum":               "spectrum.ieee.org",
+  "Ars Technica":                "arstechnica.com",
+  "ACM Queue":                   "queue.acm.org",
+  "Hacker News":                 "news.ycombinator.com",
+  "Chatham House":               "chathamhouse.org",
+  "Foreign Affairs":             "foreignaffairs.com",
+  "War on the Rocks":            "warontherocks.com",
+  "Council on Foreign Relations":"cfr.org",
+  "Al Jazeera":                  "aljazeera.com",
+  "Ness Labs":                   "nesslabs.com",
+  "MIT Sloan Review":            "sloanreview.mit.edu",
+  "Noema Magazine":              "noemamag.com",
+  "Strategy+Business":           "strategy-business.com",
+  "First Round Review":          "review.firstround.com",
+  "VoxEU (CEPR)":                "cepr.org",
+  "Econlib":                     "econlib.org",
+  "Noahpinion":                  "noahpinion.blog",
+  "Marginal Revolution":         "marginalrevolution.com",
+  "IMF Blog":                    "imf.org",
+  "Quanta Magazine":             "quantamagazine.org",
+  "Nautilus":                    "nautil.us",
+  "Undark":                      "undark.org",
+  "Aeon":                        "aeon.co",
+  "Phys.org":                    "phys.org",
+  "Farnam Street":               "fs.blog",
+  "Psyche (Aeon)":               "psyche.co",
+  "LessWrong":                   "lesswrong.com",
+  "Nir And Far":                 "nirandfar.com",
+  "History Today":               "historytoday.com",
+  "JSTOR Daily":                 "daily.jstor.org",
+  "Lapham's Quarterly":          "laphamsquarterly.org",
+  "The Public Domain Review":    "publicdomainreview.org",
+  "Literary Hub (Arts)":         "lithub.com",
+  "Literary Hub (Books)":        "lithub.com",
+  "LA Review of Books":          "lareviewofbooks.org",
+  "Smithsonian Magazine":        "smithsonianmag.com",
+  "RUSI":                        "rusi.org",
+  "Lawfare":                     "lawfaremedia.org",
+  "Modern War Institute":        "mwi.westpoint.edu",
+  "Inkstick Media":              "inkstickmedia.com",
+  "Stat News":                   "statnews.com",
+  "Undark (Health)":             "undark.org",
+  "Aeon (Psychology)":           "psyche.co",
+  "The BMJ":                     "bmj.com",
+  "Knowable Magazine":           "knowablemagazine.org",
+  "Yale Environment 360":        "e360.yale.edu",
+  "Carbon Brief":                "carbonbrief.org",
+  "Ensia":                       "ensia.com",
+  "Mongabay":                    "mongabay.com",
+  "Inside Climate News":         "insideclimatenews.org",
+};
+
+function SourceLogo({ source }: { source: string }) {
+  const domain = SOURCE_DOMAIN[source];
+  const [error, setError] = useState(false);
+
+  if (!domain || error) {
+    return (
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-xs font-bold text-gray-400">
+        {source.charAt(0)}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={`https://logo.clearbit.com/${domain}`}
+      alt={source}
+      className="h-8 w-8 rounded-lg object-contain bg-white border border-gray-100"
+      onError={() => setError(true)}
+    />
+  );
+}
+
 function ArticleCard({ article }: { article: Article }) {
   const emoji = CATEGORY_EMOJI[article.category] ?? "📄";
   const isFallback = !article.url || article.url === "https://news.ycombinator.com";
@@ -48,9 +130,12 @@ function ArticleCard({ article }: { article: Article }) {
       <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">{emoji}</span>
+            <SourceLogo source={article.source} />
             <div>
-              <p className="text-sm font-medium text-gray-500">{article.category}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm">{emoji}</span>
+                <p className="text-sm font-medium text-gray-500">{article.category}</p>
+              </div>
               <p className="text-xs text-gray-400">
                 {article.source} · {article.readingTime}
               </p>
@@ -112,9 +197,9 @@ function PendingCard({ category }: { category: string }) {
   return (
     <article className="rounded-3xl border border-dashed border-gray-200 bg-gray-50 p-6">
       <div className="flex items-center gap-3">
-        <span className="text-2xl opacity-40">{emoji}</span>
+        <div className="h-8 w-8 animate-pulse rounded-lg bg-gray-200" />
         <div>
-          <p className="text-sm font-medium text-gray-400">{category}</p>
+          <p className="text-sm font-medium text-gray-400">{emoji} {category}</p>
           <p className="text-xs text-gray-300">Article being curated…</p>
         </div>
       </div>
