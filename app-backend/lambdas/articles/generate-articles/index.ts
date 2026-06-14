@@ -369,20 +369,10 @@ function buildEmailHtml(articles: Article[]): string {
               ${a.source} &nbsp;·&nbsp; ${a.readingTime}
             </p>
 
-            <!-- Summary -->
-            <p style="margin:0 0 14px 0;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-              ${a.summary}
+            <!-- Summary + reason merged -->
+            <p style="margin:0 0 18px 0;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+              ${a.summary} ${a.reason}
             </p>
-
-            <!-- Why box -->
-            <table cellpadding="0" cellspacing="0" width="100%">
-              <tr>
-                <td style="padding:14px 16px;background:#f9fafb;border-left:3px solid #e5e7eb;border-radius:0 8px 8px 0;">
-                  <p style="margin:0 0 3px 0;font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;">Why today</p>
-                  <p style="margin:0;font-size:13px;line-height:1.6;color:#4b5563;">${a.reason}</p>
-                </td>
-              </tr>
-            </table>
 
             <!-- CTA -->
             <table cellpadding="0" cellspacing="0" style="margin-top:18px;">

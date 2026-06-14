@@ -148,7 +148,7 @@ function ArticleCard({ article }: { article: Article }) {
             </p>
 
             <div className="mt-4 rounded-2xl bg-gray-50 px-4 py-3">
-              <p className="text-xs font-medium text-gray-500">Why this article?</p>
+              <p className="text-xs font-medium text-gray-500">Why we picked this for you</p>
               <p className="mt-1 text-sm text-gray-700">{article.reason}</p>
             </div>
           </div>
