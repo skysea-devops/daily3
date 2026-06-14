@@ -17,6 +17,9 @@ const CATEGORY_EMOJI: Record<string, string> = {
   "Productivity":     "⚡",
   "History":          "🏛️",
   "Arts & Culture":   "🎭",
+  "Military":         "⚔️",
+  "Health":           "🧬",
+  "Environment":      "🌿",
 };
 
 function ArticleCard({ article }: { article: Article }) {

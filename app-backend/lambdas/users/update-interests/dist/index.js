@@ -56,7 +56,7 @@ var handler = async (event) => {
       new import_lib_dynamodb.UpdateCommand({
         TableName: USERS_TABLE_NAME,
         Key: { PK: `USER#${userId}`, SK: "PROFILE" },
-        UpdateExpression: "SET interests = :interests, updatedAt = :now, email = if_not_exists(email, :email)",
+        UpdateExpression: "SET interests = :interests, updatedAt = :now, email = :email",
         ExpressionAttributeValues: {
           ":interests": interests,
           ":now": now,
