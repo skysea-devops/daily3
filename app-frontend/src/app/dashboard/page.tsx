@@ -114,13 +114,15 @@ function ArticleCard({ article }: { article: Article }) {
             <div className="flex items-center gap-2">
               <span className="text-sm">{emoji}</span>
               <p className="text-sm font-medium text-gray-500">{article.category}</p>
-              <span className="text-gray-300">·</span>
-              <p className="text-xs text-gray-400">{article.source} · {article.readingTime}</p>
             </div>
 
             <h2 className="mt-3 text-xl font-semibold leading-snug text-gray-900">
               {article.title}
             </h2>
+
+            <p className="mt-1.5 text-xs text-gray-400">
+              {article.source} · {article.readingTime}
+            </p>
 
             {/* Unsplash photo — başlığın altında, içerik genişliğinde */}
             {photo && (
@@ -172,7 +174,7 @@ function ArticleCard({ article }: { article: Article }) {
                 rel="noreferrer"
                 className="rounded-xl bg-black px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-gray-800 transition-colors"
               >
-                Read →
+                Read Full Article →
               </a>
             </div>
           )}
