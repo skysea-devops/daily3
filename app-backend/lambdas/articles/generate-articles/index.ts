@@ -471,6 +471,67 @@ function scoreAndFilter(
     });
 }
 
+// ─── Jina AI Reader: fetch full article text ──────────────────────────────────
+
+async function fetchFullText(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://r.jina.ai/${url}`, {
+      headers: {
+        "Accept":     "text/plain",
+        "User-Agent": "Daily3Bot/1.0",
+        "X-No-Cache": "true",
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return null;
+    const text = await res.text();
+    // İlk 6000 karakteri al — Bedrock context için yeterli
+    return text.slice(0, 6000).trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+// ─── Bedrock: generate rich summary from full text ────────────────────────────
+
+async function generateRichSummary(
+  title:    string,
+  fullText: string,
+  interest: string
+): Promise<string> {
+  const prompt = `You are an editorial assistant for Daily3, a daily article curation app for professionals.
+
+Article title: "${title}"
+User interest: "${interest}"
+
+Article content:
+${fullText}
+
+Write a rich, informative summary of this article in 5-6 sentences (~120-150 words). Requirements:
+- Convey the core argument, key evidence, and most important insight
+- Make every sentence count — professionals should learn something just from reading this
+- Do not start with the title, source name, or filler phrases like "this article explores" or "the author argues"
+- Write in active, direct prose
+- End with the most surprising or actionable insight
+
+Respond with ONLY the summary text, no JSON, no markdown.`;
+
+  const command = new InvokeModelCommand({
+    modelId:     "eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+    contentType: "application/json",
+    accept:      "application/json",
+    body: JSON.stringify({
+      anthropic_version: "bedrock-2023-05-31",
+      max_tokens:        300,
+      messages:          [{ role: "user", content: prompt }],
+    }),
+  });
+
+  const response = await bedrock.send(command);
+  const raw      = JSON.parse(new TextDecoder().decode(response.body));
+  return raw.content[0].text.trim();
+}
+
 // ─── Bedrock: pick best article ───────────────────────────────────────────────
 
 interface BedrockSelection {
@@ -493,7 +554,7 @@ async function selectBestArticle(
   const candidateList = candidates
     .map(
       (c, i) =>
-        `[${i}] "${c.title}" — ${c.sourceName} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    ${c.description.slice(0, 150)}`
+        `[${i}] "${c.title}" — ${c.sourceName} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    ${c.description.slice(0, 400)}`
     )
     .join("\n\n");
 
@@ -520,7 +581,7 @@ ${candidateList}
 Respond ONLY with valid JSON (no markdown):
 {
   "selectedIndex": <0-${candidates.length - 1}>,
-  "summary": "<3-4 sentence substantive summary of the article's key arguments and insights, written in an engaging way that makes a professional want to read it. Do not start with the title or source name.>",
+  "summary": "<Write 4-5 rich, informative sentences that convey the article's core argument, key evidence, and most surprising or important insight. Use the RSS description as a starting point but expand meaningfully. Make every sentence count — professionals should feel they've learned something just from reading this. Do not start with the title or source name. Do not use filler phrases like 'this article explores' or 'the author argues'.>",
   "reason": "<one sentence: what makes this a valuable long-form read for someone interested in ${interest}>",
   "readingTime": "<estimated reading time e.g. '8 min read'>"
 }`;
@@ -542,7 +603,20 @@ Respond ONLY with valid JSON (no markdown):
     .trim()
     .replace(/^```json\s*/i, "")
     .replace(/\s*```$/i, "");
-  return JSON.parse(text) as BedrockSelection;
+  const parsed = JSON.parse(text) as BedrockSelection;
+
+  // Bedrock çıktısındaki entity'leri temizle
+  const cleanStr = (s: string) => s
+    .replace(/&#8217;/g, "'").replace(/&#8216;/g, "'")
+    .replace(/&#8220;/g, '"').replace(/&#8221;/g, '"')
+    .replace(/&#8230;/g, "…").replace(/&#\d+;/g, "")
+    .replace(/&amp;/g, "&").replace(/&quot;/g, '"');
+
+  return {
+    ...parsed,
+    summary: cleanStr(parsed.summary ?? ""),
+    reason:  cleanStr(parsed.reason ?? ""),
+  };
 }
 
 // ─── Fallback ─────────────────────────────────────────────────────────────────
@@ -686,10 +760,28 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
       const selection = await selectBestArticle(top10, interest, history);
       const chosen    = top10[Math.min(selection.selectedIndex, top10.length - 1)];
 
+      // Jina ile tam metni çek, zengin özet üret
+      let summary = selection.summary || chosen.description || "Click to read the full article.";
+      if (chosen.url && chosen.url !== "https://news.ycombinator.com") {
+        const fullText = await fetchFullText(chosen.url);
+        if (fullText && fullText.length > 500) {
+          try {
+            const richSummary = await generateRichSummary(chosen.title, fullText, interest);
+            if (richSummary && richSummary.length > 100) {
+              summary = richSummary;
+            }
+          } catch (err) {
+            console.warn(`Rich summary failed for "${chosen.title}":`, err);
+          }
+        } else {
+          console.log(`Jina returned no content for: ${chosen.url}`);
+        }
+      }
+
       return {
         category:    interest,
         title:       chosen.title,
-        summary:     selection.summary || chosen.description || "Click to read the full article.",
+        summary,
         reason:      selection.reason,
         url:         chosen.url,
         source:      chosen.sourceName,
