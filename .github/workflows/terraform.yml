@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "infra/terraform/**"
+      - "app-backend/**"
       - ".github/workflows/terraform.yml"
 
   push:
@@ -13,6 +14,7 @@ on:
       - main
     paths:
       - "infra/terraform/**"
+      - "app-backend/**"
       - ".github/workflows/terraform.yml"
 
 permissions:
