@@ -29,12 +29,37 @@ var import_client_lambda = require("@aws-sdk/client-lambda");
 var dynamo = import_lib_dynamodb.DynamoDBDocumentClient.from(new import_client_dynamodb.DynamoDBClient({}));
 var lambda = new import_client_lambda.LambdaClient({});
 var USERS_TABLE_NAME = process.env.USERS_TABLE_NAME;
+var ARTICLES_TABLE_NAME = process.env.ARTICLES_TABLE_NAME;
 var GENERATE_ARTICLES_FN = process.env.GENERATE_ARTICLES_FUNCTION_NAME;
 var CORS_ORIGIN = process.env.CORS_ORIGIN ?? "*";
+var DEVELOPER_USER_IDS = new Set(
+  (process.env.DEVELOPER_USER_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean)
+);
 var headers = {
   "Content-Type": "application/json",
   "Access-Control-Allow-Origin": CORS_ORIGIN
 };
+function todaySK() {
+  return `DATE#${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}`;
+}
+async function articlesExistToday(userId) {
+  try {
+    const result = await dynamo.send(
+      new import_lib_dynamodb.GetCommand({
+        TableName: ARTICLES_TABLE_NAME,
+        Key: {
+          PK: `USER#${userId}`,
+          SK: todaySK()
+        },
+        ProjectionExpression: "PK"
+      })
+    );
+    return !!result.Item;
+  } catch (err) {
+    console.warn("Failed to check today's articles:", err);
+    return false;
+  }
+}
 var handler = async (event) => {
   try {
     const claims = event.requestContext.authorizer.jwt.claims;
@@ -52,6 +77,8 @@ var handler = async (event) => {
       };
     }
     const now = (/* @__PURE__ */ new Date()).toISOString();
+    const isDeveloper = DEVELOPER_USER_IDS.has(userId);
+    const alreadyGenerated = !isDeveloper && await articlesExistToday(userId);
     await dynamo.send(
       new import_lib_dynamodb.UpdateCommand({
         TableName: USERS_TABLE_NAME,
@@ -64,6 +91,19 @@ var handler = async (event) => {
         }
       })
     );
+    if (alreadyGenerated) {
+      console.log(`Articles already exist today for user=${userId}, skipping generate`);
+      ;
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          message: "Interests updated. Today's articles are already ready.",
+          interests,
+          articlesReady: true
+        })
+      };
+    }
     await lambda.send(
       new import_client_lambda.InvokeCommand({
         FunctionName: GENERATE_ARTICLES_FN,
@@ -72,13 +112,14 @@ var handler = async (event) => {
         Payload: Buffer.from(JSON.stringify({ userId, interests }))
       })
     );
-    console.log(`Triggered generate-articles for user ${userId}`);
+    console.log(`Triggered generate-articles for user=${userId}${isDeveloper ? " [developer]" : ""}`);
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
         message: "Interests updated. Articles are being generated.",
-        interests
+        interests,
+        articlesReady: false
       })
     };
   } catch (error) {
