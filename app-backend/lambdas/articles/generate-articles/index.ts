@@ -165,8 +165,12 @@ function extractItems(xml: string, sourceName: string): RSSItem[] {
         .replace(/&#\d+;/g, "")
         .replace(/&[a-z]+;/g, "")
         .replace(/<[^>]+>/g, "").trim();
-      const url = extractText(seg, "link") ||
+      const rawUrl = extractText(seg, "link") ||
         seg.match(/<link[^>]+href="([^"]+)"/)?.[1] || "";
+      // URL'deki HTML entity'leri temizle
+      const url = rawUrl
+        .replace(/&#038;/g, "&").replace(/&amp;/g, "&")
+        .replace(/&#\d+;/g, "").trim();
       const description =
         extractText(seg, "description") ||
         extractText(seg, "summary") ||
@@ -507,7 +511,7 @@ User interest: "${interest}"
 Article content:
 ${fullText}
 
-Write a rich, informative summary of this article in 5-6 sentences (~120-150 words). Requirements:
+Write a rich, informative summary of this article in 15-20 sentences (~500 words). Requirements:
 - Convey the core argument, key evidence, and most important insight
 - Make every sentence count — professionals should learn something just from reading this
 - Do not start with the title, source name, or filler phrases like "this article explores" or "the author argues"
@@ -522,7 +526,7 @@ Respond with ONLY the summary text, no JSON, no markdown.`;
     accept:      "application/json",
     body: JSON.stringify({
       anthropic_version: "bedrock-2023-05-31",
-      max_tokens:        300,
+      max_tokens:        800,
       messages:          [{ role: "user", content: prompt }],
     }),
   });
@@ -767,7 +771,14 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
         if (fullText && fullText.length > 500) {
           try {
             const richSummary = await generateRichSummary(chosen.title, fullText, interest);
-            if (richSummary && richSummary.length > 100) {
+            // Bedrock hata mesajı döndürdüyse kullanma
+            const isErrorMsg = richSummary.toLowerCase().includes("unable to provide") ||
+              richSummary.toLowerCase().includes("403") ||
+              richSummary.toLowerCase().includes("forbidden") ||
+              richSummary.toLowerCase().includes("i cannot") ||
+              richSummary.toLowerCase().includes("i'm unable") ||
+              richSummary.toLowerCase().includes("authentication");
+            if (richSummary && richSummary.length > 100 && !isErrorMsg) {
               summary = richSummary;
             }
           } catch (err) {
