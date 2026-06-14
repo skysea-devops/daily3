@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { getDailyArticles } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -25,6 +25,23 @@ const CATEGORY_EMOJI: Record<string, string> = {
 function ArticleCard({ article }: { article: Article }) {
   const emoji = CATEGORY_EMOJI[article.category] ?? "📄";
   const isFallback = !article.url || article.url === "https://news.ycombinator.com";
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  function toggleAudio() {
+    if (!article.audioUrl) return;
+    if (!audioRef.current) {
+      audioRef.current = new Audio(article.audioUrl);
+      audioRef.current.onended = () => setPlaying(false);
+    }
+    if (playing) {
+      audioRef.current.pause();
+      setPlaying(false);
+    } else {
+      audioRef.current.play();
+      setPlaying(true);
+    }
+  }
 
   return (
     <article className="rounded-3xl border border-gray-200 bg-white p-6">
@@ -55,14 +72,35 @@ function ArticleCard({ article }: { article: Article }) {
         </div>
 
         {!isFallback && (
-          <a
-            href={article.url}
-            target="_blank"
-            rel="noreferrer"
-            className="shrink-0 rounded-xl bg-black px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-gray-800 transition-colors"
-          >
-            Read →
-          </a>
+          <div className="flex shrink-0 flex-col gap-2">
+            {article.audioUrl && (
+              <button
+                onClick={toggleAudio}
+                className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                aria-label={playing ? "Pause audio" : "Play audio"}
+              >
+                {playing ? (
+                  <>
+                    <span className="text-base">⏸</span>
+                    <span>Pause</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-base">▶</span>
+                    <span>Listen</span>
+                  </>
+                )}
+              </button>
+            )}
+            <a
+              href={article.url}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-xl bg-black px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+            >
+              Read →
+            </a>
+          </div>
         )}
       </div>
     </article>
@@ -205,7 +243,7 @@ function DashboardContent() {
         {status === "ready" && (
           <div className="space-y-4">
             {articles.map((article) => (
-              <ArticleCard key={article.url} article={article} />
+              <ArticleCard key={article.category} article={article} />
             ))}
 
             {generatedAt && (

@@ -2,16 +2,22 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand, QueryCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import { PollyClient, SynthesizeSpeechCommand } from "@aws-sdk/client-polly";
+import { S3Client, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { createHash } from "crypto";
 import { Article, DailyArticles, Keys } from "../../../shared/types";
 
 const dynamo  = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const bedrock = new BedrockRuntimeClient({ region: process.env.AWS_REGION });
 const ses     = new SESClient({ region: process.env.AWS_REGION });
+const polly   = new PollyClient({ region: process.env.AWS_REGION });
+const s3      = new S3Client({ region: process.env.AWS_REGION });
 
-const ARTICLES_TABLE = process.env.ARTICLES_TABLE_NAME!;
-const USERS_TABLE    = process.env.USERS_TABLE_NAME!;
-const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL!;
-const CORS_ORIGIN    = process.env.CORS_ORIGIN ?? "*";
+const ARTICLES_TABLE   = process.env.ARTICLES_TABLE_NAME!;
+const USERS_TABLE      = process.env.USERS_TABLE_NAME!;
+const SES_FROM_EMAIL   = process.env.SES_FROM_EMAIL!;
+const CORS_ORIGIN      = process.env.CORS_ORIGIN ?? "*";
+const AUDIO_BUCKET     = process.env.AUDIO_BUCKET_NAME!;
 
 // ─── RSS source map ───────────────────────────────────────────────────────────
 
@@ -91,22 +97,17 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
 
   "Military": [
     { name: "War on the Rocks",          url: "https://warontherocks.com/feed/" },
-    { name: "RUSI",                      url: "https://rusi.org/rss.xml" },
-    { name: "Lawfare",                   url: "https://www.lawfaremedia.org/feed" },
     { name: "Modern War Institute",      url: "https://mwi.westpoint.edu/feed/" },
     { name: "Inkstick Media",            url: "https://inkstickmedia.com/feed/" },
   ],
- 
+
   "Health": [
     { name: "Stat News",                 url: "https://www.statnews.com/feed/" },
     { name: "Undark (Health)",           url: "https://undark.org/category/health/feed/" },
-    { name: "Mosaic Science",            url: "https://mosaicscience.com/feed/" },
-    { name: "The BMJ (Opinion)",         url: "https://www.bmj.com/rss/thebmj_el.xml" },
     { name: "Aeon (Psychology)",         url: "https://aeon.co/feed.rss" },
   ],
- 
+
   "Environment": [
-    { name: "Yale Environment 360",      url: "https://e360.yale.edu/feed" },
     { name: "Carbon Brief",              url: "https://www.carbonbrief.org/feed/" },
     { name: "Ensia",                     url: "https://ensia.com/feed/" },
     { name: "Mongabay",                  url: "https://news.mongabay.com/feed/" },
@@ -448,7 +449,7 @@ interface BedrockSelection {
   reason:        string;
   readingTime:   string;
 }
- 
+
 async function selectBestArticle(
   candidates: ScoredCandidate[],
   interest:   string,
@@ -458,40 +459,40 @@ async function selectBestArticle(
     .filter(([, count]) => count >= 2)
     .map(([src]) => src)
     .join(", ");
- 
+
   const candidateList = candidates
     .map(
       (c, i) =>
         `[${i}] "${c.title}" — ${c.sourceName} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    ${c.description.slice(0, 150)}`
     )
     .join("\n\n");
- 
+
   const diversityNote = recentSourcesList
     ? `\nIMPORTANT: The user has recently seen articles from: ${recentSourcesList}. Prefer a different source today if possible.`
     : "";
- 
+
   const prompt = `You are an editorial assistant for Daily3, a daily long-form article curation app for professionals who want to learn deeply.
- 
+
 User interest: "${interest}"
 ${diversityNote}
- 
+
 Select the single best LONG-FORM ARTICLE from the candidates below. You must strictly prioritise:
 1. DEPTH over brevity — prefer essays, research summaries, analysis pieces, and think-tank reports. Reject short news items, press releases, and articles under ~800 words.
 2. SUBSTANCE — the piece should contain original analysis, research findings, or expert insight. Not just a summary of events.
 3. Freshness — prefer articles published TODAY or recently (marked "today" or "recent")
 4. Source variety — avoid sources marked "[source shown recently]" unless clearly superior
 5. Strong relevance to "${interest}"
- 
+
 Candidates:
 ${candidateList}
- 
+
 Respond ONLY with valid JSON (no markdown):
 {
   "selectedIndex": <0-${candidates.length - 1}>,
   "reason": "<one sentence: what makes this a valuable long-form read for someone interested in ${interest}>",
   "readingTime": "<estimated reading time e.g. '8 min read'>"
 }`;
- 
+
   const command = new InvokeModelCommand({
     modelId:     "eu.anthropic.claude-haiku-4-5-20251001-v1:0",
     contentType: "application/json",
@@ -502,7 +503,7 @@ Respond ONLY with valid JSON (no markdown):
       messages:          [{ role: "user", content: prompt }],
     }),
   });
- 
+
   const response = await bedrock.send(command);
   const raw      = JSON.parse(new TextDecoder().decode(response.body));
   const text     = raw.content[0].text
@@ -511,9 +512,9 @@ Respond ONLY with valid JSON (no markdown):
     .replace(/\s*```$/i, "");
   return JSON.parse(text) as BedrockSelection;
 }
- 
+
 // ─── Fallback ─────────────────────────────────────────────────────────────────
- 
+
 function fallbackArticle(interest: string): Article {
   return {
     category:    interest,
@@ -526,34 +527,105 @@ function fallbackArticle(interest: string): Article {
     publishedAt: new Date().toISOString(),
   };
 }
- 
+
+// ─── Audio Edition: Polly TTS + S3 shared cache ───────────────────────────────
+
+function articleId(url: string): string {
+  return createHash("sha256").update(url).digest("hex").slice(0, 32);
+}
+
+async function audioExists(s3Key: string): Promise<boolean> {
+  try {
+    await s3.send(new HeadObjectCommand({ Bucket: AUDIO_BUCKET, Key: s3Key }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function generateAudio(article: Article): Promise<string | null> {
+  if (!AUDIO_BUCKET) return null;
+
+  const id    = articleId(article.url);
+  const s3Key = `audio/${id}/en.mp3`;
+
+  // Shared cache — başka kullanıcı için zaten üretilmişse atla
+  if (await audioExists(s3Key)) {
+    console.log(`Audio cache hit: ${s3Key}`);
+    return `https://${AUDIO_BUCKET}.s3.amazonaws.com/${s3Key}`;
+  }
+
+  // Polly'ye gönderilecek metin: title + summary + reason
+  const text = [
+    article.title,
+    article.summary,
+    `Why this article? ${article.reason}`,
+  ].join(". ");
+
+  try {
+    const response = await polly.send(
+      new SynthesizeSpeechCommand({
+        Text:         text,
+        OutputFormat: "mp3",
+        VoiceId:      "Joanna",   // Neural, EN-US
+        Engine:       "neural",
+        TextType:     "text",
+      })
+    );
+
+    if (!response.AudioStream) return null;
+
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of response.AudioStream as AsyncIterable<Uint8Array>) {
+      chunks.push(chunk);
+    }
+    const audioBuffer = Buffer.concat(chunks);
+
+    await s3.send(
+      new PutObjectCommand({
+        Bucket:      AUDIO_BUCKET,
+        Key:         s3Key,
+        Body:        audioBuffer,
+        ContentType: "audio/mpeg",
+        CacheControl: "public, max-age=86400",
+      })
+    );
+
+    console.log(`Audio generated and uploaded: ${s3Key}`);
+    return `https://${AUDIO_BUCKET}.s3.amazonaws.com/${s3Key}`;
+  } catch (err) {
+    console.error(`Polly failed for article "${article.title}":`, err);
+    return null;
+  }
+}
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
- 
+
 interface GenerateEvent {
   userId:    string;
   interests: string[];
   userEmail?: string; // daily-trigger'dan direk geçilebilir, yoksa DynamoDB'den çekilir
 }
- 
+
 export const handler = async (event: GenerateEvent): Promise<void> => {
   const { userId, interests } = event;
- 
+
   if (!userId || !Array.isArray(interests) || interests.length !== 3) {
     throw new Error("userId and exactly 3 interests are required.");
   }
- 
+
   console.log(`Generating for user=${userId} interests=${interests.join(", ")}`);
- 
+
   const history = await fetchRecentHistory(userId);
   console.log(`History: ${history.seenUrls.size} seen URLs, ${history.seenSources.size} sources`);
- 
+
   const articleResults = await Promise.allSettled(
     interests.map(async (interest): Promise<Article> => {
       const sources = RSS_SOURCES[interest];
       if (!sources) throw new Error(`No RSS sources for interest: ${interest}`);
- 
+
       const feedResults = await Promise.allSettled(sources.map(fetchRSSFeed));
- 
+
       const allItems: RSSItem[] = [];
       feedResults.forEach((r, i) => {
         if (r.status === "fulfilled") {
@@ -562,26 +634,26 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
           console.warn(`Feed failed: ${sources[i].url}`, r.reason);
         }
       });
- 
+
       if (allItems.length === 0) {
         throw new Error(`All feeds failed for interest: ${interest}`);
       }
- 
+
       const candidates = scoreAndFilter(allItems, history);
- 
+
       if (candidates.length === 0) {
         throw new Error(`No fresh unseen articles for interest: ${interest}`);
       }
- 
+
       console.log(
         `${interest}: ${allItems.length} raw → ${candidates.length} candidates ` +
         `(today: ${candidates.filter(c => c.freshness === "today").length})`
       );
- 
+
       const top10     = candidates.slice(0, 10);
       const selection = await selectBestArticle(top10, interest, history);
       const chosen    = top10[Math.min(selection.selectedIndex, top10.length - 1)];
- 
+
       return {
         category:    interest,
         title:       chosen.title,
@@ -594,32 +666,41 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
       };
     })
   );
- 
+
   const articles: Article[] = articleResults.map((result, i) => {
     if (result.status === "fulfilled") return result.value;
     console.error(`Failed for "${interests[i]}":`, result.reason);
     return fallbackArticle(interests[i]);
   });
- 
+
+  // Audio Edition — Polly TTS (fire-and-forget per article, shared cache)
+  const articlesWithAudio = await Promise.all(
+    articles.map(async (article) => {
+      if (article.url === "https://news.ycombinator.com") return article;
+      const audioUrl = await generateAudio(article);
+      return audioUrl ? { ...article, audioUrl } : article;
+    })
+  );
+
   // DynamoDB'e yaz
   const now  = new Date();
   const item: DailyArticles = {
     PK:          Keys.userPK(userId),
     SK:          Keys.dateSK(now),
-    articles,
+    articles:    articlesWithAudio,
     generatedAt: now.toISOString(),
     ttl:         Keys.ttl30Days(),
   };
- 
+
   await dynamo.send(new PutCommand({ TableName: ARTICLES_TABLE, Item: item }));
-  console.log(`Wrote ${articles.length} articles for user=${userId} date=${Keys.dateSK(now)}`);
- 
+  console.log(`Wrote ${articlesWithAudio.length} articles for user=${userId} date=${Keys.dateSK(now)}`);
+
   // Email gönder — SES_FROM_EMAIL tanımlıysa
   if (SES_FROM_EMAIL) {
     const userEmail = event.userEmail ?? await fetchUserEmail(userId);
     if (userEmail) {
       try {
-        await sendDailyEmail(userEmail, articles);
+        await sendDailyEmail(userEmail, articlesWithAudio);
       } catch (err) {
         // Email hatası makale üretimini engellemesin
         console.error("Failed to send email notification:", err);
