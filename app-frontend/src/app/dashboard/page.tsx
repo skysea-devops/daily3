@@ -219,31 +219,11 @@ function DashboardContent() {
     let cancelled = false;
 
     async function load() {
-      const invalidated = localStorage.getItem("daily3-articles-invalidated");
-      if (invalidated) {
-        localStorage.removeItem("daily3-articles-invalidated");
-        setStatus("pending");
-        setTimeout(() => { if (!cancelled) load(); }, 3000);
-        return;
-      }
-
       try {
         const data = await getDailyArticles(user!.accessToken);
         if (cancelled) return;
 
         if (data.status === "ready" && data.articles.length > 0) {
-          const storedRaw = localStorage.getItem("daily3-categories");
-          const storedInterests: string[] = storedRaw ? JSON.parse(storedRaw) : [];
-          const articleCategories = data.articles.map((a: Article) => a.category);
-          const isStale = storedInterests.length > 0 &&
-            !storedInterests.every((i) => articleCategories.includes(i));
-
-          if (isStale) {
-            setStatus("pending");
-            setTimeout(() => { if (!cancelled) load(); }, 3000);
-            return;
-          }
-
           setArticles(data.articles);
           setGeneratedAt(data.generatedAt);
           setStatus("ready");

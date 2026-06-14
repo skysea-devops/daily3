@@ -10,10 +10,10 @@ import { Keys } from "../../../shared/types";
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const lambda = new LambdaClient({});
 
-const ARTICLES_TABLE               = process.env.ARTICLES_TABLE_NAME!;
-const USERS_TABLE                  = process.env.USERS_TABLE_NAME!;
-const GENERATE_ARTICLES_FUNCTION   = process.env.GENERATE_ARTICLES_FUNCTION_NAME!;
-const CORS_ORIGIN                  = process.env.CORS_ORIGIN ?? "*";
+const ARTICLES_TABLE             = process.env.ARTICLES_TABLE_NAME!;
+const USERS_TABLE                = process.env.USERS_TABLE_NAME!;
+const GENERATE_ARTICLES_FUNCTION = process.env.GENERATE_ARTICLES_FUNCTION_NAME!;
+const CORS_ORIGIN                = process.env.CORS_ORIGIN ?? "*";
 
 const headers = {
   "Content-Type": "application/json",
@@ -36,7 +36,7 @@ export const handler = async (
       ? new Date(dateParam)
       : new Date();
 
-    // Kullanıcı profilini çek — interests updatedAt için
+    // Kullanıcı profilini çek
     const userResult = await dynamo.send(
       new GetCommand({
         TableName: USERS_TABLE,
@@ -48,8 +48,7 @@ export const handler = async (
       })
     );
 
-    const userUpdatedAt  = userResult.Item?.updatedAt as string | undefined;
-    const userInterests  = userResult.Item?.interests as string[] | undefined;
+    const userInterests = userResult.Item?.interests as string[] | undefined;
 
     // Bugünkü makale kaydını çek
     const articleResult = await dynamo.send(
@@ -62,16 +61,11 @@ export const handler = async (
       })
     );
 
-    const item          = articleResult.Item;
-    const generatedAt   = item?.generatedAt as string | undefined;
+    const item = articleResult.Item;
 
-    // Stale kontrolü: makale kaydı yok VEYA interests değişikliğinden önce generate edilmiş
-    const isStale =
-      !item ||
-      (userUpdatedAt && generatedAt && generatedAt < userUpdatedAt);
-
-    if (isStale) {
-      // Yeniden generate tetikle (fire-and-forget)
+    // Sadece bugün hiç makale üretilmemişse generate tetikle
+    // (interests değişikliği artık stale sayılmıyor — ertesi gün yansır)
+    if (!item) {
       if (userInterests && userInterests.length === 3) {
         await lambda.send(
           new InvokeCommand({
@@ -82,7 +76,7 @@ export const handler = async (
             ),
           })
         );
-        console.log(`Triggered re-generate for user=${userId} (stale articles)`);
+        console.log(`Triggered generate for user=${userId} (no articles today)`);
       }
 
       return {
@@ -96,6 +90,8 @@ export const handler = async (
       };
     }
 
+    // Makale var — mevcut makaleleri dön
+    // interests değişmiş olsa bile bugün yeni generate yok
     return {
       statusCode: 200,
       headers,
