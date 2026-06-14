@@ -1,5 +1,13 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+// 401 gelince otomatik sign-out + login'e yönlendir
+function handleUnauthorized() {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("id_token");
+  localStorage.removeItem("daily3-categories");
+  window.location.href = "/login";
+}
+
 export async function updateUserInterests(
   interests: string[],
   accessToken: string
@@ -17,16 +25,19 @@ export async function updateUserInterests(
     body: JSON.stringify({ interests }),
   });
 
+  if (response.status === 401) {
+    handleUnauthorized();
+    throw new Error("Session expired");
+  }
+
   if (!response.ok) {
     const errorBody = await response.json().catch(() => null);
-
-    throw new Error(
-      errorBody?.message || "Failed to update user interests"
-    );
+    throw new Error(errorBody?.message || "Failed to update user interests");
   }
 
   return response.json();
 }
+
 export async function getUserProfile(accessToken: string): Promise<{
   interests: string[];
   email: string | null;
@@ -41,6 +52,11 @@ export async function getUserProfile(accessToken: string): Promise<{
       Authorization: `Bearer ${accessToken}`,
     },
   });
+
+  if (response.status === 401) {
+    handleUnauthorized();
+    throw new Error("Session expired");
+  }
 
   if (!response.ok) {
     throw new Error("Failed to fetch user profile");
@@ -68,6 +84,11 @@ export async function getDailyArticles(
   const response = await fetch(url, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
+
+  if (response.status === 401) {
+    handleUnauthorized();
+    throw new Error("Session expired");
+  }
 
   if (!response.ok) throw new Error("Failed to fetch articles");
   return response.json();
