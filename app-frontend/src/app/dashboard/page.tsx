@@ -108,25 +108,6 @@ function ArticleCard({ article }: { article: Article }) {
 
   return (
     <article className="rounded-3xl border border-gray-200 bg-white overflow-hidden">
-      {/* Unsplash header image */}
-      {photo && (
-        <div className="relative h-48 w-full">
-          <img
-            src={photo.url}
-            alt={article.title}
-            className="h-full w-full object-cover"
-          />
-          <a
-            href={`${photo.authorUrl}`}
-            target="_blank"
-            rel="noreferrer"
-            className="absolute bottom-1 right-2 text-[10px] text-white/70 hover:text-white"
-          >
-            Photo by {photo.authorName} on Unsplash
-          </a>
-        </div>
-      )}
-
       <div className="p-6">
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div className="flex-1">
@@ -141,7 +122,26 @@ function ArticleCard({ article }: { article: Article }) {
               {article.title}
             </h2>
 
-            <p className="mt-2 text-sm leading-relaxed text-gray-600">
+            {/* Unsplash photo — başlığın altında, içerik genişliğinde */}
+            {photo && (
+              <div className="relative mt-3 h-36 w-full overflow-hidden rounded-2xl">
+                <img
+                  src={photo.url}
+                  alt={article.title}
+                  className="h-full w-full object-cover"
+                />
+                <a
+                  href={photo.authorUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="absolute bottom-1 right-2 text-[10px] text-white/70 hover:text-white"
+                >
+                  Photo by {photo.authorName} on Unsplash
+                </a>
+              </div>
+            )}
+
+            <p className="mt-3 text-sm leading-relaxed text-gray-600">
               {article.summary}
             </p>
 
