@@ -81,7 +81,7 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
 
   "History": [
     { name: "Aeon",                     url: "https://aeon.co/feed.rss" },
-    { name: "History Today",            url: "https://www.historytoday.com/feed" },
+    { name: "History Today",            url: "https://www.historytoday.com/feed/rss.xml" },
     { name: "JSTOR Daily",              url: "https://daily.jstor.org/feed/" },
     { name: "Lapham's Quarterly",       url: "https://www.laphamsquarterly.org/rss.xml" },
     { name: "The Public Domain Review", url: "https://publicdomainreview.org/rss.xml" },
@@ -97,6 +97,8 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
 
   "Military": [
     { name: "War on the Rocks",          url: "https://warontherocks.com/feed/" },
+    { name: "RUSI",                      url: "https://www.rusi.org/feeds/latest" },
+    { name: "Lawfare",                   url: "https://www.lawfaremedia.org/feeds/all" },
     { name: "Modern War Institute",      url: "https://mwi.westpoint.edu/feed/" },
     { name: "Inkstick Media",            url: "https://inkstickmedia.com/feed/" },
   ],
@@ -104,10 +106,13 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   "Health": [
     { name: "Stat News",                 url: "https://www.statnews.com/feed/" },
     { name: "Undark (Health)",           url: "https://undark.org/category/health/feed/" },
-    { name: "Aeon (Psychology)",         url: "https://aeon.co/feed.rss" },
+    { name: "Aeon (Psychology)",         url: "https://psyche.co/feed" },
+    { name: "The BMJ",                   url: "https://www.bmj.com/rss/current.xml" },
+    { name: "Knowable Magazine",         url: "https://knowablemagazine.org/rss" },
   ],
 
   "Environment": [
+    { name: "Yale Environment 360",      url: "https://e360.yale.edu/feed.xml" },
     { name: "Carbon Brief",              url: "https://www.carbonbrief.org/feed/" },
     { name: "Ensia",                     url: "https://ensia.com/feed/" },
     { name: "Mongabay",                  url: "https://news.mongabay.com/feed/" },
