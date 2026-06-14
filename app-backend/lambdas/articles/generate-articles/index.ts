@@ -2,16 +2,22 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand, QueryCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import { PollyClient, SynthesizeSpeechCommand } from "@aws-sdk/client-polly";
+import { S3Client, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { createHash } from "crypto";
 import { Article, DailyArticles, Keys } from "../../../shared/types";
 
 const dynamo  = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const bedrock = new BedrockRuntimeClient({ region: process.env.AWS_REGION });
 const ses     = new SESClient({ region: process.env.AWS_REGION });
+const polly   = new PollyClient({ region: process.env.AWS_REGION });
+const s3      = new S3Client({ region: process.env.AWS_REGION });
 
-const ARTICLES_TABLE = process.env.ARTICLES_TABLE_NAME!;
-const USERS_TABLE    = process.env.USERS_TABLE_NAME!;
-const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL!;
-const CORS_ORIGIN    = process.env.CORS_ORIGIN ?? "*";
+const ARTICLES_TABLE   = process.env.ARTICLES_TABLE_NAME!;
+const USERS_TABLE      = process.env.USERS_TABLE_NAME!;
+const SES_FROM_EMAIL   = process.env.SES_FROM_EMAIL!;
+const CORS_ORIGIN      = process.env.CORS_ORIGIN ?? "*";
+const AUDIO_BUCKET     = process.env.AUDIO_BUCKET_NAME!;
 
 // ─── RSS source map ───────────────────────────────────────────────────────────
 
@@ -75,7 +81,7 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
 
   "History": [
     { name: "Aeon",                     url: "https://aeon.co/feed.rss" },
-    { name: "History Today",            url: "https://www.historytoday.com/feed" },
+    { name: "History Today",            url: "https://www.historytoday.com/feed/rss.xml" },
     { name: "JSTOR Daily",              url: "https://daily.jstor.org/feed/" },
     { name: "Lapham's Quarterly",       url: "https://www.laphamsquarterly.org/rss.xml" },
     { name: "The Public Domain Review", url: "https://publicdomainreview.org/rss.xml" },
@@ -87,6 +93,30 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "LA Review of Books",   url: "https://lareviewofbooks.org/feed/" },
     { name: "Aeon",                 url: "https://aeon.co/feed.rss" },
     { name: "Smithsonian Magazine", url: "https://www.smithsonianmag.com/rss/latest_articles/" },
+  ],
+
+  "Military": [
+    { name: "War on the Rocks",          url: "https://warontherocks.com/feed/" },
+    { name: "RUSI",                      url: "https://www.rusi.org/feeds/latest" },
+    { name: "Lawfare",                   url: "https://www.lawfaremedia.org/feeds/all" },
+    { name: "Modern War Institute",      url: "https://mwi.westpoint.edu/feed/" },
+    { name: "Inkstick Media",            url: "https://inkstickmedia.com/feed/" },
+  ],
+
+  "Health": [
+    { name: "Stat News",                 url: "https://www.statnews.com/feed/" },
+    { name: "Undark (Health)",           url: "https://undark.org/category/health/feed/" },
+    { name: "Aeon (Psychology)",         url: "https://psyche.co/feed" },
+    { name: "The BMJ",                   url: "https://www.bmj.com/rss/current.xml" },
+    { name: "Knowable Magazine",         url: "https://knowablemagazine.org/rss" },
+  ],
+
+  "Environment": [
+    { name: "Yale Environment 360",      url: "https://e360.yale.edu/feed.xml" },
+    { name: "Carbon Brief",              url: "https://www.carbonbrief.org/feed/" },
+    { name: "Ensia",                     url: "https://ensia.com/feed/" },
+    { name: "Mongabay",                  url: "https://news.mongabay.com/feed/" },
+    { name: "Inside Climate News",       url: "https://insideclimatenews.org/feed/" },
   ],
 };
 
@@ -237,6 +267,9 @@ const CATEGORY_EMOJI: Record<string, string> = {
   "Productivity":     "⚡",
   "History":          "🏛️",
   "Arts & Culture":   "🎭",
+  "Military":         "⚔️",
+  "Health":           "🧬",
+  "Environment":      "🌿",
 };
 
 function buildEmailHtml(articles: Article[]): string {
@@ -500,6 +533,77 @@ function fallbackArticle(interest: string): Article {
   };
 }
 
+// ─── Audio Edition: Polly TTS + S3 shared cache ───────────────────────────────
+
+function articleId(url: string): string {
+  return createHash("sha256").update(url).digest("hex").slice(0, 32);
+}
+
+async function audioExists(s3Key: string): Promise<boolean> {
+  try {
+    await s3.send(new HeadObjectCommand({ Bucket: AUDIO_BUCKET, Key: s3Key }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function generateAudio(article: Article): Promise<string | null> {
+  if (!AUDIO_BUCKET) return null;
+
+  const id    = articleId(article.url);
+  const s3Key = `audio/${id}/en.mp3`;
+
+  // Shared cache — başka kullanıcı için zaten üretilmişse atla
+  if (await audioExists(s3Key)) {
+    console.log(`Audio cache hit: ${s3Key}`);
+    return `https://${AUDIO_BUCKET}.s3.amazonaws.com/${s3Key}`;
+  }
+
+  // Polly'ye gönderilecek metin: title + summary + reason
+  const text = [
+    article.title,
+    article.summary,
+    `Why this article? ${article.reason}`,
+  ].join(". ");
+
+  try {
+    const response = await polly.send(
+      new SynthesizeSpeechCommand({
+        Text:         text,
+        OutputFormat: "mp3",
+        VoiceId:      "Joanna",   // Neural, EN-US
+        Engine:       "neural",
+        TextType:     "text",
+      })
+    );
+
+    if (!response.AudioStream) return null;
+
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of response.AudioStream as AsyncIterable<Uint8Array>) {
+      chunks.push(chunk);
+    }
+    const audioBuffer = Buffer.concat(chunks);
+
+    await s3.send(
+      new PutObjectCommand({
+        Bucket:      AUDIO_BUCKET,
+        Key:         s3Key,
+        Body:        audioBuffer,
+        ContentType: "audio/mpeg",
+        CacheControl: "public, max-age=86400",
+      })
+    );
+
+    console.log(`Audio generated and uploaded: ${s3Key}`);
+    return `https://${AUDIO_BUCKET}.s3.amazonaws.com/${s3Key}`;
+  } catch (err) {
+    console.error(`Polly failed for article "${article.title}":`, err);
+    return null;
+  }
+}
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 interface GenerateEvent {
@@ -574,25 +678,34 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
     return fallbackArticle(interests[i]);
   });
 
+  // Audio Edition — Polly TTS (fire-and-forget per article, shared cache)
+  const articlesWithAudio = await Promise.all(
+    articles.map(async (article) => {
+      if (article.url === "https://news.ycombinator.com") return article;
+      const audioUrl = await generateAudio(article);
+      return audioUrl ? { ...article, audioUrl } : article;
+    })
+  );
+
   // DynamoDB'e yaz
   const now  = new Date();
   const item: DailyArticles = {
     PK:          Keys.userPK(userId),
     SK:          Keys.dateSK(now),
-    articles,
+    articles:    articlesWithAudio,
     generatedAt: now.toISOString(),
     ttl:         Keys.ttl30Days(),
   };
 
   await dynamo.send(new PutCommand({ TableName: ARTICLES_TABLE, Item: item }));
-  console.log(`Wrote ${articles.length} articles for user=${userId} date=${Keys.dateSK(now)}`);
+  console.log(`Wrote ${articlesWithAudio.length} articles for user=${userId} date=${Keys.dateSK(now)}`);
 
   // Email gönder — SES_FROM_EMAIL tanımlıysa
   if (SES_FROM_EMAIL) {
     const userEmail = event.userEmail ?? await fetchUserEmail(userId);
     if (userEmail) {
       try {
-        await sendDailyEmail(userEmail, articles);
+        await sendDailyEmail(userEmail, articlesWithAudio);
       } catch (err) {
         // Email hatası makale üretimini engellemesin
         console.error("Failed to send email notification:", err);

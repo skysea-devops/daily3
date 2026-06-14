@@ -62,6 +62,24 @@ export const CATEGORIES: { id: string; label: string; emoji: string; description
     emoji:       "🎭",
     description: "Literature, film, music, criticism",
   },
+  {
+    id:          "Military",
+    label:       "Military",
+    emoji:       "⚔️",
+    description: "Strategy, defense policy, military history",
+  },
+  {
+    id:          "Health",
+    label:       "Health",
+    emoji:       "🧬",
+    description: "Medicine, mental health, longevity, well-being",
+  },
+  {
+    id:          "Environment",
+    label:       "Environment",
+    emoji:       "🌿",
+    description: "Climate, ecology, sustainability, energy",
+  },
 ];
 
 function OnboardingForm() {

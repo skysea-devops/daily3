@@ -9,8 +9,6 @@ data "aws_caller_identity" "current" {}
 
 # ==============================================================================
 # update-interests
-# Tetikleyici: PUT /me/interests
-# Kullanici interestlerini DynamoDB'e kaydeder, generate-articles'i async invoke eder
 # ==============================================================================
 
 resource "aws_cloudwatch_log_group" "update_interests" {
@@ -90,8 +88,6 @@ resource "aws_lambda_function" "update_interests" {
 
 # ==============================================================================
 # get-profile
-# Tetikleyici: GET /me/profile
-# Sign-in sonrasi interests'i DynamoDB'den cekip frontend'e doner
 # ==============================================================================
 
 resource "aws_cloudwatch_log_group" "get_profile" {
@@ -164,8 +160,6 @@ resource "aws_lambda_function" "get_profile" {
 
 # ==============================================================================
 # generate-articles
-# Tetikleyici: update-interests veya daily-trigger'dan async invoke
-# RSS'ten makale ceker, Bedrock ile secim yapar, DynamoDB'e yazar, SES ile email gonderir
 # ==============================================================================
 
 resource "aws_cloudwatch_log_group" "generate_articles" {
@@ -233,6 +227,18 @@ resource "aws_iam_role_policy" "generate_articles_lambda_policy" {
         Action   = ["ses:SendEmail", "ses:SendRawEmail"]
         Resource = "*"
       },
+      {
+        Sid      = "PollyTTS"
+        Effect   = "Allow"
+        Action   = ["polly:SynthesizeSpeech"]
+        Resource = "*"
+      },
+      {
+        Sid      = "AudioS3Write"
+        Effect   = "Allow"
+        Action   = ["s3:PutObject", "s3:HeadObject", "s3:GetObject"]
+        Resource = "arn:aws:s3:::${aws_s3_bucket.audio.id}/*"
+      },
     ]
   })
 }
@@ -250,7 +256,7 @@ resource "aws_lambda_function" "generate_articles" {
   handler          = "index.handler"
   filename         = data.archive_file.generate_articles_lambda_zip.output_path
   source_code_hash = data.archive_file.generate_articles_lambda_zip.output_base64sha256
-  timeout          = 60
+  timeout          = 120
   memory_size      = var.environment == "prod" ? 512 : 256
 
   environment {
@@ -260,6 +266,7 @@ resource "aws_lambda_function" "generate_articles" {
       SES_FROM_EMAIL      = var.ses_from_email
       CORS_ORIGIN         = var.cors_origin
       BEDROCK_REGION      = var.aws_region
+      AUDIO_BUCKET_NAME   = aws_s3_bucket.audio.id
       NODE_OPTIONS        = "--enable-source-maps"
     }
   }
@@ -269,8 +276,6 @@ resource "aws_lambda_function" "generate_articles" {
 
 # ==============================================================================
 # get-articles
-# Tetikleyici: GET /me/articles
-# Bugunku makaleleri doner. Stale ise generate-articles'i yeniden tetikler.
 # ==============================================================================
 
 resource "aws_cloudwatch_log_group" "get_articles" {
@@ -357,8 +362,6 @@ resource "aws_lambda_function" "get_articles" {
 
 # ==============================================================================
 # daily-trigger
-# Tetikleyici: EventBridge her gun 04:00 UTC (07:00 Turkiye)
-# Tum kullanicilari scan eder, her biri icin generate-articles'i async invoke eder
 # ==============================================================================
 
 resource "aws_cloudwatch_log_group" "daily_trigger" {
@@ -435,7 +438,6 @@ resource "aws_lambda_function" "daily_trigger" {
   depends_on = [aws_cloudwatch_log_group.daily_trigger]
 }
 
-# EventBridge: her gun 07:00 Turkiye saati = 04:00 UTC
 resource "aws_cloudwatch_event_rule" "daily_07_00" {
   name                = "${var.project_name}-${var.environment}-daily-07-00"
   description         = "Triggers daily article generation at 07:00 Turkey time (04:00 UTC)"
@@ -454,4 +456,54 @@ resource "aws_lambda_permission" "allow_eventbridge" {
   function_name = aws_lambda_function.daily_trigger.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.daily_07_00.arn
+}
+
+# ==============================================================================
+# Audio Edition — S3 Bucket (shared Polly TTS cache)
+# ==============================================================================
+
+resource "aws_s3_bucket" "audio" {
+  bucket = "${var.project_name}-${var.environment}-audio"
+}
+
+resource "aws_s3_bucket_public_access_block" "audio" {
+  bucket = aws_s3_bucket.audio.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+resource "aws_s3_bucket_policy" "audio_public_read" {
+  bucket     = aws_s3_bucket.audio.id
+  depends_on = [aws_s3_bucket_public_access_block.audio]
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "PublicReadAudio"
+      Effect    = "Allow"
+      Principal = "*"
+      Action    = "s3:GetObject"
+      Resource  = "${aws_s3_bucket.audio.arn}/*"
+    }]
+  })
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "audio" {
+  bucket = aws_s3_bucket.audio.id
+
+  rule {
+    id     = "expire-audio-30-days"
+    status = "Enabled"
+
+    filter {
+      prefix = "audio/"
+    }
+
+    expiration {
+      days = 30
+    }
+  }
 }
