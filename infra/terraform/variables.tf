@@ -45,3 +45,21 @@ variable "developer_user_ids" {
   type        = string
   default     = ""
 }
+
+variable "app_url" {
+  description = "Frontend app URL (e.g. https://app.daily3.io)"
+  type        = string
+  default     = "http://localhost:3000"
+}
+
+variable "contact_email" {
+  description = "Contact email shown in welcome email"
+  type        = string
+  default     = "igokdeniz80@gmail.com"
+}
+
+variable "app_name" {
+  description = "App display name used in emails"
+  type        = string
+  default     = "Daily3"
+}

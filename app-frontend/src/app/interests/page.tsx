@@ -12,9 +12,10 @@ function InterestsForm() {
   const router = useRouter();
   const { user, markInterestsSaved } = useAuth();
 
-  const [selected, setSelected] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [selected, setSelected]         = useState<string[]>([]);
+  const [loading, setLoading]           = useState(false);
+  const [saved, setSaved]               = useState(false);
+  const [showTomorrow, setShowTomorrow] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("daily3-categories");
@@ -36,14 +37,22 @@ function InterestsForm() {
     if (selected.length !== 3 || !user) return;
     setLoading(true);
     setSaved(false);
+    setShowTomorrow(false);
     try {
-      await updateUserInterests(selected, user.accessToken);
+      const result = await updateUserInterests(selected, user.accessToken);
       localStorage.setItem("daily3-categories", JSON.stringify(selected));
-      // Dashboard'a interests değişti sinyali — eski makaleleri gösterme
-      localStorage.setItem("daily3-articles-invalidated", "true");
       markInterestsSaved();
       setSaved(true);
-      setTimeout(() => router.push("/dashboard"), 900);
+
+      // Eğer bugün zaten makale varsa (articlesReady: true) → "yarın gelecek" mesajı
+      if (result.articlesReady) {
+        setShowTomorrow(true);
+        // Dashboard'a invalidated sinyali GÖNDERME — mevcut makaleler kalsın
+      } else {
+        // İlk kez / makale yoksa → normal akış, dashboard pending gösterecek
+        localStorage.setItem("daily3-articles-invalidated", "true");
+        setTimeout(() => router.push("/dashboard"), 1200);
+      }
     } catch (error) {
       console.error("Failed to save interests:", error);
       alert("Failed to save interests. Please try again.");
@@ -62,6 +71,24 @@ function InterestsForm() {
         <p className="mt-3 text-gray-500">
           Select exactly 3 topics. Your daily articles will be refreshed every morning.
         </p>
+
+        {/* Yarın gelecek banner */}
+        {showTomorrow && (
+          <div className="mt-6 rounded-2xl bg-green-50 border border-green-100 px-5 py-4">
+            <p className="text-sm font-medium text-green-700">
+              ✓ Interests saved!
+            </p>
+            <p className="mt-1 text-xs text-green-600">
+              Your new articles will arrive tomorrow at 07:00. Today's articles are still available on your dashboard.
+            </p>
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="mt-3 text-xs font-medium text-green-700 underline"
+            >
+              Go to dashboard →
+            </button>
+          </div>
+        )}
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {CATEGORIES.map((cat) => {
@@ -102,7 +129,7 @@ function InterestsForm() {
 
           <button
             onClick={handleSave}
-            disabled={selected.length !== 3 || loading}
+            disabled={selected.length !== 3 || loading || showTomorrow}
             className={`rounded-xl px-6 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-30 ${
               saved ? "bg-green-600" : "bg-black"
             }`}
