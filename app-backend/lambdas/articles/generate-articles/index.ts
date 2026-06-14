@@ -104,6 +104,7 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
 
   "Health": [
+    { name: "Stat News",                 url: "https://www.statnews.com/feed/" },
     { name: "Undark (Health)",           url: "https://undark.org/category/health/feed/" },
     { name: "Aeon (Psychology)",         url: "https://psyche.co/feed" },
     { name: "The BMJ",                   url: "https://www.bmj.com/rss/current.xml" },
@@ -165,7 +166,19 @@ function extractItems(xml: string, sourceName: string): RSSItem[] {
         extractText(seg, "published") ||
         extractText(seg, "updated");
       const cleanDesc = description
-        .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 900);
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#8230;/g, "…")
+        .replace(/&#\d+;/g, "")
+        .replace(/&[a-z]+;/g, "")
+        .replace(/The post .+ appeared( first)? on .+\./gi, "")
+        .replace(/\[\s*\.\.\.\s*\]/g, "…")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 1200);
 
       return {
         title,
