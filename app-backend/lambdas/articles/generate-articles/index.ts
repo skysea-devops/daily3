@@ -475,6 +475,7 @@ function scoreAndFilter(
 
 interface BedrockSelection {
   selectedIndex: number;
+  summary:       string;
   reason:        string;
   readingTime:   string;
 }
@@ -519,6 +520,7 @@ ${candidateList}
 Respond ONLY with valid JSON (no markdown):
 {
   "selectedIndex": <0-${candidates.length - 1}>,
+  "summary": "<3-4 sentence substantive summary of the article's key arguments and insights, written in an engaging way that makes a professional want to read it. Do not start with the title or source name.>",
   "reason": "<one sentence: what makes this a valuable long-form read for someone interested in ${interest}>",
   "readingTime": "<estimated reading time e.g. '8 min read'>"
 }`;
@@ -529,7 +531,7 @@ Respond ONLY with valid JSON (no markdown):
     accept:      "application/json",
     body: JSON.stringify({
       anthropic_version: "bedrock-2023-05-31",
-      max_tokens:        256,
+      max_tokens:        600,
       messages:          [{ role: "user", content: prompt }],
     }),
   });
@@ -687,7 +689,7 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
       return {
         category:    interest,
         title:       chosen.title,
-        summary:     chosen.description || "Click to read the full article.",
+        summary:     selection.summary || chosen.description || "Click to read the full article.",
         reason:      selection.reason,
         url:         chosen.url,
         source:      chosen.sourceName,
