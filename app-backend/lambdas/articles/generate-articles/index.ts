@@ -334,74 +334,122 @@ function buildEmailHtml(articles: Article[]): string {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 
-  const articleCards = articles
+  const categoryBadges = articles
     .filter((a) => a.url && a.url !== "https://news.ycombinator.com")
     .map((a) => {
       const emoji = CATEGORY_EMOJI[a.category] ?? "📄";
+      return `<span style="display:inline-block;margin:0 6px 6px 0;padding:4px 10px;background:#f3f4f6;border-radius:20px;font-size:11px;color:#6b7280;font-weight:500;">${emoji} ${a.category}</span>`;
+    })
+    .join("");
+
+  const articleBlocks = articles
+    .filter((a) => a.url && a.url !== "https://news.ycombinator.com")
+    .map((a, i) => {
+      const emoji = CATEGORY_EMOJI[a.category] ?? "📄";
       return `
-      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;">
         <tr>
-          <td style="padding:24px;background:#ffffff;">
-            <p style="margin:0 0 4px 0;font-size:13px;color:#6b7280;">
-              ${emoji} ${a.category}
-            </p>
-            <p style="margin:0 0 2px 0;font-size:12px;color:#9ca3af;">
-              ${a.source} · ${a.readingTime}
-            </p>
-            <h2 style="margin:12px 0 8px 0;font-size:18px;line-height:1.4;color:#111827;">
-              ${a.title}
-            </h2>
-            <p style="margin:0 0 16px 0;font-size:14px;line-height:1.6;color:#4b5563;">
-              ${a.summary}
-            </p>
-            <table cellpadding="0" cellspacing="0" style="margin-bottom:16px;background:#f9fafb;border-radius:10px;">
+          <td style="padding:32px 0;">
+            <!-- Article number + category -->
+            <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
-                <td style="padding:12px 16px;">
-                  <p style="margin:0 0 4px 0;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;">Why this article?</p>
-                  <p style="margin:0;font-size:13px;color:#374151;">${a.reason}</p>
+                <td>
+                  <span style="font-size:11px;font-weight:700;color:#d1d5db;margin-right:8px;">${String(i + 1).padStart(2, "0")}</span>
+                  <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">${emoji} ${a.category}</span>
                 </td>
               </tr>
             </table>
-            <a href="${a.url}" style="display:inline-block;padding:10px 20px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:500;">
-              Read article →
-            </a>
+
+            <!-- Title -->
+            <h2 style="margin:10px 0 4px 0;font-size:21px;font-weight:700;line-height:1.3;color:#111827;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+              <a href="${a.url}" style="color:#111827;text-decoration:none;">${a.title}</a>
+            </h2>
+
+            <!-- Source -->
+            <p style="margin:0 0 14px 0;font-size:12px;color:#9ca3af;">
+              ${a.source} &nbsp;·&nbsp; ${a.readingTime}
+            </p>
+
+            <!-- Summary -->
+            <p style="margin:0 0 14px 0;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+              ${a.summary}
+            </p>
+
+            <!-- Why box -->
+            <table cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td style="padding:14px 16px;background:#f9fafb;border-left:3px solid #e5e7eb;border-radius:0 8px 8px 0;">
+                  <p style="margin:0 0 3px 0;font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;">Why today</p>
+                  <p style="margin:0;font-size:13px;line-height:1.6;color:#4b5563;">${a.reason}</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CTA -->
+            <table cellpadding="0" cellspacing="0" style="margin-top:18px;">
+              <tr>
+                <td style="background:#111827;border-radius:8px;">
+                  <a href="${a.url}" style="display:inline-block;padding:10px 20px;font-size:13px;font-weight:600;color:#ffffff;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                    Read full article &rarr;
+                  </a>
+                </td>
+              </tr>
+            </table>
           </td>
         </tr>
-      </table>`;
+        ${i < 2 ? `<tr><td style="border-bottom:1px solid #f3f4f6;"></td></tr>` : ""}`;
     })
     .join("");
 
   return `<!DOCTYPE html>
 <html>
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Your Daily3</title>
+</head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;">
     <tr>
-      <td style="padding:40px 20px;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;">
+      <td style="padding:32px 20px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 
           <!-- Header -->
           <tr>
-            <td style="padding:0 0 32px 0;">
-              <h1 style="margin:0 0 4px 0;font-size:28px;font-weight:700;color:#111827;">Daily3</h1>
-              <p style="margin:0;font-size:14px;color:#6b7280;">${today}</p>
-              <p style="margin:8px 0 0 0;font-size:15px;color:#374151;">
-                Your three carefully selected articles for today are ready.
+            <td style="padding:32px 36px 24px 36px;border-bottom:1px solid #f3f4f6;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <span style="font-size:13px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#111827;">Daily3</span>
+                    <p style="margin:4px 0 0 0;font-size:13px;color:#9ca3af;">${today}</p>
+                  </td>
+                  <td align="right" valign="top">
+                    <span style="font-size:12px;color:#9ca3af;">Your daily read</span>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:16px 0 12px 0;font-size:22px;font-weight:700;color:#111827;line-height:1.3;">
+                Your 3 articles for today are ready.
               </p>
+              <div>${categoryBadges}</div>
             </td>
           </tr>
 
           <!-- Articles -->
           <tr>
-            <td>${articleCards}</td>
+            <td style="padding:0 36px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                ${articleBlocks}
+              </table>
+            </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="padding:24px 0 0 0;border-top:1px solid #e5e7eb;">
-              <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">
-                Daily3 · Your daily reading digest<br>
-                New articles arrive every morning at 07:00.
+            <td style="padding:24px 36px;background:#f9fafb;border-top:1px solid #f3f4f6;">
+              <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
+                Daily3 &nbsp;·&nbsp; Curated by AI, delivered every morning at 07:00.<br>
+                <a href="#" style="color:#9ca3af;">Unsubscribe</a> &nbsp;·&nbsp; <a href="#" style="color:#9ca3af;">View in browser</a>
               </p>
             </td>
           </tr>
