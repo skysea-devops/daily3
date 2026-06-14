@@ -10,7 +10,7 @@ import { Article, DailyArticles, Keys } from "../../../shared/types";
 const dynamo  = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const bedrock = new BedrockRuntimeClient({ region: process.env.AWS_REGION });
 const ses     = new SESClient({ region: process.env.AWS_REGION });
-const polly   = new PollyClient({ region: process.env.AWS_REGION });
+const polly   = new PollyClient({ region: "us-east-1" }); // Generative engine only in us-east-1
 const s3      = new S3Client({ region: process.env.AWS_REGION });
 
 const ARTICLES_TABLE   = process.env.ARTICLES_TABLE_NAME!;
@@ -572,8 +572,8 @@ async function generateAudio(article: Article): Promise<string | null> {
       new SynthesizeSpeechCommand({
         Text:         text,
         OutputFormat: "mp3",
-        VoiceId:      "Joanna",   // Neural, EN-US
-        Engine:       "neural",
+        VoiceId:      "Ruth",
+        Engine:       "generative",
         TextType:     "text",
       })
     );
