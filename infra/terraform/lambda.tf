@@ -264,7 +264,7 @@ resource "aws_lambda_function" "generate_articles" {
   handler          = "index.handler"
   filename         = data.archive_file.generate_articles_lambda_zip.output_path
   source_code_hash = data.archive_file.generate_articles_lambda_zip.output_base64sha256
-  timeout          = 120
+  timeout          = 150
   memory_size      = var.environment == "prod" ? 512 : 256
 
   environment {
