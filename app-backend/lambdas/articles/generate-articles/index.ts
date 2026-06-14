@@ -511,6 +511,8 @@ interface ScoredCandidate extends RSSItem {
 
 const ROUNDUP_PATTERNS  = /\b(weekly|roundup|link list|best of|this week in|top \d+)\b/i;
 const PODCAST_PATTERNS  = /\b(podcast|transcript|episode|listen now|audio|ep\.|ep \d+)\b/i;
+const VIDEO_PATTERNS    = /\b(video|watch|newsfeed|news feed)\b/i;
+const VIDEO_URL_PATTERN = /\/(video|videos|watch)\//i;
 
 function scoreAndFilter(
   items: RSSItem[],
@@ -535,6 +537,8 @@ function scoreAndFilter(
     .filter((item) => !history.seenUrls.has(item.url))
     .filter((item) => !ROUNDUP_PATTERNS.test(item.title))
     .filter((item) => !PODCAST_PATTERNS.test(item.title))
+    .filter((item) => !VIDEO_PATTERNS.test(item.title))
+    .filter((item) => !VIDEO_URL_PATTERN.test(item.url))
     .sort((a, b) => {
       const freshnessScore = (f: string) => f === "today" ? 2 : f === "recent" ? 1 : 0;
       const diff = freshnessScore(b.freshness) - freshnessScore(a.freshness);
@@ -582,7 +586,7 @@ ${diversityNote}
 Select the single best LONG-FORM ARTICLE from the candidates below. You must strictly prioritise:
 1. DEPTH over brevity — prefer essays, research summaries, analysis pieces, and think-tank reports. Reject short news items, press releases, and articles under ~800 words.
 2. SUBSTANCE — the piece should contain original analysis, research findings, or expert insight. Not just a summary of events.
-3. FORMAT — reject podcast transcripts, interview Q&A transcripts, episode summaries, and "listen now" style content. Only written articles intended to be read.
+3. FORMAT — reject podcast transcripts, interview Q&A transcripts, episode summaries, "listen now" style content, video reports, and newsfeed items. Only written long-form articles intended to be read.
 4. Freshness — prefer articles published TODAY or recently (marked "today" or "recent")
 5. Source variety — avoid sources marked "[source shown recently]" unless clearly superior
 6. Strong relevance to "${interest}"
