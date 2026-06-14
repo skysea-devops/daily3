@@ -597,7 +597,7 @@ ${candidateList}
 Respond ONLY with valid JSON (no markdown):
 {
   "selectedIndex": <0-${candidates.length - 1}>,
-  "summary": "<Write an editorial commentary of 5-7 sentences (~150 words) in the style of The Browser newsletter. This is YOUR OWN original analysis and perspective, not a summary of the article. Based on the title and description: explain why this piece matters right now, what idea or argument makes it worth reading, and what the reader will take away. Write with intellectual curiosity and a distinct editorial voice. Be specific — reference the actual topic, not vague generalities. Do not start with 'This article' or 'The author'. Do not reproduce the article's text — write your own original commentary.>",
+  "summary": "<Write an editorial commentary of 4-5 sentences (~100 words) in the style of The Browser newsletter. This is YOUR OWN original analysis and perspective, not a summary of the article. Based on the title and description: explain why this piece matters right now, what idea or argument makes it worth reading, and what the reader will take away. Write with intellectual curiosity and a distinct editorial voice. Be specific — reference the actual topic, not vague generalities. Do not start with 'This article' or 'The author'. Do not reproduce the article's text — write your own original commentary.>",
   "reason": "<one sentence: what makes this a valuable long-form read for someone interested in ${interest}>",
   "readingTime": "<estimated reading time e.g. '8 min read'>"
 }`;
@@ -608,7 +608,7 @@ Respond ONLY with valid JSON (no markdown):
     accept:      "application/json",
     body: JSON.stringify({
       anthropic_version: "bedrock-2023-05-31",
-      max_tokens:        700,
+      max_tokens:        400,
       messages:          [{ role: "user", content: prompt }],
     }),
   });
