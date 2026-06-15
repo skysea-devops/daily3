@@ -365,25 +365,14 @@ function buildEmailHtml(articles: Article[]): string {
             </h2>
 
             <!-- Source -->
-            <p style="margin:0 0 14px 0;font-size:12px;color:#9ca3af;">
+            <p style="margin:0 0 14px 0;font-size:13px;color:#6b7280;font-weight:500;">
               ${a.source} &nbsp;·&nbsp; ${a.readingTime}
             </p>
 
-            <!-- Summary + reason merged -->
-            <p style="margin:0 0 18px 0;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-              ${a.summary} ${a.reason}
+            <!-- Summary inline with Read more link -->
+            <p style="margin:0;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+              ${a.summary} <a href="${a.url}" style="color:#111827;font-weight:600;text-decoration:none;white-space:nowrap;">Read full article &rarr;</a>
             </p>
-
-            <!-- CTA -->
-            <table cellpadding="0" cellspacing="0" style="margin-top:18px;">
-              <tr>
-                <td style="background:#111827;border-radius:8px;">
-                  <a href="${a.url}" style="display:inline-block;padding:10px 20px;font-size:13px;font-weight:600;color:#ffffff;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-                    Read full article &rarr;
-                  </a>
-                </td>
-              </tr>
-            </table>
           </td>
         </tr>
         ${i < 2 ? `<tr><td style="border-bottom:1px solid #f3f4f6;"></td></tr>` : ""}`;
@@ -598,7 +587,7 @@ Respond ONLY with valid JSON (no markdown):
 {
   "selectedIndex": <0-${candidates.length - 1}>,
   "summary": "<Write 3-4 sentences (~75 words) as if recommending this article to a smart friend over coffee. Be direct, curious, and specific — say what the piece is actually about and why it's worth 10 minutes of their day. Use plain language, no jargon. Do not start with 'This article' or 'The author'. Do not use phrases like 'delve into', 'explore', 'unpack', or 'shed light on'. Write your own take — do not reproduce the article's text.>",
-  "reason": "<one sentence: what makes this a valuable long-form read for someone interested in ${interest}>",
+  "reason": "<One short sentence, max 20 words. Say specifically why THIS article is worth reading today — not generic praise. Write like a friend, not a marketer.>",
   "readingTime": "<estimated reading time e.g. '8 min read'>"
 }`;
 
