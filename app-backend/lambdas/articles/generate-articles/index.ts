@@ -597,7 +597,7 @@ ${candidateList}
 Respond ONLY with valid JSON (no markdown):
 {
   "selectedIndex": <0-${candidates.length - 1}>,
-  "summary": "<Write an editorial commentary of 3-4 sentences (~75 words) in the style of The Browser newsletter. This is YOUR OWN original analysis and perspective, not a summary of the article. Based on the title and description: explain why this piece matters right now and what the reader will take away. Write with intellectual curiosity and a distinct editorial voice. Be specific — reference the actual topic. Do not start with 'This article' or 'The author'. Do not reproduce the article's text.>",
+  "summary": "<Write 3-4 sentences (~75 words) as if recommending this article to a smart friend over coffee. Be direct, curious, and specific — say what the piece is actually about and why it's worth 10 minutes of their day. Use plain language, no jargon. Do not start with 'This article' or 'The author'. Do not use phrases like 'delve into', 'explore', 'unpack', or 'shed light on'. Write your own take — do not reproduce the article's text.>",
   "reason": "<one sentence: what makes this a valuable long-form read for someone interested in ${interest}>",
   "readingTime": "<estimated reading time e.g. '8 min read'>"
 }`;
