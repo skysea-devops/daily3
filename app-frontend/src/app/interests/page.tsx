@@ -39,7 +39,8 @@ function InterestsForm() {
     setSaved(false);
     setShowTomorrow(false);
     try {
-      const result = await updateUserInterests(selected, user.accessToken);
+      const email = user.email ?? undefined;
+      const result = await updateUserInterests(selected, user.accessToken, email);
       localStorage.setItem("daily3-categories", JSON.stringify(selected));
       markInterestsSaved();
       setSaved(true);

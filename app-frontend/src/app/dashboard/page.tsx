@@ -120,7 +120,7 @@ function ArticleCard({ article }: { article: Article }) {
               {article.title}
             </h2>
 
-            <p className="mt-1.5 text-xs text-gray-400">
+            <p className="mt-1.5 text-sm text-gray-500 font-medium">
               {article.source} · {article.readingTime}
             </p>
 
