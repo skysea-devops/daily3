@@ -56,8 +56,9 @@ export const handler = async (
       return { statusCode: 401, headers, body: JSON.stringify({ message: "Unauthorized" }) };
     }
 
-    const body = JSON.parse(event.body ?? "{}") as { interests?: unknown };
+    const body = JSON.parse(event.body ?? "{}") as { interests?: unknown; email?: unknown };
     const { interests } = body;
+    const emailFromBody = typeof body.email === "string" ? body.email : null;
 
     if (
       !Array.isArray(interests) ||
@@ -89,7 +90,7 @@ export const handler = async (
         ExpressionAttributeValues: {
           ":interests": interests,
           ":now":       now,
-          ":email":     (claims["email"] as string | undefined) ?? null,
+          ":email":     emailFromBody ?? (claims["email"] as string | undefined) ?? null,
         },
       })
     );

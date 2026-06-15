@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { signUp } from "@/lib/cognito";
 
 const FREE_FEATURES = [
-  "3 curated long-form articles daily",
-  "Audio edition — listen to every article",
-  "12 interest categories to choose from",
+  "3 curated long-form articles in your interests daily",
+  "1 podcast recommendation daily",
+  "15 interest categories to choose from",
   "Daily email digest",
   "Editorial commentary on each article",
 ];
@@ -18,8 +18,8 @@ const PRO_FEATURES = [
   "6 sub-topics per category (granular selection)",
   "Personalised prompt — AI picks articles for your specific focus",
   "3 podcast recommendations daily",
+  "3 video recommendations daily",
   "Weekly trend report every Sunday",
-  "Natural-voice audio in 20 languages",
 ];
 
 function RegisterModal({
