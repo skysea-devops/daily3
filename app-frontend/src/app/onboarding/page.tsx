@@ -103,7 +103,7 @@ function OnboardingForm() {
     setLoading(true);
     try {
       await updateUserInterests(selected, user.accessToken);
-      localStorage.setItem("daily3-categories", JSON.stringify(selected));
+      localStorage.setItem("cogletta-categories", JSON.stringify(selected));
       markInterestsSaved();
       router.push("/dashboard");
     } catch (error) {
@@ -126,7 +126,7 @@ function OnboardingForm() {
         </h1>
 
         <p className="mt-3 text-gray-500">
-          Daily3 will curate one in-depth article per category, every day.
+          Cogletta will curate one in-depth article per category, every day.
         </p>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

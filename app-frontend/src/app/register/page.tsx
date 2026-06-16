@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signUp } from "@/lib/cognito";
+import Navbar from "@/components/Navbar";
 
 const FREE_FEATURES = [
   "3 curated long-form articles in your interests daily",
@@ -22,19 +23,31 @@ const PRO_FEATURES = [
   "Weekly trend report every Sunday",
 ];
 
-function RegisterModal({
-  plan,
-  onClose,
-}: {
-  plan: "free" | "pro";
-  onClose: () => void;
-}) {
+const input: React.CSSProperties = {
+  marginTop: 8,
+  width: "100%",
+  border: "1px solid var(--rule)",
+  borderRadius: 10,
+  padding: "12px 16px",
+  fontSize: "0.9375rem",
+  background: "var(--white)",
+  color: "var(--ink)",
+  outline: "none",
+};
+
+const label: React.CSSProperties = {
+  fontSize: "0.8125rem",
+  fontWeight: 600,
+  color: "var(--ink-soft)",
+};
+
+function RegisterModal({ plan, onClose }: { plan: "free" | "pro"; onClose: () => void }) {
   const router = useRouter();
-  const [name, setName]       = useState("");
-  const [email, setEmail]     = useState("");
+  const [name, setName]         = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState("");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -54,79 +67,62 @@ function RegisterModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 200,
+        background: "rgba(26,23,20,0.5)",
+        display: "flex", alignItems: "center", justifyContent: "center", padding: "0 20px",
+      }}
     >
-      <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl">
-        <div className="mb-6 flex items-center justify-between">
+      <div style={{
+        width: "100%", maxWidth: 440,
+        background: "var(--white)",
+        border: "1px solid var(--rule)",
+        borderRadius: 16, padding: "40px 36px",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
           <div>
-            <h2 className="text-2xl font-bold">Create your account</h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Starting with{" "}
-              <span className={`font-semibold ${plan === "pro" ? "text-violet-600" : "text-black"}`}>
+            <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)" }}>
+              Create your account
+            </h2>
+            <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)", marginTop: 4 }}>
+              Starting with <strong style={{ color: plan === "pro" ? "var(--accent)" : "var(--ink)" }}>
                 {plan === "pro" ? "Pro" : "Free"} plan
-              </span>
+              </strong>
             </p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-muted)", fontSize: "1.25rem", lineHeight: 1 }}>✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           <div>
-            <label className="text-sm font-medium">Name</label>
-            <input
-              type="text"
-              placeholder="Your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="mt-1.5 w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-black"
-            />
+            <label style={label}>Name</label>
+            <input style={input} type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} required />
           </div>
           <div>
-            <label className="text-sm font-medium">Email</label>
-            <input
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-1.5 w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-black"
-            />
+            <label style={label}>Email</label>
+            <input style={input} type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
           </div>
           <div>
-            <label className="text-sm font-medium">Password</label>
-            <input
-              type="password"
-              placeholder="At least 8 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              className="mt-1.5 w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-black"
-            />
+            <label style={label}>Password</label>
+            <input style={input} type="password" placeholder="At least 8 characters" value={password} onChange={e => setPassword(e.target.value)} required minLength={8} />
           </div>
 
-          {error && (
-            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
-          )}
+          {error && <p style={{ background: "#fef2f2", color: "#991b1b", padding: "12px 16px", borderRadius: 10, fontSize: "0.875rem" }}>{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full rounded-xl px-6 py-3 text-sm font-semibold text-white transition disabled:opacity-40 ${
-              plan === "pro"
-                ? "bg-violet-600 hover:bg-violet-700"
-                : "bg-black hover:bg-gray-800"
-            }`}
-          >
+          <button type="submit" disabled={loading} style={{
+            background: plan === "pro" ? "var(--accent)" : "var(--ink)",
+            color: "var(--white)", border: "none", borderRadius: 10,
+            padding: "13px 24px", fontSize: "0.9375rem", fontWeight: 600,
+            cursor: "pointer", opacity: loading ? 0.5 : 1,
+          }}>
             {loading ? "Creating account..." : "Create account →"}
           </button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-gray-500">
+        <p style={{ marginTop: 20, textAlign: "center", fontSize: "0.875rem", color: "var(--ink-soft)" }}>
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-black">Sign in</Link>
+          <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>Sign in</Link>
         </p>
       </div>
     </div>
@@ -137,95 +133,92 @@ export default function RegisterPage() {
   const [modal, setModal] = useState<"free" | "pro" | null>(null);
 
   return (
-    <>
+    <div style={{ minHeight: "100vh", background: "var(--paper)" }}>
+      <Navbar />
       {modal && <RegisterModal plan={modal} onClose={() => setModal(null)} />}
 
-      <main className="min-h-screen bg-gray-50">
-        {/* Hero */}
-        <div className="bg-white border-b border-gray-100">
-          <div className="mx-auto max-w-4xl px-6 py-16 text-center">
-            <p className="text-sm font-semibold uppercase tracking-widest text-gray-400">Daily3</p>
-            <h1 className="mt-4 text-5xl font-bold tracking-tight text-gray-900 leading-tight">
-              Read less.<br />Learn more.
-            </h1>
-            <p className="mt-5 text-lg text-gray-500 max-w-xl mx-auto leading-relaxed">
-              Every morning, three long-form articles curated by AI — one for each topic you care about. No algorithm, no noise. Just reading worth your time.
-            </p>
-          </div>
-        </div>
-
-        {/* Plans */}
-        <div className="mx-auto max-w-4xl px-6 py-16">
-          <div className="grid gap-6 md:grid-cols-2">
-
-            {/* Free Plan */}
-            <div className="rounded-3xl border border-gray-200 bg-white p-8 flex flex-col">
-              <div className="mb-6">
-                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Free</p>
-                <h2 className="mt-2 text-2xl font-bold text-gray-900">Start reading today</h2>
-                <p className="mt-2 text-sm text-gray-500 leading-relaxed">
-                  Everything you need to build a daily reading habit. No credit card required.
-                </p>
-              </div>
-
-              <ul className="flex-1 space-y-3 mb-8">
-                {FREE_FEATURES.map((f) => (
-                  <li key={f} className="flex items-start gap-3">
-                    <span className="mt-0.5 text-green-500 text-sm">✓</span>
-                    <span className="text-sm text-gray-700">{f}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                onClick={() => setModal("free")}
-                className="w-full rounded-xl border-2 border-black bg-white px-6 py-3 text-sm font-semibold text-black hover:bg-black hover:text-white transition"
-              >
-                Get started for free →
-              </button>
-            </div>
-
-            {/* Pro Plan */}
-            <div className="rounded-3xl border-2 border-violet-600 bg-white p-8 flex flex-col relative">
-              <div className="absolute -top-3 left-8">
-                <span className="rounded-full bg-violet-600 px-3 py-1 text-xs font-bold text-white uppercase tracking-wide">
-                  Coming soon
-                </span>
-              </div>
-
-              <div className="mb-6">
-                <p className="text-xs font-bold uppercase tracking-widest text-violet-600">Pro</p>
-                <h2 className="mt-2 text-2xl font-bold text-gray-900">Go deeper</h2>
-                <p className="mt-2 text-sm text-gray-500 leading-relaxed">
-                  For serious readers. Granular personalisation, multilingual audio, and weekly intelligence reports.
-                </p>
-              </div>
-
-              <ul className="flex-1 space-y-3 mb-8">
-                {PRO_FEATURES.map((f) => (
-                  <li key={f} className="flex items-start gap-3">
-                    <span className="mt-0.5 text-violet-500 text-sm">✓</span>
-                    <span className="text-sm text-gray-700">{f}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                disabled
-                className="w-full rounded-xl bg-violet-100 px-6 py-3 text-sm font-semibold text-violet-400 cursor-not-allowed"
-              >
-                Notify me when Pro launches
-              </button>
-            </div>
-
-          </div>
-
-          <p className="mt-8 text-center text-sm text-gray-400">
-            Already have an account?{" "}
-            <Link href="/login" className="font-medium text-black">Sign in</Link>
+      {/* Hero */}
+      <div style={{ borderBottom: "1px solid var(--rule)", background: "var(--white)" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "72px 5vw 64px", textAlign: "center" }}>
+          <span style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--accent)" }}>
+            Join Cogletta
+          </span>
+          <h1 style={{ fontFamily: "'Lora', serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 600, color: "var(--ink)", marginTop: 16, marginBottom: 16, lineHeight: 1.2 }}>
+            Read what matters to you.
+          </h1>
+          <p style={{ fontSize: "1.0625rem", color: "var(--ink-soft)", maxWidth: 500, margin: "0 auto", lineHeight: 1.75 }}>
+            Every morning, three long-form articles selected for your interests — delivered to your inbox before you start your day.
           </p>
         </div>
-      </main>
-    </>
+      </div>
+
+      {/* Plans */}
+      <div style={{ maxWidth: 860, margin: "0 auto", padding: "60px 5vw" }}>
+        <div style={{ display: "grid", gap: 20, gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))" }}>
+
+          {/* Free */}
+          <div style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: 16, padding: 36, display: "flex", flexDirection: "column" }}>
+            <div style={{ marginBottom: 24 }}>
+              <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-muted)" }}>Free</span>
+              <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)", marginTop: 8, marginBottom: 8 }}>Start reading today</h2>
+              <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.65 }}>Everything you need to build a daily reading habit. No credit card required.</p>
+            </div>
+            <ul style={{ flex: 1, listStyle: "none", marginBottom: 28, display: "flex", flexDirection: "column", gap: 12 }}>
+              {FREE_FEATURES.map(f => (
+                <li key={f} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <span style={{ color: "var(--accent)", marginTop: 1, fontWeight: 700 }}>✓</span>
+                  <span style={{ fontSize: "0.875rem", color: "var(--ink-soft)" }}>{f}</span>
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => setModal("free")} style={{
+              width: "100%", background: "var(--ink)", color: "var(--white)",
+              border: "none", borderRadius: 10, padding: "13px 24px",
+              fontSize: "0.9375rem", fontWeight: 600, cursor: "pointer",
+            }}>
+              Get started for free →
+            </button>
+          </div>
+
+          {/* Pro */}
+          <div style={{ background: "var(--white)", border: "2px solid var(--accent)", borderRadius: 16, padding: 36, display: "flex", flexDirection: "column", position: "relative" }}>
+            <div style={{
+              position: "absolute", top: -13, left: 28,
+              background: "var(--accent)", color: "var(--white)",
+              fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em",
+              textTransform: "uppercase", padding: "4px 12px", borderRadius: 20,
+            }}>
+              Coming soon
+            </div>
+            <div style={{ marginBottom: 24 }}>
+              <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)" }}>Pro</span>
+              <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)", marginTop: 8, marginBottom: 8 }}>Go deeper</h2>
+              <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.65 }}>For serious readers. Granular personalisation, podcasts, videos, and weekly reports.</p>
+            </div>
+            <ul style={{ flex: 1, listStyle: "none", marginBottom: 28, display: "flex", flexDirection: "column", gap: 12 }}>
+              {PRO_FEATURES.map(f => (
+                <li key={f} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <span style={{ color: "var(--accent)", marginTop: 1, fontWeight: 700 }}>✓</span>
+                  <span style={{ fontSize: "0.875rem", color: "var(--ink-soft)" }}>{f}</span>
+                </li>
+              ))}
+            </ul>
+            <button disabled style={{
+              width: "100%", background: "var(--paper-warm)", color: "var(--ink-muted)",
+              border: "none", borderRadius: 10, padding: "13px 24px",
+              fontSize: "0.9375rem", fontWeight: 600, cursor: "not-allowed",
+            }}>
+              Notify me when Pro launches
+            </button>
+          </div>
+
+        </div>
+
+        <p style={{ marginTop: 32, textAlign: "center", fontSize: "0.875rem", color: "var(--ink-muted)" }}>
+          Already have an account?{" "}
+          <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>Sign in</Link>
+        </p>
+      </div>
+    </div>
   );
 }

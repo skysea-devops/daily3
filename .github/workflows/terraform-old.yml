@@ -1,0 +1,111 @@
+name: Deploy
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "infra/terraform/**"
+      - "app-backend/**"
+      - ".github/workflows/terraform.yml"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "infra/terraform/**"
+      - "app-backend/**"
+      - ".github/workflows/terraform.yml"
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: read
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────────
+  # 1. Build all Lambda functions (TypeScript → JS via esbuild)
+  # ────────────────────────────────────────────────────────────────────────────
+  build-lambdas:
+    name: Build Lambda functions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: app-backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: app-backend
+        run: npm ci
+
+      - name: Type check
+        working-directory: app-backend
+        run: npm run typecheck
+
+      - name: Build
+        working-directory: app-backend
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      # Upload dist folders so the terraform job can use them
+      - name: Upload Lambda build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-dist
+          path: app-backend/lambdas/**/dist/
+          retention-days: 1
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 2. Terraform plan (PRs) / apply (push to main)
+  # ────────────────────────────────────────────────────────────────────────────
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+    needs: build-lambdas
+
+    defaults:
+      run:
+        working-directory: infra/terraform
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Restore the built Lambda dist/ folders
+      - name: Download Lambda build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-dist
+          path: app-backend/lambdas
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve tfplan

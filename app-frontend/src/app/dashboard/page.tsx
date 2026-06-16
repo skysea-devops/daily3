@@ -24,63 +24,31 @@ const CATEGORY_EMOJI: Record<string, string> = {
   "Environment":      "🌿",
 };
 
-// Başlıktan arama terimi üret — ilk 3-4 anlamlı kelime
 function extractKeywords(title: string): string {
-  const stopWords = new Set(["the","a","an","of","in","on","at","to","for","is","are","was","were","and","or","but","how","why","what","when","who","will","can","has","have","its","by","with","from","as","this","that","these","those","be","been","being"]);
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter(w => w.length > 2 && !stopWords.has(w))
-    .slice(0, 3)
-    .join(" ");
+  const stop = new Set(["the","a","an","of","in","on","at","to","for","is","are","was","were","and","or","but","how","why","what","when","who","will","can","has","have","its","by","with","from","as","this","that","these","those","be","been","being"]);
+  return title.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w=>w.length>2&&!stop.has(w)).slice(0,3).join(" ");
 }
 
-interface UnsplashPhoto {
-  url: string;
-  authorName: string;
-  authorUrl: string;
-}
+interface UnsplashPhoto { url: string; authorName: string; authorUrl: string; }
 
 function useUnsplashPhoto(title: string, category: string): UnsplashPhoto | null {
   const [photo, setPhoto] = useState<UnsplashPhoto | null>(null);
-
   useEffect(() => {
-    const keywords = extractKeywords(title) || category;
-    const cacheKey = `unsplash:${keywords}`;
-
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) {
-      setPhoto(JSON.parse(cached));
-      return;
-    }
-
-    fetch(
-      `https://api.unsplash.com/photos/random?query=${encodeURIComponent(keywords)}&orientation=landscape&content_filter=high`,
-      { headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` } }
-    )
-      .then(r => r.json())
-      .then(data => {
+    const kw = extractKeywords(title) || category;
+    const key = `unsplash:${kw}`;
+    const cached = sessionStorage.getItem(key);
+    if (cached) { setPhoto(JSON.parse(cached)); return; }
+    fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(kw)}&orientation=landscape&content_filter=high`,
+      { headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` } })
+      .then(r => r.json()).then(data => {
         if (data?.urls?.regular) {
-          // Unsplash zorunluluğu: download endpoint'ini trigger et
-          if (data.links?.download_location) {
-            fetch(data.links.download_location, {
-              headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` },
-            }).catch(() => {});
-          }
-
-          const p: UnsplashPhoto = {
-            url:        data.urls.regular,
-            authorName: data.user?.name ?? "Unsplash",
-            authorUrl:  `${data.user?.links?.html ?? "https://unsplash.com"}?utm_source=daily3&utm_medium=referral`,
-          };
-          sessionStorage.setItem(cacheKey, JSON.stringify(p));
+          if (data.links?.download_location) fetch(data.links.download_location, { headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` } }).catch(()=>{});
+          const p = { url: data.urls.regular, authorName: data.user?.name ?? "Unsplash", authorUrl: `${data.user?.links?.html ?? "https://unsplash.com"}?utm_source=cogletta&utm_medium=referral` };
+          sessionStorage.setItem(key, JSON.stringify(p));
           setPhoto(p);
         }
-      })
-      .catch(() => {});
+      }).catch(()=>{});
   }, [title, category]);
-
   return photo;
 }
 
@@ -97,83 +65,71 @@ function ArticleCard({ article }: { article: Article }) {
       audioRef.current = new Audio(article.audioUrl);
       audioRef.current.onended = () => setPlaying(false);
     }
-    if (playing) {
-      audioRef.current.pause();
-      setPlaying(false);
-    } else {
-      audioRef.current.play();
-      setPlaying(true);
-    }
+    if (playing) { audioRef.current.pause(); setPlaying(false); }
+    else { audioRef.current.play(); setPlaying(true); }
   }
 
   return (
-    <article className="rounded-3xl border border-gray-200 bg-white overflow-hidden">
-      <div className="p-6">
-        <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">{emoji}</span>
-              <p className="text-sm font-medium text-gray-500">{article.category}</p>
+    <article style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: 16, overflow: "hidden" }}>
+      <div style={{ padding: "28px 28px 32px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: "0.9rem" }}>{emoji}</span>
+              <span style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-muted)" }}>
+                {article.category}
+              </span>
             </div>
 
-            <h2 className="mt-3 text-xl font-semibold leading-snug text-gray-900">
+            <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.25rem", fontWeight: 600, lineHeight: 1.35, color: "var(--ink)", marginBottom: 6 }}>
               {article.title}
             </h2>
 
-            <p className="mt-1.5 text-sm text-gray-500 font-medium">
+            <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)", fontWeight: 500, marginBottom: 16 }}>
               {article.source} · {article.readingTime}
             </p>
 
-            {/* Unsplash photo — başlığın altında, içerik genişliğinde */}
             {photo && (
-              <div className="relative mt-3 h-36 w-full overflow-hidden rounded-2xl">
-                <img
-                  src={photo.url}
-                  alt={article.title}
-                  className="h-full w-full object-cover"
-                />
-                <a
-                  href={photo.authorUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="absolute bottom-1 right-2 text-[10px] text-white/70 hover:text-white"
-                >
+              <div style={{ position: "relative", height: 160, borderRadius: 10, overflow: "hidden", marginBottom: 16 }}>
+                <img src={photo.url} alt={article.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <a href={photo.authorUrl} target="_blank" rel="noreferrer"
+                  style={{ position: "absolute", bottom: 6, right: 10, fontSize: "0.6875rem", color: "rgba(255,255,255,0.7)", textDecoration: "none" }}>
                   Photo by {photo.authorName} on Unsplash
                 </a>
               </div>
             )}
 
-            <p className="mt-3 text-sm leading-relaxed text-gray-600">
+            <p style={{ fontFamily: "'Lora', serif", fontSize: "0.9375rem", lineHeight: 1.75, color: "var(--ink-soft)", marginBottom: 16 }}>
               {article.summary}
             </p>
 
-            <div className="mt-4 rounded-2xl bg-gray-50 px-4 py-3">
-              <p className="text-xs font-medium text-gray-500">Why we picked this for you</p>
-              <p className="mt-1 text-sm text-gray-700">{article.reason}</p>
+            <div style={{ background: "var(--paper-warm)", border: "1px solid var(--rule)", borderRadius: 10, padding: "14px 16px" }}>
+              <p style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-muted)", marginBottom: 4 }}>
+                Why we picked this for you
+              </p>
+              <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.6 }}>{article.reason}</p>
             </div>
           </div>
 
           {!isFallback && (
-            <div className="flex shrink-0 flex-col gap-2">
+            <div style={{ display: "flex", gap: 10 }}>
               {article.audioUrl && (
-                <button
-                  onClick={toggleAudio}
-                  className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
-                  aria-label={playing ? "Pause audio" : "Play audio"}
-                >
-                  {playing ? (
-                    <><span className="text-base">⏸</span><span>Pause</span></>
-                  ) : (
-                    <><span className="text-base">▶</span><span>Listen</span></>
-                  )}
+                <button onClick={toggleAudio}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    border: "1px solid var(--rule)", background: "var(--white)",
+                    borderRadius: 10, padding: "10px 18px", fontSize: "0.875rem",
+                    fontWeight: 600, color: "var(--ink-soft)", cursor: "pointer",
+                  }}>
+                  {playing ? "⏸ Pause" : "▶ Listen"}
                 </button>
               )}
-              <a
-                href={article.url}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-xl bg-black px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-gray-800 transition-colors"
-              >
+              <a href={article.url} target="_blank" rel="noreferrer"
+                style={{
+                  flex: 1, textAlign: "center", background: "var(--ink)", color: "var(--white)",
+                  borderRadius: 10, padding: "10px 20px", fontSize: "0.875rem",
+                  fontWeight: 600, textDecoration: "none",
+                }}>
                 Read Full Article →
               </a>
             </div>
@@ -187,15 +143,15 @@ function ArticleCard({ article }: { article: Article }) {
 function PendingCard({ category }: { category: string }) {
   const emoji = CATEGORY_EMOJI[category] ?? "📄";
   return (
-    <article className="rounded-3xl border border-dashed border-gray-200 bg-gray-50 overflow-hidden">
-      <div className="h-48 animate-pulse bg-gray-200" />
-      <div className="p-6">
-        <div className="flex items-center gap-2">
-          <span className="text-sm opacity-40">{emoji}</span>
-          <p className="text-sm font-medium text-gray-400">{category}</p>
+    <article style={{ background: "var(--white)", border: "1px dashed var(--rule)", borderRadius: 16, overflow: "hidden", opacity: 0.7 }}>
+      <div style={{ height: 120, background: "var(--paper-warm)", animation: "pulse 2s infinite" }} />
+      <div style={{ padding: 28 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <span>{emoji}</span>
+          <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--ink-muted)" }}>{category}</span>
         </div>
-        <div className="mt-3 h-4 w-3/4 animate-pulse rounded bg-gray-200" />
-        <div className="mt-2 h-4 w-1/2 animate-pulse rounded bg-gray-200" />
+        <div style={{ height: 16, background: "var(--paper-warm)", borderRadius: 6, marginBottom: 10, width: "75%" }} />
+        <div style={{ height: 16, background: "var(--paper-warm)", borderRadius: 6, width: "50%" }} />
       </div>
     </article>
   );
@@ -203,26 +159,23 @@ function PendingCard({ category }: { category: string }) {
 
 function DashboardContent() {
   const { user } = useAuth();
-
   const [articles, setArticles]       = useState<Article[]>([]);
   const [status, setStatus]           = useState<"loading" | "ready" | "pending" | "error">("loading");
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [interests, setInterests]     = useState<string[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem("daily3-categories");
+    const stored = localStorage.getItem("cogletta-categories");
     if (stored) setInterests(JSON.parse(stored));
   }, []);
 
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-
     async function load() {
       try {
         const data = await getDailyArticles(user!.accessToken);
         if (cancelled) return;
-
         if (data.status === "ready" && data.articles.length > 0) {
           setArticles(data.articles);
           setGeneratedAt(data.generatedAt);
@@ -232,106 +185,103 @@ function DashboardContent() {
           setTimeout(() => { if (!cancelled) load(); }, 5000);
         }
       } catch (err) {
-        console.error("Failed to load articles:", err);
+        console.error(err);
         if (!cancelled) setStatus("error");
       }
     }
-
     load();
     return () => { cancelled = true; };
   }, [user]);
 
-  const today = new Date().toLocaleDateString("en-GB", {
-    weekday: "long", day: "numeric", month: "long",
-  });
+  const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ minHeight: "100vh", background: "var(--paper)" }}>
       <Navbar />
+      <main style={{ maxWidth: 720, margin: "0 auto", padding: "48px 5vw" }}>
 
-      <main className="mx-auto max-w-3xl px-6 py-10">
-        <div className="mb-8">
-          <p className="text-sm font-medium text-gray-400">{today}</p>
-          <h1 className="mt-1 text-4xl font-bold tracking-tight">Your Daily3</h1>
-          <p className="mt-2 text-gray-500">
+        {/* Header */}
+        <div style={{ marginBottom: 32 }}>
+          <p style={{ fontSize: "0.8125rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-muted)" }}>{today}</p>
+          <h1 style={{ fontFamily: "'Lora', serif", fontSize: "2rem", fontWeight: 600, color: "var(--ink)", marginTop: 4, marginBottom: 6 }}>
+            Your Cogletta
+          </h1>
+          <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)" }}>
             Three carefully selected articles based on your interests.
           </p>
         </div>
 
+        {/* Interest badges */}
         {interests.length > 0 && (
-          <div className="mb-6 flex flex-wrap gap-2">
-            {interests.map((interest) => (
-              <span
-                key={interest}
-                className="rounded-full bg-white border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600"
-              >
-                {CATEGORY_EMOJI[interest]} {interest}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 32 }}>
+            {interests.map(i => (
+              <span key={i} style={{
+                background: "var(--white)", border: "1px solid var(--rule)",
+                borderRadius: 20, padding: "5px 14px", fontSize: "0.8125rem",
+                fontWeight: 500, color: "var(--ink-soft)",
+              }}>
+                {CATEGORY_EMOJI[i]} {i}
               </span>
             ))}
           </div>
         )}
 
+        {/* Loading */}
         {status === "loading" && (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded-3xl bg-white border border-gray-200 overflow-hidden">
-                <div className="h-48 animate-pulse bg-gray-100" />
-                <div className="p-6 space-y-3">
-                  <div className="h-3 w-1/4 animate-pulse rounded bg-gray-100" />
-                  <div className="h-5 w-3/4 animate-pulse rounded bg-gray-100" />
-                  <div className="h-3 w-full animate-pulse rounded bg-gray-100" />
-                </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {[1,2,3].map(i => (
+              <div key={i} style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: 16, padding: 28 }}>
+                <div style={{ height: 12, background: "var(--paper-warm)", borderRadius: 6, width: "25%", marginBottom: 16 }} />
+                <div style={{ height: 20, background: "var(--paper-warm)", borderRadius: 6, width: "75%", marginBottom: 12 }} />
+                <div style={{ height: 12, background: "var(--paper-warm)", borderRadius: 6, width: "100%" }} />
               </div>
             ))}
           </div>
         )}
 
+        {/* Pending */}
         {status === "pending" && (
-          <div className="space-y-4">
-            <div className="rounded-2xl bg-blue-50 border border-blue-100 px-5 py-4">
-              <p className="text-sm font-medium text-blue-700">✦ Curating your articles…</p>
-              <p className="mt-1 text-xs text-blue-500">
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{
+              background: "var(--paper-warm)", border: "1px solid var(--rule)",
+              borderRadius: 12, padding: "16px 20px",
+            }}>
+              <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "var(--accent)" }}>✦ Curating your articles…</p>
+              <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", marginTop: 4 }}>
                 We're finding the best articles for you. This takes about 30 seconds.
               </p>
             </div>
-            {interests.map((interest) => (
-              <PendingCard key={interest} category={interest} />
-            ))}
+            {interests.map(i => <PendingCard key={i} category={i} />)}
           </div>
         )}
 
+        {/* Ready */}
         {status === "ready" && (
-          <div className="space-y-4">
-            {articles.map((article) => (
-              <ArticleCard key={article.category} article={article} />
-            ))}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {articles.map(a => <ArticleCard key={a.category} article={a} />)}
             {generatedAt && (
-              <p className="text-center text-xs text-gray-300 pt-2">
-                Curated at {new Date(generatedAt).toLocaleTimeString("en-GB", {
-                  hour: "2-digit", minute: "2-digit",
-                })} · Refreshes tomorrow at 07:00
+              <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--ink-muted)", paddingTop: 8 }}>
+                Curated at {new Date(generatedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · Refreshes tomorrow at 07:00
               </p>
             )}
           </div>
         )}
 
+        {/* Error */}
         {status === "error" && (
-          <div className="rounded-2xl bg-red-50 border border-red-100 px-5 py-4">
-            <p className="text-sm font-medium text-red-700">Failed to load articles.</p>
-            <button onClick={() => setStatus("loading")} className="mt-2 text-xs text-red-500 underline">
+          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, padding: "16px 20px" }}>
+            <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#991b1b" }}>Failed to load articles.</p>
+            <button onClick={() => setStatus("loading")} style={{ marginTop: 8, fontSize: "0.875rem", color: "#991b1b", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
               Try again
             </button>
           </div>
         )}
+
       </main>
     </div>
   );
 }
 
 export default function DashboardPage() {
-  return (
-    <RequireAuth>
-      <DashboardContent />
-    </RequireAuth>
-  );
+  return <RequireAuth><DashboardContent /></RequireAuth>;
 }

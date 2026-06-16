@@ -97,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const profile = await getUserProfile(accessToken);
             if (profile.interests && profile.interests.length === 3) {
               localStorage.setItem(
-                "daily3-categories",
+                "cogletta-categories",
                 JSON.stringify(profile.interests)
               );
               setHasInterests(true);
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } catch {
             // Fallback to localStorage if API fails
-            const saved = localStorage.getItem("daily3-categories");
+            const saved = localStorage.getItem("cogletta-categories");
             setHasInterests(!!saved);
           }
 
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     cognitoUser?.signOut();
     localStorage.removeItem("access_token");
     localStorage.removeItem("id_token");
-    localStorage.removeItem("daily3-categories");
+    localStorage.removeItem("cogletta-categories");
     setUser(null);
     setHasInterests(false);
   }, []);

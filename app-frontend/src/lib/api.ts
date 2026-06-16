@@ -4,14 +4,13 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 function handleUnauthorized() {
   localStorage.removeItem("access_token");
   localStorage.removeItem("id_token");
-  localStorage.removeItem("daily3-categories");
+  localStorage.removeItem("cogletta-categories");
   window.location.href = "/login";
 }
 
 export async function updateUserInterests(
   interests: string[],
-  accessToken: string,
-  email?: string
+  accessToken: string
 ) {
   if (!API_BASE_URL) {
     throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
@@ -23,7 +22,7 @@ export async function updateUserInterests(
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ interests, email }),
+    body: JSON.stringify({ interests }),
   });
 
   if (response.status === 401) {
