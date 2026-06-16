@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Daily3 — Your daily reading habit",
+  title: "Cogletta — Read what matters to you",
   description:
-    "Choose 3 interests. Get 3 high-quality articles every day. No information overload.",
+    "Every morning, three long-form articles on the topics you care about. Curated by AI, delivered daily.",
 };
 
 export default function RootLayout({

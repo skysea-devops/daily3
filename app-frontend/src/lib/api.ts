@@ -4,7 +4,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 function handleUnauthorized() {
   localStorage.removeItem("access_token");
   localStorage.removeItem("id_token");
-  localStorage.removeItem("daily3-categories");
+  localStorage.removeItem("cogletta-categories");
   window.location.href = "/login";
 }
 

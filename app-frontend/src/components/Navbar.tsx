@@ -14,42 +14,46 @@ export default function Navbar() {
   }
 
   return (
-    <header className="border-b border-gray-100 bg-white">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="text-xl font-bold">
-          Daily3
+    <header style={{
+      borderBottom: "1px solid var(--rule)",
+      background: "var(--paper)",
+      position: "sticky",
+      top: 0,
+      zIndex: 100,
+    }}>
+      <div style={{
+        maxWidth: 1100,
+        margin: "0 auto",
+        padding: "0 5vw",
+        height: 56,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}>
+        <Link href="/" style={{
+          fontFamily: "'Lora', serif",
+          fontWeight: 600,
+          fontSize: "1.05rem",
+          color: "var(--ink)",
+          textDecoration: "none",
+          letterSpacing: "0.02em",
+        }}>
+          Cogletta
         </Link>
 
-        <nav className="flex items-center gap-5 text-sm">
+        <nav style={{ display: "flex", alignItems: "center", gap: 20 }}>
           {!loading && user ? (
             <>
-              <Link href="/dashboard" className="text-gray-600 hover:text-black">
-                Dashboard
-              </Link>
-
-              <Link href="/interests" className="text-gray-600 hover:text-black">
-                Interests
-              </Link>
-
-              <button
-                onClick={handleSignOut}
-                className="text-gray-600 hover:text-black"
-              >
+              <Link href="/dashboard" style={navLink}>Dashboard</Link>
+              <Link href="/interests" style={navLink}>Interests</Link>
+              <button onClick={handleSignOut} style={{ ...navLink, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
                 Sign Out
               </button>
             </>
           ) : (
             <>
-              <Link href="/login" className="text-gray-600 hover:text-black">
-                Sign In
-              </Link>
-
-              <Link
-                href="/register"
-                className="rounded-xl bg-black px-4 py-2 text-white"
-              >
-                Register
-              </Link>
+              <Link href="/login" style={navLink}>Sign in</Link>
+              <Link href="/register" style={navBtn}>Start reading</Link>
             </>
           )}
         </nav>
@@ -57,3 +61,21 @@ export default function Navbar() {
     </header>
   );
 }
+
+const navLink: React.CSSProperties = {
+  fontSize: "0.875rem",
+  color: "var(--ink-soft)",
+  textDecoration: "none",
+  fontFamily: "Inter, sans-serif",
+};
+
+const navBtn: React.CSSProperties = {
+  fontSize: "0.875rem",
+  fontWeight: 600,
+  color: "var(--white)",
+  background: "var(--ink)",
+  padding: "8px 18px",
+  borderRadius: 6,
+  textDecoration: "none",
+  fontFamily: "Inter, sans-serif",
+};

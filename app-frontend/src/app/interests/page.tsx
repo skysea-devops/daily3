@@ -18,16 +18,12 @@ function InterestsForm() {
   const [showTomorrow, setShowTomorrow] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("daily3-categories");
+    const stored = localStorage.getItem("cogletta-categories");
     if (stored) setSelected(JSON.parse(stored));
   }, []);
 
   function toggleCategory(id: string) {
-    if (selected.includes(id)) {
-      setSelected(selected.filter((c) => c !== id));
-      setSaved(false);
-      return;
-    }
+    if (selected.includes(id)) { setSelected(selected.filter(c => c !== id)); setSaved(false); return; }
     if (selected.length === 3) return;
     setSelected([...selected, id]);
     setSaved(false);
@@ -39,19 +35,14 @@ function InterestsForm() {
     setSaved(false);
     setShowTomorrow(false);
     try {
-      const email = user.email ?? undefined;
-      const result = await updateUserInterests(selected, user.accessToken, email);
-      localStorage.setItem("daily3-categories", JSON.stringify(selected));
+      const result = await updateUserInterests(selected, user.accessToken, user.email);
+      localStorage.setItem("cogletta-categories", JSON.stringify(selected));
       markInterestsSaved();
       setSaved(true);
-
-      // Eğer bugün zaten makale varsa (articlesReady: true) → "yarın gelecek" mesajı
       if (result.articlesReady) {
         setShowTomorrow(true);
-        // Dashboard'a invalidated sinyali GÖNDERME — mevcut makaleler kalsın
       } else {
-        // İlk kez / makale yoksa → normal akış, dashboard pending gösterecek
-        localStorage.setItem("daily3-articles-invalidated", "true");
+        localStorage.setItem("cogletta-articles-invalidated", "true");
         setTimeout(() => router.push("/dashboard"), 1200);
       }
     } catch (error) {
@@ -63,57 +54,52 @@ function InterestsForm() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div style={{ minHeight: "100vh", background: "var(--paper)" }}>
       <Navbar />
+      <main style={{ maxWidth: 780, margin: "0 auto", padding: "56px 5vw" }}>
 
-      <main className="mx-auto max-w-3xl px-6 py-12">
-        <h1 className="text-4xl font-bold tracking-tight">Your interests</h1>
-
-        <p className="mt-3 text-gray-500">
-          Select exactly 3 topics. Your daily articles will be refreshed every morning.
+        <h1 style={{ fontFamily: "'Lora', serif", fontSize: "2rem", fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}>
+          Your interests
+        </h1>
+        <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: 32 }}>
+          Select exactly 3 topics. Your articles refresh every morning at 07:00.
         </p>
 
-        {/* Yarın gelecek banner */}
         {showTomorrow && (
-          <div className="mt-6 rounded-2xl bg-green-50 border border-green-100 px-5 py-4">
-            <p className="text-sm font-medium text-green-700">
-              ✓ Interests saved!
+          <div style={{
+            background: "#f0fdf4", border: "1px solid #bbf7d0",
+            borderRadius: 12, padding: "16px 20px", marginBottom: 28,
+          }}>
+            <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#166534" }}>✓ Interests saved!</p>
+            <p style={{ fontSize: "0.875rem", color: "#15803d", marginTop: 4 }}>
+              Your new articles will arrive tomorrow at 07:00. Today's articles are still available.
             </p>
-            <p className="mt-1 text-xs text-green-600">
-              Your new articles will arrive tomorrow at 07:00. Today's articles are still available on your dashboard.
-            </p>
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="mt-3 text-xs font-medium text-green-700 underline"
-            >
+            <button onClick={() => router.push("/dashboard")}
+              style={{ marginTop: 10, fontSize: "0.875rem", fontWeight: 600, color: "#166534", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
               Go to dashboard →
             </button>
           </div>
         )}
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {CATEGORIES.map((cat) => {
+        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", marginBottom: 40 }}>
+          {CATEGORIES.map(cat => {
             const isSelected = selected.includes(cat.id);
             const isDisabled = !isSelected && selected.length === 3;
-
             return (
-              <button
-                key={cat.id}
-                onClick={() => toggleCategory(cat.id)}
-                disabled={isDisabled}
-                className={`rounded-2xl border p-4 text-left transition-all ${
-                  isSelected
-                    ? "border-black bg-black text-white"
-                    : isDisabled
-                    ? "cursor-not-allowed border-gray-100 bg-gray-50 opacity-40"
-                    : "border-gray-200 bg-white hover:border-gray-400"
-                }`}
-              >
-                <span className="text-2xl">{cat.emoji}</span>
-                <p className={`mt-2 font-medium ${isSelected ? "text-white" : "text-gray-900"}`}>
+              <button key={cat.id} onClick={() => toggleCategory(cat.id)} disabled={isDisabled}
+                style={{
+                  borderRadius: 12, padding: "18px 20px", textAlign: "left",
+                  cursor: isDisabled ? "not-allowed" : "pointer",
+                  border: isSelected ? "2px solid var(--accent)" : "1px solid var(--rule)",
+                  background: isSelected ? "var(--accent)" : isDisabled ? "var(--paper-warm)" : "var(--white)",
+                  opacity: isDisabled ? 0.45 : 1,
+                  transition: "all 0.15s",
+                }}>
+                <span style={{ fontSize: "1.5rem" }}>{cat.emoji}</span>
+                <p style={{ marginTop: 10, fontWeight: 600, fontSize: "0.9375rem", color: isSelected ? "var(--white)" : "var(--ink)" }}>
                   {cat.label}
                 </p>
-                <p className={`mt-0.5 text-xs ${isSelected ? "text-gray-300" : "text-gray-400"}`}>
+                <p style={{ marginTop: 3, fontSize: "0.8rem", color: isSelected ? "rgba(255,255,255,0.75)" : "var(--ink-muted)", lineHeight: 1.4 }}>
                   {cat.description}
                 </p>
               </button>
@@ -121,20 +107,17 @@ function InterestsForm() {
           })}
         </div>
 
-        <div className="mt-8 flex items-center justify-between">
-          <p className="text-sm text-gray-400">
-            {selected.length === 3
-              ? "Ready to save."
-              : `Select ${3 - selected.length} more`}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>
+            {selected.length === 3 ? "Ready to save." : `Select ${3 - selected.length} more`}
           </p>
-
-          <button
-            onClick={handleSave}
-            disabled={selected.length !== 3 || loading || showTomorrow}
-            className={`rounded-xl px-6 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-30 ${
-              saved ? "bg-green-600" : "bg-black"
-            }`}
-          >
+          <button onClick={handleSave} disabled={selected.length !== 3 || loading || showTomorrow}
+            style={{
+              background: saved ? "#166534" : "var(--ink)",
+              color: "var(--white)", border: "none", borderRadius: 10,
+              padding: "12px 28px", fontSize: "0.9375rem", fontWeight: 600,
+              cursor: "pointer", opacity: (selected.length !== 3 || loading || showTomorrow) ? 0.3 : 1,
+            }}>
             {loading ? "Saving..." : saved ? "Saved! ✓" : "Save interests"}
           </button>
         </div>
@@ -144,9 +127,5 @@ function InterestsForm() {
 }
 
 export default function InterestsPage() {
-  return (
-    <RequireAuth>
-      <InterestsForm />
-    </RequireAuth>
-  );
+  return <RequireAuth><InterestsForm /></RequireAuth>;
 }
