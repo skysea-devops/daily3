@@ -101,3 +101,5 @@ resource "aws_lambda_permission" "allow_api_gateway_get_articles" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.backend.execution_arn}/*/*"
 }
+
+
