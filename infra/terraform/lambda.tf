@@ -471,7 +471,7 @@ resource "aws_lambda_permission" "allow_eventbridge" {
 # ==============================================================================
 
 resource "aws_s3_bucket" "audio" {
-  bucket = "${var.project_name}-${var.environment}-audio"
+  bucket = "daily3-dev-audio" # kept for backward compat — contains existing audio files
 }
 
 resource "aws_s3_bucket_public_access_block" "audio" {
