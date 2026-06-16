@@ -160,14 +160,8 @@ jobs:
 
       - name: Sync to S3
         run: |
-          # Rename .txt files to .html (Next.js static export quirk)
-          find out/ -name "*.txt" | while read f; do
-            mv "$f" "${f%.txt}.html"
-          done
-
-          # Sync static assets (JS, CSS, images) with long cache
-          aws s3 sync out/_next/ s3://${{ vars.FRONTEND_BUCKET_NAME }}/_next/ \
-            --cache-control "public, max-age=31536000, immutable"
+          # Remove RSC payload .txt files (not needed for static hosting)
+          find out/ -name "*.txt" -delete
 
           # Sync HTML files with correct content-type and no-cache
           find out/ -name "*.html" | while read f; do
@@ -177,10 +171,15 @@ jobs:
               --cache-control "no-cache, no-store, must-revalidate"
           done
 
-          # Sync remaining files
-          aws s3 sync out/ s3://${{ vars.FRONTEND_BUCKET_NAME }}/ \
+          # Sync static assets with long cache
+          aws s3 sync out/_next/ "s3://${{ vars.FRONTEND_BUCKET_NAME }}/_next/" \
+            --cache-control "public, max-age=31536000, immutable"
+
+          # Sync remaining files (favicon, etc)
+          aws s3 sync out/ "s3://${{ vars.FRONTEND_BUCKET_NAME }}/" \
             --exclude "_next/*" \
             --exclude "*.html" \
+            --exclude "*.txt" \
             --cache-control "public, max-age=3600"
 
       - name: Invalidate CloudFront
@@ -188,5 +187,3 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
-
-
