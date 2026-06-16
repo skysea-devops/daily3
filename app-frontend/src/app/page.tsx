@@ -101,8 +101,7 @@ export default function HomePage() {
           <h1 className="lp-h1">Read what<br /><em>matters to you.</em></h1>
           <p className="lp-sub">
             Every morning, three long-form articles on the topics you actually care about —
-            carefully selected for your interests and delivered to your inbox.
-
+            curated by AI, delivered to your inbox. No algorithm, no noise.
           </p>
           <Link href="/register" className="lp-cta">Start reading for free →</Link>
           <span className="lp-note">Free forever · No credit card required</span>
@@ -247,7 +246,7 @@ export default function HomePage() {
             {" · "}
             <Link href="/register">Register</Link>
             {" · "}
-            <a href="mailto:hello@cogletta.com">Contact</a>
+            <a href="mailto:read@cogletta.com">read@cogletta.com</a>
           </p>
         </footer>
 

@@ -1,5 +1,4 @@
-developer_user_ids = "73540802-c031-701d-d864-8b1c6715736e"
-
-app_url       = "http://cogletta.com"  # domain gelince güncelle
-contact_email = "igokdeniz80@gmail.com"
+app_url       = "https://www.cogletta.com"
+contact_email = "read@cogletta.com"
 app_name      = "Cogletta"
+ses_from_email = "read@cogletta.com"
