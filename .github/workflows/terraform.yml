@@ -160,17 +160,24 @@ jobs:
 
       - name: Sync to S3
         run: |
-          aws s3 sync out/ s3://${{ vars.FRONTEND_BUCKET_NAME }}/ \
-            --delete \
-            --cache-control "public, max-age=3600" \
-            --exclude "*.html"
+          # Rename .txt files to .html (Next.js static export quirk)
+          find out/ -name "*.txt" | while read f; do
+            mv "$f" "${f%.txt}.html"
+          done
 
-          # HTML dosyaları için cache yok (her zaman taze)
+          # Sync HTML files with no-cache
           aws s3 sync out/ s3://${{ vars.FRONTEND_BUCKET_NAME }}/ \
             --delete \
+            --content-type "text/html" \
             --cache-control "no-cache, no-store, must-revalidate" \
-            --include "*.html" \
-            --exclude "*"
+            --exclude "*" \
+            --include "*.html"
+
+          # Sync everything else
+          aws s3 sync out/ s3://${{ vars.FRONTEND_BUCKET_NAME }}/ \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "*.html"
 
       - name: Invalidate CloudFront
         run: |
