@@ -1,6 +1,6 @@
 variable "project_name" {
   type    = string
-  default = "daily3"
+  default = "cogletta"
 }
 
 variable "environment" {
@@ -20,11 +20,11 @@ variable "aws_region" {
 
 variable "github_repo" {
   type    = string
-  default = "skysea-devops/daily3"
+  default = "skysea-devops/cogletta"
 }
 
 variable "cors_origin" {
-  description = "Single origin allowed for CORS on Lambda responses (e.g. https://app.daily3.io)"
+  description = "Single origin allowed for CORS on Lambda responses (e.g. https://cogletta.com)"
   type        = string
   default     = "*"
 }
@@ -47,9 +47,9 @@ variable "developer_user_ids" {
 }
 
 variable "app_url" {
-  description = "Frontend app URL (e.g. https://app.daily3.io)"
+  description = "Frontend app URL (e.g. https://cogletta.com)"
   type        = string
-  default     = "http://localhost:3000"
+  default     = "http://cogletta.com"
 }
 
 variable "contact_email" {
@@ -61,5 +61,5 @@ variable "contact_email" {
 variable "app_name" {
   description = "App display name used in emails"
   type        = string
-  default     = "Daily3"
+  default     = "Cogletta"
 }
