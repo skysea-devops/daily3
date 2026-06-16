@@ -165,19 +165,23 @@ jobs:
             mv "$f" "${f%.txt}.html"
           done
 
-          # Sync HTML files with no-cache
-          aws s3 sync out/ s3://${{ vars.FRONTEND_BUCKET_NAME }}/ \
-            --delete \
-            --content-type "text/html" \
-            --cache-control "no-cache, no-store, must-revalidate" \
-            --exclude "*" \
-            --include "*.html"
+          # Sync static assets (JS, CSS, images) with long cache
+          aws s3 sync out/_next/ s3://${{ vars.FRONTEND_BUCKET_NAME }}/_next/ \
+            --cache-control "public, max-age=31536000, immutable"
 
-          # Sync everything else
+          # Sync HTML files with correct content-type and no-cache
+          find out/ -name "*.html" | while read f; do
+            key="${f#out/}"
+            aws s3 cp "$f" "s3://${{ vars.FRONTEND_BUCKET_NAME }}/$key" \
+              --content-type "text/html; charset=utf-8" \
+              --cache-control "no-cache, no-store, must-revalidate"
+          done
+
+          # Sync remaining files
           aws s3 sync out/ s3://${{ vars.FRONTEND_BUCKET_NAME }}/ \
-            --delete \
-            --cache-control "public, max-age=31536000, immutable" \
-            --exclude "*.html"
+            --exclude "_next/*" \
+            --exclude "*.html" \
+            --cache-control "public, max-age=3600"
 
       - name: Invalidate CloudFront
         run: |
