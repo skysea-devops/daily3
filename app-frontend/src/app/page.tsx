@@ -240,7 +240,7 @@ export default function HomePage() {
 
         {/* FOOTER */}
         <footer className="lp-footer">
-          <p>© 2026 Cogletta · Curated by AI, delivered every morning at 07:00.</p>
+          <p>© 2026 Cogletta </p>
           <p>
             <Link href="/login">Sign in</Link>
             {" · "}
