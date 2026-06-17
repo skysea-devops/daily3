@@ -83,7 +83,7 @@ resource "aws_cloudfront_origin_access_control" "frontend" {
 }
 
 resource "aws_s3_bucket_policy" "frontend" {
-  bucket     = aws_s3_bucket.frontend.id
+  bucket = aws_s3_bucket.frontend.id
   depends_on = [
     aws_s3_bucket_public_access_block.frontend,
     aws_cloudfront_distribution.frontend,
@@ -104,6 +104,34 @@ resource "aws_s3_bucket_policy" "frontend" {
       }
     }]
   })
+}
+
+# ==============================================================================
+# CloudFront Function — URL Rewrite (Next.js static export routing)
+# /register       → /register/index.html
+# /register/      → /register/index.html
+# /               → /index.html  (default_root_object handles this)
+# ==============================================================================
+
+resource "aws_cloudfront_function" "rewrite" {
+  provider = aws.us_east_1
+  name     = "${var.project_name}-${var.environment}-rewrite"
+  runtime  = "cloudfront-js-2.0"
+  publish  = true
+  code     = <<-EOT
+    async function handler(event) {
+      const request = event.request;
+      const uri = request.uri;
+
+      if (uri.endsWith('/')) {
+        request.uri = uri + 'index.html';
+      } else if (!uri.includes('.')) {
+        request.uri = uri + '/index.html';
+      }
+
+      return request;
+    }
+  EOT
 }
 
 # ==============================================================================
@@ -135,12 +163,17 @@ resource "aws_cloudfront_distribution" "frontend" {
       cookies { forward = "none" }
     }
 
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.rewrite.arn
+    }
+
     min_ttl     = 0
     default_ttl = 3600
     max_ttl     = 86400
   }
 
-  # Next.js static export — SPA routing
+  # Next.js static export — fallback for unmatched paths
   custom_error_response {
     error_code            = 404
     response_code         = 200
