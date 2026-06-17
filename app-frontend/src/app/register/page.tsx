@@ -154,7 +154,7 @@ export default function RegisterPage() {
 
       {/* Plans */}
       <div style={{ maxWidth: 860, margin: "0 auto", padding: "60px 5vw" }}>
-        <div style={{ display: "grid", gap: 20, gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))" }}>
+        <div style={{ display: "grid", gap: 20, gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
 
           {/* Free */}
           <div style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: 16, padding: 36, display: "flex", flexDirection: "column" }}>
