@@ -248,3 +248,6 @@ output "cloudfront_url" {
 output "site_url" {
   value = "https://www.cogletta.com"
 }
+
+
+
