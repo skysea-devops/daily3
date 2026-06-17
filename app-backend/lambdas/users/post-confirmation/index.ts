@@ -5,7 +5,7 @@ const ses = new SESClient({ region: process.env.AWS_REGION });
 const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL!;
 const APP_URL        = process.env.APP_URL!;
 const CONTACT_EMAIL  = process.env.CONTACT_EMAIL!;
-const APP_NAME       = process.env.APP_NAME ?? "Daily3";
+const APP_NAME       = process.env.APP_NAME ?? "Cogletta";
 
 function buildWelcomeHtml(email: string): string {
   return `<!DOCTYPE html>
@@ -13,7 +13,7 @@ function buildWelcomeHtml(email: string): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>"Welcome and thanks for joinning ${APP_NAME} — your daily reading starts now"</title>
+  <title>Welcome to ${APP_NAME}</title>
 </head>
 <body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;">
@@ -32,6 +32,10 @@ function buildWelcomeHtml(email: string): string {
 
           <tr>
             <td style="padding:32px 36px;">
+
+              <p style="margin:0 0 20px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+                Thanks for joining ${APP_NAME}. It means a lot to have you here. The idea for ${APP_NAME} came from a feeling —
+              </p>
 
               <p style="margin:0 0 20px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
                 I once realized that after spending time on my phone, when I put it down, I couldn't remember anything tangible. Social media, news sites, video platforms show me things — but are these things really what matters to me? And there's so much out there that choosing what to read has become stressful in itself.
@@ -79,13 +83,13 @@ function buildWelcomeHtml(email: string): string {
               </table>
 
               <p style="margin:0 0 16px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                You're now subscribed — head to your dashboard to read your 3 curated articles and listen to their audio versions:
+                You're now subscribed — head to your dashboard to read your first curated articles:
               </p>
 
               <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
                 <tr>
                   <td style="background:#111827;border-radius:8px;">
-                    <a href="${APP_URL}" style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">
+                    <a href="${APP_URL}/dashboard" style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">
                       Go to my dashboard →
                     </a>
                   </td>
@@ -156,13 +160,15 @@ function buildWelcomeHtml(email: string): string {
 function buildWelcomeText(email: string): string {
   return `Welcome to ${APP_NAME}!
 
+Thanks for joining ${APP_NAME}. It means a lot to have you here. The idea for ${APP_NAME} came from a feeling —
+
 I once realized that after spending time on my phone, when I put it down, I couldn't remember anything tangible. That's why I created ${APP_NAME} — three articles every morning on topics you choose. No noise. Focus.
 
 Here's what we share with you every day:
 → Three carefully selected articles based on your interests
 → An audio version of each article
 
-Go to your dashboard: ${APP_URL}
+Go to your dashboard: ${APP_URL}/dashboard
 
 Your articles are ready every morning at 07:00. You can change your topics anytime from the Interests page — changes take effect the next morning.
 
@@ -203,7 +209,6 @@ export const handler = async (event: any): Promise<any> => {
     );
     console.log(`Welcome email sent to ${email}`);
   } catch (err) {
-    // Email hatası Cognito akışını engellemesin
     console.error("Failed to send welcome email:", err);
   }
 
