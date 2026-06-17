@@ -4,6 +4,12 @@ resource "aws_cognito_user_pool" "main" {
   username_attributes      = ["email"]
   auto_verified_attributes = ["email"]
 
+  email_configuration {
+    email_sending_account = "DEVELOPER"
+    source_arn            = "arn:aws:ses:eu-central-1:117647030196:identity/cogletta.com"
+    from_email_address    = "Cogletta <read@cogletta.com>"
+  }
+
   schema {
     name                = "given_name"
     attribute_data_type = "String"
@@ -88,6 +94,7 @@ resource "aws_cognito_user_pool_domain" "main" {
   domain       = "${var.project_name}-${var.environment}-auth"
   user_pool_id = aws_cognito_user_pool.main.id
 }
+
 # ==============================================================================
 # PostConfirmation Lambda — Welcome email gönderir
 # ==============================================================================
@@ -151,11 +158,11 @@ resource "aws_lambda_function" "post_confirmation" {
 
   environment {
     variables = {
-      SES_FROM_EMAIL  = var.ses_from_email
-      APP_URL         = var.app_url
-      CONTACT_EMAIL   = var.contact_email
-      APP_NAME        = var.app_name
-      NODE_OPTIONS    = "--enable-source-maps"
+      SES_FROM_EMAIL = var.ses_from_email
+      APP_URL        = var.app_url
+      CONTACT_EMAIL  = var.contact_email
+      APP_NAME       = var.app_name
+      NODE_OPTIONS   = "--enable-source-maps"
     }
   }
 
