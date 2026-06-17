@@ -62,7 +62,7 @@ resource "aws_cognito_user_pool_client" "web" {
 
   supported_identity_providers = [
     "COGNITO",
-    "Google"
+    "GOOGLE"
   ]
 
   callback_urls = [
