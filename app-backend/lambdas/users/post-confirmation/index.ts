@@ -139,7 +139,7 @@ function buildWelcomeHtml(email: string): string {
           <tr>
             <td style="padding:24px 36px;background:#f9fafb;border-top:1px solid #f3f4f6;">
               <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
-                ${APP_NAME} &nbsp;·&nbsp; Curated by AI, delivered every morning at 07:00.<br>
+                © 2026 ${APP_NAME}<br>
                 <a href="${APP_URL}" style="color:#9ca3af;">Open dashboard</a>
               </p>
             </td>
@@ -187,7 +187,7 @@ export const handler = async (event: any): Promise<any> => {
   try {
     await ses.send(
       new SendEmailCommand({
-        Source:      SES_FROM_EMAIL,
+        Source:      `Cogletta <${SES_FROM_EMAIL}>`,
         Destination: { ToAddresses: [email] },
         Message: {
           Subject: {
