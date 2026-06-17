@@ -1,6 +1,141 @@
+"use client";
+
 import Link from "next/link";
+import { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { signUp } from "@/lib/cognito";
+
+function RegisterModal({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
+  const [name, setName]               = useState("");
+  const [email, setEmail]             = useState("");
+  const [password, setPassword]       = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState("");
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      await signUp(name, email, password);
+      localStorage.setItem("pending_verification_email", email);
+      localStorage.setItem("selected_plan", "free");
+      router.push("/verify-email");
+    } catch (err: any) {
+      setError(err?.message || "Failed to create account.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const input: React.CSSProperties = {
+    marginTop: 8,
+    width: "100%",
+    border: "1px solid var(--rule)",
+    borderRadius: 10,
+    padding: "12px 16px",
+    fontSize: "0.9375rem",
+    background: "var(--white)",
+    color: "var(--ink)",
+    outline: "none",
+    boxSizing: "border-box",
+  };
+
+  const label: React.CSSProperties = {
+    fontSize: "0.8125rem",
+    fontWeight: 600,
+    color: "var(--ink-soft)",
+  };
+
+  return (
+    <div
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 200,
+        background: "rgba(26,23,20,0.5)",
+        display: "flex", alignItems: "center", justifyContent: "center", padding: "0 20px",
+      }}
+    >
+      <div style={{
+        width: "100%", maxWidth: 440,
+        background: "var(--white)",
+        border: "1px solid var(--rule)",
+        borderRadius: 16, padding: "40px 36px",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
+          <div>
+            <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)" }}>
+              Create your account
+            </h2>
+            <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)", marginTop: 4 }}>
+              Starting with <strong style={{ color: "var(--ink)" }}>Free plan</strong>
+            </p>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-muted)", fontSize: "1.25rem", lineHeight: 1 }}>✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <div>
+            <label style={label}>Name</label>
+            <input style={input} type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} required />
+          </div>
+          <div>
+            <label style={label}>Email</label>
+            <input style={input} type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
+          </div>
+          <div>
+            <label style={label}>Password</label>
+            <div style={{ position: "relative" }}>
+              <input
+                style={{ ...input, paddingRight: 44 }}
+                type={showPassword ? "text" : "password"}
+                placeholder="At least 8 characters"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                minLength={8}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(s => !s)}
+                tabIndex={-1}
+                style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--ink-muted)", display: "flex", alignItems: "center" }}
+              >
+                {showPassword ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {error && <p style={{ background: "#fef2f2", color: "#991b1b", padding: "12px 16px", borderRadius: 10, fontSize: "0.875rem" }}>{error}</p>}
+
+          <button type="submit" disabled={loading} style={{
+            background: "var(--ink)", color: "var(--white)",
+            border: "none", borderRadius: 10,
+            padding: "13px 24px", fontSize: "0.9375rem", fontWeight: 600,
+            cursor: "pointer", opacity: loading ? 0.5 : 1,
+          }}>
+            {loading ? "Creating account..." : "Create account →"}
+          </button>
+        </form>
+
+        <p style={{ marginTop: 20, textAlign: "center", fontSize: "0.875rem", color: "var(--ink-soft)" }}>
+          Already have an account?{" "}
+          <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>Sign in</Link>
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function HomePage() {
+  const [showModal, setShowModal] = useState(false);
+
   return (
     <>
       <style>{`
@@ -38,7 +173,7 @@ export default function HomePage() {
         .lp-h1 { font-family: 'Lora', serif; font-size: clamp(2.4rem, 5vw, 3.8rem); font-weight: 600; line-height: 1.18; color: var(--ink); margin-bottom: 24px; }
         .lp-h1 em { font-style: italic; color: var(--accent); }
         .lp-sub { font-size: 1.125rem; color: var(--ink-soft); max-width: 540px; margin: 0 auto 40px; line-height: 1.75; }
-        .lp-cta { display: inline-block; background: var(--ink); color: var(--white); padding: 14px 32px; border-radius: 8px; font-size: 0.9375rem; font-weight: 600; text-decoration: none; }
+        .lp-cta { display: inline-block; background: var(--ink); color: var(--white); padding: 14px 32px; border-radius: 8px; font-size: 0.9375rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; }
         .lp-note { display: block; margin-top: 14px; font-size: 0.8125rem; color: var(--ink-muted); }
 
         .lp-divider { width: 48px; height: 2px; background: var(--accent); margin: 0 auto; }
@@ -84,6 +219,8 @@ export default function HomePage() {
         .lp-footer a { color: var(--ink-muted); text-decoration: none; }
       `}</style>
 
+      {showModal && <RegisterModal onClose={() => setShowModal(false)} />}
+
       <div className="lp-body">
 
         {/* NAV */}
@@ -91,7 +228,9 @@ export default function HomePage() {
           <a href="/" className="lp-logo">Cogletta</a>
           <div className="lp-nav-links">
             <Link href="/login">Sign in</Link>
-            <Link href="/register" className="lp-btn-nav">Start reading</Link>
+            <button onClick={() => setShowModal(true)} className="lp-btn-nav" style={{ background: "var(--ink)", color: "var(--white)", border: "none", cursor: "pointer", padding: "8px 18px", borderRadius: 6, fontWeight: 500, fontSize: "0.875rem" }}>
+              Start reading
+            </button>
           </div>
         </nav>
 
@@ -103,8 +242,10 @@ export default function HomePage() {
             Every morning, three long-form articles on the topics you actually care about —
             curated and delivered to your inbox. No algorithm, no noise.
           </p>
-          <Link href="/register" className="lp-cta">Start reading for free →</Link>
-          <span className="lp-note"> No credit card required</span>
+          <button onClick={() => setShowModal(true)} className="lp-cta">
+            Start reading for free →
+          </button>
+          <span className="lp-note">Subscribe to get 3 articles tailored to your interests daily.</span>
         </section>
 
         <div className="lp-divider" />
@@ -164,7 +305,7 @@ export default function HomePage() {
               {[
                 { n: "01", title: "Choose your topics", body: "Pick three interest areas from 15 categories — history, economics, science, world politics, and more." },
                 { n: "02", title: "AI reads the web", body: "Every day, hundreds of sources are scanned. Only the best long-form article per category makes the cut." },
-                { n: "03", title: "Read at 07:00", body: "Your three articles arrive every morning — on your dashboard and in your inbox, ready to read or listen to." },
+                { n: "03", title: "Read at 07:00", body: "Your three articles arrive every morning — on your dashboard and in your inbox, ready to read." },
               ].map(s => (
                 <div key={s.n} className="lp-step">
                   <div className="lp-step-num">{s.n}</div>
@@ -183,9 +324,9 @@ export default function HomePage() {
           <div className="lp-features">
             {[
               { icon: "📰", title: "3 curated articles daily", body: "Long-form, substantive pieces from think-tanks, academic journals, and quality publications. No clickbait." },
-              { icon: "🎧", title: "Audio edition", body: "Every article comes with a natural-voice audio version. Listen on your commute, walk, or while making coffee." },
               { icon: "✉️", title: "Daily email digest", body: "Your three articles delivered to your inbox every morning at 07:00. Clean, readable." },
               { icon: "💡", title: "Why we picked this for you", body: "Each article comes with a short editorial note — why this piece, why today, why it's worth your time." },
+              { icon: "⚙️", title: "15 interest categories", body: "From world politics and economics to science, history, arts and more. You choose what matters to you." },
             ].map(f => (
               <div key={f.title} className="lp-feature">
                 <div className="lp-feature-icon">{f.icon}</div>
@@ -210,7 +351,7 @@ export default function HomePage() {
                 Britain's invasion fiction tracks a fascinating arc — the 19th-century fear of foreign attack gradually morphed into
                 something more psychologically complex, a fear of internal collapse dressed in external threat.
                 If you've ever wondered why certain anxieties resurface in politics every generation,
-                this is the literary genealogy that explains it. <a href="/register">Read full article →</a>
+                this is the literary genealogy that explains it. <a href="#" onClick={e => { e.preventDefault(); setShowModal(true); }}>Read full article →</a>
               </p>
             </div>
 
@@ -221,7 +362,7 @@ export default function HomePage() {
               <p className="lp-art-text">
                 Three powers, one calculation: as Israel intensifies strikes on Hezbollah, the calculus for a nuclear agreement
                 shifts in real time. This piece cuts through the noise to show how tactical military decisions
-                ripple into diplomatic channels in ways that aren't obvious from headlines alone. <a href="/register">Read full article →</a>
+                ripple into diplomatic channels in ways that aren't obvious from headlines alone. <a href="#" onClick={e => { e.preventDefault(); setShowModal(true); }}>Read full article →</a>
               </p>
             </div>
           </div>
@@ -234,17 +375,21 @@ export default function HomePage() {
             We don't advertise, we don't manipulate algorithms.
             We grow because readers share us with people they trust.
           </p>
-          <Link href="/register" className="lp-cta">Read your first three articles →</Link>
-          <span className="lp-note">Takes 30 seconds to set up</span>
+          <button onClick={() => setShowModal(true)} className="lp-cta">
+            Read your first three articles →
+          </button>
+          <span className="lp-note">Free forever · Takes 30 seconds to set up</span>
         </div>
 
         {/* FOOTER */}
         <footer className="lp-footer">
-          <p>© 2026 Cogletta </p>
+          <p>© 2026 Cogletta</p>
           <p>
             <Link href="/login">Sign in</Link>
             {" · "}
-            <Link href="/register">Register</Link>
+            <Link href="/legal">Terms</Link>
+            {" · "}
+            <Link href="/legal">Privacy</Link>
             {" · "}
             <a href="mailto:read@cogletta.com">read@cogletta.com</a>
           </p>
