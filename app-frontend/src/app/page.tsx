@@ -101,10 +101,10 @@ export default function HomePage() {
           <h1 className="lp-h1">Read what<br /><em>matters to you.</em></h1>
           <p className="lp-sub">
             Every morning, three long-form articles on the topics you actually care about —
-            curated by AI, delivered to your inbox. No algorithm, no noise.
+            curated and delivered to your inbox. No algorithm, no noise.
           </p>
           <Link href="/register" className="lp-cta">Start reading for free →</Link>
-          <span className="lp-note">Free forever · No credit card required</span>
+          <span className="lp-note"> No credit card required</span>
         </section>
 
         <div className="lp-divider" />
@@ -235,7 +235,7 @@ export default function HomePage() {
             We grow because readers share us with people they trust.
           </p>
           <Link href="/register" className="lp-cta">Read your first three articles →</Link>
-          <span className="lp-note">Free forever · Takes 30 seconds to set up</span>
+          <span className="lp-note">Takes 30 seconds to set up</span>
         </div>
 
         {/* FOOTER */}
