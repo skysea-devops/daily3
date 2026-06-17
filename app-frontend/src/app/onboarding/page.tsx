@@ -8,78 +8,18 @@ import { useAuth } from "@/lib/auth-context";
 import { RequireOnboarding } from "@/components/Guards";
 
 export const CATEGORIES: { id: string; label: string; emoji: string; description: string }[] = [
-  {
-    id:          "Software & DevOps",
-    label:       "Software & DevOps",
-    emoji:       "🛠️",
-    description: "Architecture, system design, cloud, CI/CD",
-  },
-  {
-    id:          "Technology",
-    label:       "Technology",
-    emoji:       "💡",
-    description: "AI, product, innovation, industry trends",
-  },
-  {
-    id:          "World Politics",
-    label:       "World Politics",
-    emoji:       "🌍",
-    description: "Geopolitics, policy, international affairs",
-  },
-  {
-    id:          "Business",
-    label:       "Business",
-    emoji:       "📈",
-    description: "Strategy, leadership, management thinking",
-  },
-  {
-    id:          "Economics",
-    label:       "Economics",
-    emoji:       "💰",
-    description: "Markets, finance, economic trends",
-  },
-  {
-    id:          "Science",
-    label:       "Science",
-    emoji:       "🔬",
-    description: "Research, discoveries, physics, biology",
-  },
-  {
-    id:          "Productivity",
-    label:       "Productivity",
-    emoji:       "⚡",
-    description: "Focus, habits, tools, mental models",
-  },
-  {
-    id:          "History",
-    label:       "History",
-    emoji:       "🏛️",
-    description: "Ancient to modern, events, civilizations",
-  },
-  {
-    id:          "Arts & Culture",
-    label:       "Arts & Culture",
-    emoji:       "🎭",
-    description: "Literature, film, music, criticism",
-  },
-  {
-    id:          "Military",
-    label:       "Military",
-    emoji:       "⚔️",
-    description: "Strategy, defense policy, military history",
-  },
-  {
-    id:          "Health",
-    label:       "Health",
-    emoji:       "🧬",
-    description: "Medicine, mental health, longevity, well-being",
-  },
-  {
-    id:          "Environment",
-    label:       "Environment",
-    emoji:       "🌿",
-    description: "Climate, ecology, sustainability, energy",
-  },
+  { id: "Software & DevOps", label: "Software & DevOps", emoji: "🛠️", description: "Architecture, system design, cloud, CI/CD" },
+  { id: "Technology", label: "Technology", emoji: "💡", description: "AI, product, innovation, industry trends" },
+  { id: "World Politics", label: "World Politics", emoji: "🌍", description: "Geopolitics, policy, international affairs" },
+  { id: "Business", label: "Business", emoji: "📈", description: "Strategy, leadership, management thinking" },
+  { id: "Economics", label: "Economics", emoji: "💰", description: "Markets, finance, economic trends" },
+  { id: "Science", label: "Science", emoji: "🔬", description: "Research, discoveries, physics, biology" },
+  { id: "Productivity", label: "Productivity", emoji: "⚡", description: "Focus, habits, tools, mental models" },
+  { id: "History", label: "History", emoji: "🏛️", description: "Ancient to modern, events, civilizations" },
+  { id: "Arts & Culture", label: "Arts & Culture", emoji: "🎭", description: "Literature, film, music, criticism" },
+  { id: "Military", label: "Military", emoji: "⚔️", description: "Strategy, defense policy, military history" },
+  { id: "Health", label: "Health", emoji: "🧬", description: "Medicine, mental health, longevity, well-being" },
+  { id: "Environment", label: "Environment", emoji: "🌿", description: "Climate, ecology, sustainability, energy" },
 ];
 
 function OnboardingForm() {
@@ -115,21 +55,27 @@ function OnboardingForm() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <Navbar />
+      <main style={{ maxWidth: 800, margin: "0 auto", padding: "48px 24px" }}>
 
-      <main className="mx-auto max-w-3xl px-6 py-12">
-        <p className="text-sm font-medium text-gray-400">Step 1 of 1</p>
+        <p style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--ink-muted)", marginBottom: 12 }}>
+          Step 1 of 1
+        </p>
 
-        <h1 className="mt-3 text-4xl font-bold tracking-tight">
+        <h1 style={{ fontSize: "2.25rem", fontWeight: 700, color: "var(--ink)", marginBottom: 12, lineHeight: 1.2 }}>
           Choose your 3 interests
         </h1>
 
-        <p className="mt-3 text-gray-500">
+        <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: 32 }}>
           Cogletta will curate one in-depth article per category, every day.
         </p>
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 12,
+        }}>
           {CATEGORIES.map((cat) => {
             const isSelected = selected.includes(cat.id);
             const isDisabled = !isSelected && selected.length === 3;
@@ -139,19 +85,31 @@ function OnboardingForm() {
                 key={cat.id}
                 onClick={() => toggleCategory(cat.id)}
                 disabled={isDisabled}
-                className={`rounded-2xl border p-4 text-left transition-all ${
-                  isSelected
-                    ? "border-black bg-black text-white"
-                    : isDisabled
-                    ? "cursor-not-allowed border-gray-100 bg-gray-50 opacity-40"
-                    : "border-gray-200 bg-white hover:border-gray-400"
-                }`}
+                style={{
+                  border: `1.5px solid ${isSelected ? "var(--ink)" : "var(--rule)"}`,
+                  borderRadius: 16,
+                  padding: "16px",
+                  textAlign: "left",
+                  cursor: isDisabled ? "not-allowed" : "pointer",
+                  background: isSelected ? "var(--ink)" : "var(--white)",
+                  opacity: isDisabled ? 0.4 : 1,
+                  transition: "all 0.15s",
+                }}
               >
-                <span className="text-2xl">{cat.emoji}</span>
-                <p className={`mt-2 font-medium ${isSelected ? "text-white" : "text-gray-900"}`}>
+                <span style={{ fontSize: "1.5rem" }}>{cat.emoji}</span>
+                <p style={{
+                  marginTop: 8, marginBottom: 4,
+                  fontWeight: 600, fontSize: "0.9375rem",
+                  color: isSelected ? "var(--white)" : "var(--ink)",
+                }}>
                   {cat.label}
                 </p>
-                <p className={`mt-0.5 text-xs ${isSelected ? "text-gray-300" : "text-gray-400"}`}>
+                <p style={{
+                  fontSize: "0.75rem",
+                  color: isSelected ? "rgba(255,255,255,0.65)" : "var(--ink-muted)",
+                  lineHeight: 1.4,
+                  margin: 0,
+                }}>
                   {cat.description}
                 </p>
               </button>
@@ -159,8 +117,8 @@ function OnboardingForm() {
           })}
         </div>
 
-        <div className="mt-8 flex items-center justify-between">
-          <p className="text-sm text-gray-400">
+        <div style={{ marginTop: 32, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>
             {selected.length === 3
               ? "Perfect! Ready to continue."
               : `Select ${3 - selected.length} more`}
@@ -169,7 +127,18 @@ function OnboardingForm() {
           <button
             onClick={continueToDashboard}
             disabled={selected.length !== 3 || loading}
-            className="rounded-xl bg-black px-6 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-30"
+            style={{
+              background: "var(--ink)",
+              color: "var(--white)",
+              border: "none",
+              borderRadius: 12,
+              padding: "12px 24px",
+              fontSize: "0.9375rem",
+              fontWeight: 600,
+              cursor: selected.length !== 3 || loading ? "not-allowed" : "pointer",
+              opacity: selected.length !== 3 || loading ? 0.3 : 1,
+              transition: "opacity 0.15s",
+            }}
           >
             {loading ? "Saving..." : "Continue →"}
           </button>

@@ -13,7 +13,7 @@ function buildWelcomeHtml(email: string): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Welcome to ${APP_NAME}</title>
+  <title>"Welcome and thanks for joinning ${APP_NAME} — your daily reading starts now"</title>
 </head>
 <body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;">
