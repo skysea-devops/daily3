@@ -33,12 +33,18 @@ function buildWelcomeHtml(email: string): string {
           <tr>
             <td style="padding:32px 36px;">
 
-              <p style="margin:0 0 20px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                Thanks for joining ${APP_NAME}. It means a lot to have you here. The idea for ${APP_NAME} came from a feeling —
+              <p style="margin:0 0 28px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+                Thanks for joining ${APP_NAME}. It means a lot to have you here.
               </p>
 
+              <p style="margin:0 0 8px 0;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9ca3af;">The Name</p>
+              <p style="margin:0 0 28px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+                The name blends two Latin roots. <em>Cognito</em> means "to know" or "to understand" — the origin of the modern word cognition. <em>Collecta</em> means "gathered together" or "carefully collected." Together, they express what ${APP_NAME} is built to do.
+              </p>
+
+              <p style="margin:0 0 8px 0;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9ca3af;">The Idea</p>
               <p style="margin:0 0 20px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                I once realized that after spending time on my phone, when I put it down, I couldn't remember anything tangible. Social media, news sites, video platforms show me things — but are these things really what matters to me? And there's so much out there that choosing what to read has become stressful in itself.
+                The idea for ${APP_NAME} came from a feeling that I once realized that after spending time on my phone, when I put it down, I couldn't remember anything tangible. Social media, news sites, video platforms show me things — but are these things really what matters to me? And there's so much out there that choosing what to read has become stressful in itself.
               </p>
 
               <p style="margin:0 0 20px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
@@ -49,13 +55,13 @@ function buildWelcomeHtml(email: string): string {
                 That's why I created ${APP_NAME}. Three articles every morning on topics you choose. No noise. Focus.
               </p>
 
-              <p style="margin:0 0 20px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+              <p style="margin:0 0 28px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
                 If you think like me — welcome. You're in the right place.
               </p>
 
-              <p style="margin:0 0 28px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                Thanks to AI-powered ${APP_NAME}, hundreds of sources are scanned every day and we select what is truly worth your attention based on your interests.
-              </p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px 0;">
+                <tr><td style="border-top:1px solid #f3f4f6;"></td></tr>
+              </table>
 
               <p style="margin:0 0 12px 0;font-size:14px;font-weight:700;color:#111827;">Here's what we share with you every day:</p>
 
@@ -73,7 +79,7 @@ function buildWelcomeHtml(email: string): string {
                     <span style="font-size:14px;color:#9ca3af;">→</span>
                   </td>
                   <td style="padding:0 0 0 16px;">
-                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">An audio version of each article — listen on your commute, walk, or while making coffee</p>
+                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">A short editorial note on each article — why this piece, why today, why it matters</p>
                   </td>
                 </tr>
               </table>
@@ -160,13 +166,23 @@ function buildWelcomeHtml(email: string): string {
 function buildWelcomeText(email: string): string {
   return `Welcome to ${APP_NAME}!
 
-Thanks for joining ${APP_NAME}. It means a lot to have you here. The idea for ${APP_NAME} came from a feeling —
+Thanks for joining ${APP_NAME}. It means a lot to have you here.
 
-I once realized that after spending time on my phone, when I put it down, I couldn't remember anything tangible. That's why I created ${APP_NAME} — three articles every morning on topics you choose. No noise. Focus.
+THE NAME
+The name blends two Latin roots. Cognito means "to know" or "to understand" — the origin of the modern word cognition. Collecta means "gathered together" or "carefully collected." Together, they express what ${APP_NAME} is built to do.
+
+THE IDEA
+The idea for ${APP_NAME} came from a feeling that I once realized that after spending time on my phone, when I put it down, I couldn't remember anything tangible. Social media, news sites, video platforms show me things — but are these things really what matters to me? And there's so much out there that choosing what to read has become stressful in itself.
+
+I thought about how I used to read. I would pick up a magazine, follow topics that made sense to me. That feeling was gone.
+
+That's why I created ${APP_NAME}. Three articles every morning on topics you choose. No noise. Focus.
+
+If you think like me — welcome. You're in the right place.
 
 Here's what we share with you every day:
 → Three carefully selected articles based on your interests
-→ An audio version of each article
+→ A short editorial note on each article — why this piece, why today, why it matters
 
 Go to your dashboard: ${APP_URL}/dashboard
 
@@ -179,7 +195,6 @@ ${CONTACT_EMAIL}`;
 }
 
 export const handler = async (event: any): Promise<any> => {
-  // Sadece email doğrulama sonrası tetikle (ConfirmSignUp)
   if (event.triggerSource !== "PostConfirmation_ConfirmSignUp") {
     return event;
   }
