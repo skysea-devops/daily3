@@ -129,3 +129,4 @@ function InterestsForm() {
 export default function InterestsPage() {
   return <RequireAuth><InterestsForm /></RequireAuth>;
 }
+
