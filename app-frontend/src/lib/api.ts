@@ -69,6 +69,7 @@ export async function getUserProfile(accessToken: string): Promise<{
 export interface ArticleResponse {
   status:      "ready" | "pending";
   articles:    import("./types").Article[];
+  podcast:     import("./types").Podcast | null;
   generatedAt: string | null;
 }
 
@@ -94,3 +95,4 @@ export async function getDailyArticles(
   if (!response.ok) throw new Error("Failed to fetch articles");
   return response.json();
 }
+

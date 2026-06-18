@@ -228,24 +228,23 @@ export default function HomePage() {
           <a href="/" className="lp-logo">Cogletta</a>
           <div className="lp-nav-links">
             <Link href="/login">Sign in</Link>
-            <button onClick={() => setShowModal(true)} className="lp-btn-nav" style={{ background: "var(--ink)", color: "var(--white)", border: "none", cursor: "pointer", padding: "8px 18px", borderRadius: 6, fontWeight: 500, fontSize: "0.875rem" }}>
+            <Link href="/register" className="lp-btn-nav" style={{ background: "var(--ink)", color: "var(--white)", padding: "8px 18px", borderRadius: 6, fontWeight: 500, fontSize: "0.875rem", textDecoration: "none" }}>
               Start reading
-            </button>
+            </Link>
           </div>
         </nav>
 
         {/* HERO */}
         <section className="lp-hero">
-          <span className="lp-eyebrow">Three articles. Every morning.</span>
+          <span className="lp-eyebrow">Curated for you. Every morning.</span>
           <h1 className="lp-h1">Read what<br /><em>matters to you.</em></h1>
           <p className="lp-sub">
-            Every morning, three long-form articles on the topics you actually care about —
-            curated and delivered to your inbox. No algorithm, no noise.
+            Every morning, a carefully selected long-form article and a podcast episode on the topic you actually care about — curated and delivered to your inbox. No algorithm, no noise.
           </p>
           <button onClick={() => setShowModal(true)} className="lp-cta">
             Start reading for free →
           </button>
-          <span className="lp-note">Subscribe to get 3 articles tailored to your interests daily.</span>
+          <span className="lp-note">Subscribe to get a curated article and podcast every morning.</span>
         </section>
 
         <div className="lp-divider" />
@@ -290,7 +289,7 @@ export default function HomePage() {
             to me. <strong>That feeling was gone.</strong>
           </p>
           <p className="lp-p">
-            That's why I built Cogletta. Three articles every morning on topics you choose.
+            That's why I built Cogletta. An article and a podcast every morning on the topic you choose.
             No noise. Focus. If you think like me — you're in the right place.
           </p>
           <p className="lp-sig">— The Cogletta team</p>
@@ -303,9 +302,9 @@ export default function HomePage() {
             <h2 className="lp-h2">Simple by design. Powerful under the hood.</h2>
             <div className="lp-steps">
               {[
-                { n: "01", title: "Choose your topics", body: "Pick three interest areas from 15 categories — history, economics, science, world politics, and more." },
+                { n: "01", title: "Choose your topic", body: "Pick one interest area from 15 categories — history, economics, science, world politics, and more." },
                 { n: "02", title: "AI reads the web", body: "Every day, hundreds of sources are scanned. Only the best long-form article per category makes the cut." },
-                { n: "03", title: "Read at 07:00", body: "Your three articles arrive every morning — on your dashboard and in your inbox, ready to read." },
+                { n: "03", title: "Ready at 07:00", body: "Your article and podcast episode arrive every morning — on your dashboard and in your inbox, ready to read." },
               ].map(s => (
                 <div key={s.n} className="lp-step">
                   <div className="lp-step-num">{s.n}</div>
@@ -323,10 +322,10 @@ export default function HomePage() {
           <h2 className="lp-h2">Everything you need to build a reading habit.</h2>
           <div className="lp-features">
             {[
-              { icon: "📰", title: "3 curated articles daily", body: "Long-form, substantive pieces from think-tanks, academic journals, and quality publications. No clickbait." },
-              { icon: "✉️", title: "Daily email digest", body: "Your three articles delivered to your inbox every morning at 07:00. Clean, readable." },
+              { icon: "📰", title: "1 curated article daily", body: "Long-form, substantive pieces from think-tanks, academic journals, and quality publications. No clickbait." },
+              { icon: "✉️", title: "Daily email digest", body: "Your article and podcast delivered to your inbox every morning at 07:00. Clean, readable." },
               { icon: "💡", title: "Why we picked this for you", body: "Each article comes with a short editorial note — why this piece, why today, why it's worth your time." },
-              { icon: "⚙️", title: "15 interest categories", body: "From world politics and economics to science, history, arts and more. You choose what matters to you." },
+              { icon: "🎙", title: "1 podcast episode daily", body: "A carefully selected episode from top podcasts in your interest area — paired with your article every morning." },
             ].map(f => (
               <div key={f.title} className="lp-feature">
                 <div className="lp-feature-icon">{f.icon}</div>
@@ -376,14 +375,14 @@ export default function HomePage() {
             We grow because readers share us with people they trust.
           </p>
           <button onClick={() => setShowModal(true)} className="lp-cta">
-            Read your first three articles →
+            Start reading for free →
           </button>
           <span className="lp-note">Free forever · Takes 30 seconds to set up</span>
         </div>
 
         {/* FOOTER */}
         <footer className="lp-footer">
-          <p>© 2026 Cogletta</p>
+          <p>© 2026 Cogletta · 1 article + 1 podcast, every morning</p>
           <p>
             <Link href="/login">Sign in</Link>
             {" · "}
