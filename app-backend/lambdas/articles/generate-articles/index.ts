@@ -722,8 +722,21 @@ Respond ONLY with valid JSON (no markdown):
   const text     = raw.content[0].text
     .trim()
     .replace(/^```json\s*/i, "")
-    .replace(/\s*```$/i, "");
-  const parsed = JSON.parse(text) as BedrockSelection;
+    .replace(/\s*```$/i, "")
+    .replace(/[\u0000-\u001F\u007F]/g, " "); // control chars temizle
+
+  let parsed: BedrockSelection;
+  try {
+    parsed = JSON.parse(text) as BedrockSelection;
+  } catch {
+    console.warn("Bedrock JSON parse failed, using index 0. Raw:", text.slice(0, 200));
+    parsed = { selectedIndex: 0, summary: "", reason: "", readingTime: "~5 min read" };
+  }
+
+  // selectedIndex güvenlik kontrolü
+  if (typeof parsed.selectedIndex !== "number" || isNaN(parsed.selectedIndex)) {
+    parsed.selectedIndex = 0;
+  }
 
   const cleanStr = (s: string) => s
     .replace(/&#8217;/g, "'").replace(/&#8216;/g, "'")
@@ -806,8 +819,20 @@ Respond ONLY with valid JSON (no markdown):
   const text     = raw.content[0].text
     .trim()
     .replace(/^```json\s*/i, "")
-    .replace(/\s*```$/i, "");
-  const parsed = JSON.parse(text) as BedrockPodcastSelection;
+    .replace(/\s*```$/i, "")
+    .replace(/[\u0000-\u001F\u007F]/g, " ");
+
+  let parsed: BedrockPodcastSelection;
+  try {
+    parsed = JSON.parse(text) as BedrockPodcastSelection;
+  } catch {
+    console.warn("Podcast Bedrock JSON parse failed, using index 0. Raw:", text.slice(0, 200));
+    parsed = { selectedIndex: 0, summary: "", reason: "", duration: "" };
+  }
+
+  if (typeof parsed.selectedIndex !== "number" || isNaN(parsed.selectedIndex)) {
+    parsed.selectedIndex = 0;
+  }
 
   const cleanStr = (s: string) => s
     .replace(/&#8217;/g, "'").replace(/&#8216;/g, "'")
@@ -951,7 +976,12 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
 
     const top10     = candidates.slice(0, 10);
     const selection = await selectBestArticle(top10, interest, history);
-    const chosen    = top10[Math.min(selection.selectedIndex, top10.length - 1)];
+    const idx       = typeof selection.selectedIndex === "number" && !isNaN(selection.selectedIndex)
+                      ? Math.max(0, Math.min(selection.selectedIndex, top10.length - 1))
+                      : 0;
+    const chosen    = top10[idx] ?? top10[0];
+
+    if (!chosen) throw new Error(`No candidate available after selection for: ${interest}`);
 
     article = {
       category:    interest,
@@ -960,7 +990,7 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
       reason:      selection.reason,
       url:         chosen.url,
       source:      chosen.sourceName,
-      readingTime: selection.readingTime,
+      readingTime: selection.readingTime || "~5 min read",
       publishedAt: chosen.pubDate || new Date().toISOString(),
     };
   } catch (err) {
@@ -994,9 +1024,14 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
 
     console.log(`${interest}: ${podItems.length} raw → ${podCandidates.length} podcast candidates`);
 
-    const top10pod    = podCandidates.slice(0, 10);
+    const top10pod     = podCandidates.slice(0, 10);
     const podSelection = await selectBestPodcast(top10pod, interest, history);
-    const chosenPod   = top10pod[Math.min(podSelection.selectedIndex, top10pod.length - 1)];
+    const podIdx       = typeof podSelection.selectedIndex === "number" && !isNaN(podSelection.selectedIndex)
+                         ? Math.max(0, Math.min(podSelection.selectedIndex, top10pod.length - 1))
+                         : 0;
+    const chosenPod    = top10pod[podIdx] ?? top10pod[0];
+
+    if (!chosenPod) throw new Error(`No podcast candidate after selection for: ${interest}`);
 
     podcast = {
       category:    interest,
