@@ -29,17 +29,13 @@ function OnboardingForm() {
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  function toggleCategory(id: string) {
-    if (selected.includes(id)) {
-      setSelected(selected.filter((c) => c !== id));
-      return;
-    }
-    if (selected.length === 3) return;
-    setSelected([...selected, id]);
+  function selectCategory(id: string) {
+    // Free plan: sadece 1 seçim — öncekinin üzerine yaz
+    setSelected([id]);
   }
 
   async function continueToDashboard() {
-    if (selected.length !== 3 || !user) return;
+    if (selected.length !== 1 || !user) return;
     setLoading(true);
     try {
       await updateUserInterests(selected, user.accessToken);
@@ -64,11 +60,11 @@ function OnboardingForm() {
         </p>
 
         <h1 style={{ fontSize: "2.25rem", fontWeight: 700, color: "var(--ink)", marginBottom: 12, lineHeight: 1.2 }}>
-          Choose your 3 interests
+          Choose your interest
         </h1>
 
         <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: 32 }}>
-          Cogletta will curate one in-depth article per category, every day.
+          Cogletta will curate one in-depth article and one podcast episode for you every day.
         </p>
 
         <div style={{
@@ -78,21 +74,18 @@ function OnboardingForm() {
         }}>
           {CATEGORIES.map((cat) => {
             const isSelected = selected.includes(cat.id);
-            const isDisabled = !isSelected && selected.length === 3;
 
             return (
               <button
                 key={cat.id}
-                onClick={() => toggleCategory(cat.id)}
-                disabled={isDisabled}
+                onClick={() => selectCategory(cat.id)}
                 style={{
                   border: `1.5px solid ${isSelected ? "var(--ink)" : "var(--rule)"}`,
                   borderRadius: 16,
                   padding: "16px",
                   textAlign: "left",
-                  cursor: isDisabled ? "not-allowed" : "pointer",
+                  cursor: "pointer",
                   background: isSelected ? "var(--ink)" : "var(--white)",
-                  opacity: isDisabled ? 0.4 : 1,
                   transition: "all 0.15s",
                 }}
               >
@@ -119,14 +112,14 @@ function OnboardingForm() {
 
         <div style={{ marginTop: 32, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>
-            {selected.length === 3
-              ? "Perfect! Ready to continue."
-              : `Select ${3 - selected.length} more`}
+            {selected.length === 1
+              ? `${CATEGORIES.find(c => c.id === selected[0])?.emoji} ${selected[0]} selected`
+              : "Pick one topic to get started"}
           </p>
 
           <button
             onClick={continueToDashboard}
-            disabled={selected.length !== 3 || loading}
+            disabled={selected.length !== 1 || loading}
             style={{
               background: "var(--ink)",
               color: "var(--white)",
@@ -135,8 +128,8 @@ function OnboardingForm() {
               padding: "12px 24px",
               fontSize: "0.9375rem",
               fontWeight: 600,
-              cursor: selected.length !== 3 || loading ? "not-allowed" : "pointer",
-              opacity: selected.length !== 3 || loading ? 0.3 : 1,
+              cursor: selected.length !== 1 || loading ? "not-allowed" : "pointer",
+              opacity: selected.length !== 1 || loading ? 0.3 : 1,
               transition: "opacity 0.15s",
             }}
           >

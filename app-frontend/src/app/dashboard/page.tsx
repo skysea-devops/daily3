@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import { getDailyArticles } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
-import type { Article } from "@/lib/types";
+import type { Article, Podcast } from "@/lib/types";
 
 const UNSPLASH_ACCESS_KEY = "rp-OBp3MMcxOlSCIV6GyPh3DOkX4IgmEGq8XBJQVnvs";
 
@@ -140,15 +140,66 @@ function ArticleCard({ article }: { article: Article }) {
   );
 }
 
-function PendingCard({ category }: { category: string }) {
-  const emoji = CATEGORY_EMOJI[category] ?? "📄";
+function PodcastCard({ podcast }: { podcast: Podcast }) {
+  const emoji = CATEGORY_EMOJI[podcast.category] ?? "🎙";
+
+  return (
+    <article style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: 16, overflow: "hidden" }}>
+      <div style={{ padding: "28px 28px 32px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{ flex: 1 }}>
+            {/* Header row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: "0.9rem" }}>🎙</span>
+              <span style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-muted)" }}>
+                Podcast · {podcast.category}
+              </span>
+            </div>
+
+            <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.25rem", fontWeight: 600, lineHeight: 1.35, color: "var(--ink)", marginBottom: 6 }}>
+              {podcast.title}
+            </h2>
+
+            <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)", fontWeight: 500, marginBottom: 16 }}>
+              {podcast.source} · {podcast.duration}
+            </p>
+
+            <p style={{ fontFamily: "'Lora', serif", fontSize: "0.9375rem", lineHeight: 1.75, color: "var(--ink-soft)", marginBottom: 16 }}>
+              {podcast.summary}
+            </p>
+
+            <div style={{ background: "var(--paper-warm)", border: "1px solid var(--rule)", borderRadius: 10, padding: "14px 16px" }}>
+              <p style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-muted)", marginBottom: 4 }}>
+                Why we picked this for you
+              </p>
+              <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.6 }}>{podcast.reason}</p>
+            </div>
+          </div>
+
+          <a href={podcast.url} target="_blank" rel="noreferrer"
+            style={{
+              textAlign: "center", background: "var(--accent)", color: "var(--white)",
+              borderRadius: 10, padding: "10px 20px", fontSize: "0.875rem",
+              fontWeight: 600, textDecoration: "none",
+            }}>
+            🎙 Listen →
+          </a>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function PendingCard({ category, type = "article" }: { category: string; type?: "article" | "podcast" }) {
+  const emoji = type === "podcast" ? "🎙" : (CATEGORY_EMOJI[category] ?? "📄");
+  const label = type === "podcast" ? `Podcast · ${category}` : category;
   return (
     <article style={{ background: "var(--white)", border: "1px dashed var(--rule)", borderRadius: 16, overflow: "hidden", opacity: 0.7 }}>
-      <div style={{ height: 120, background: "var(--paper-warm)", animation: "pulse 2s infinite" }} />
+      <div style={{ height: 80, background: "var(--paper-warm)", animation: "pulse 2s infinite" }} />
       <div style={{ padding: 28 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
           <span>{emoji}</span>
-          <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--ink-muted)" }}>{category}</span>
+          <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--ink-muted)" }}>{label}</span>
         </div>
         <div style={{ height: 16, background: "var(--paper-warm)", borderRadius: 6, marginBottom: 10, width: "75%" }} />
         <div style={{ height: 16, background: "var(--paper-warm)", borderRadius: 6, width: "50%" }} />
@@ -159,14 +210,18 @@ function PendingCard({ category }: { category: string }) {
 
 function DashboardContent() {
   const { user } = useAuth();
-  const [articles, setArticles]       = useState<Article[]>([]);
+  const [article, setArticle]         = useState<Article | null>(null);
+  const [podcast, setPodcast]         = useState<Podcast | null>(null);
   const [status, setStatus]           = useState<"loading" | "ready" | "pending" | "error">("loading");
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
-  const [interests, setInterests]     = useState<string[]>([]);
+  const [interest, setInterest]       = useState<string>("");
 
   useEffect(() => {
     const stored = localStorage.getItem("cogletta-categories");
-    if (stored) setInterests(JSON.parse(stored));
+    if (stored) {
+      const cats = JSON.parse(stored) as string[];
+      if (cats.length > 0) setInterest(cats[0]);
+    }
   }, []);
 
   useEffect(() => {
@@ -177,7 +232,8 @@ function DashboardContent() {
         const data = await getDailyArticles(user!.accessToken);
         if (cancelled) return;
         if (data.status === "ready" && data.articles.length > 0) {
-          setArticles(data.articles);
+          setArticle(data.articles[0]);
+          setPodcast(data.podcast ?? null);
           setGeneratedAt(data.generatedAt);
           setStatus("ready");
         } else {
@@ -207,29 +263,27 @@ function DashboardContent() {
             Your Cogletta
           </h1>
           <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)" }}>
-            Three carefully selected articles based on your interests.
+            Curated for you, every morning.
           </p>
         </div>
 
-        {/* Interest badges */}
-        {interests.length > 0 && (
+        {/* Interest badge */}
+        {interest && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 32 }}>
-            {interests.map(i => (
-              <span key={i} style={{
-                background: "var(--white)", border: "1px solid var(--rule)",
-                borderRadius: 20, padding: "5px 14px", fontSize: "0.8125rem",
-                fontWeight: 500, color: "var(--ink-soft)",
-              }}>
-                {CATEGORY_EMOJI[i]} {i}
-              </span>
-            ))}
+            <span style={{
+              background: "var(--white)", border: "1px solid var(--rule)",
+              borderRadius: 20, padding: "5px 14px", fontSize: "0.8125rem",
+              fontWeight: 500, color: "var(--ink-soft)",
+            }}>
+              {CATEGORY_EMOJI[interest]} {interest}
+            </span>
           </div>
         )}
 
         {/* Loading */}
         {status === "loading" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {[1,2,3].map(i => (
+            {[1, 2].map(i => (
               <div key={i} style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: 16, padding: 28 }}>
                 <div style={{ height: 12, background: "var(--paper-warm)", borderRadius: 6, width: "25%", marginBottom: 16 }} />
                 <div style={{ height: 20, background: "var(--paper-warm)", borderRadius: 6, width: "75%", marginBottom: 12 }} />
@@ -246,19 +300,21 @@ function DashboardContent() {
               background: "var(--paper-warm)", border: "1px solid var(--rule)",
               borderRadius: 12, padding: "16px 20px",
             }}>
-              <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "var(--accent)" }}>✦ Curating your articles…</p>
+              <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "var(--accent)" }}>✦ Curating your content…</p>
               <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", marginTop: 4 }}>
-                We're finding the best articles for you. This takes about 30 seconds.
+                We're finding the best article and podcast for you. This takes about 30 seconds.
               </p>
             </div>
-            {interests.map(i => <PendingCard key={i} category={i} />)}
+            {interest && <PendingCard category={interest} type="article" />}
+            {interest && <PendingCard category={interest} type="podcast" />}
           </div>
         )}
 
         {/* Ready */}
         {status === "ready" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {articles.map(a => <ArticleCard key={a.category} article={a} />)}
+            {article && <ArticleCard article={article} />}
+            {podcast && <PodcastCard podcast={podcast} />}
             {generatedAt && (
               <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--ink-muted)", paddingTop: 8 }}>
                 Curated at {new Date(generatedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · Refreshes tomorrow at 07:00
@@ -270,7 +326,7 @@ function DashboardContent() {
         {/* Error */}
         {status === "error" && (
           <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, padding: "16px 20px" }}>
-            <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#991b1b" }}>Failed to load articles.</p>
+            <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#991b1b" }}>Failed to load content.</p>
             <button onClick={() => setStatus("loading")} style={{ marginTop: 8, fontSize: "0.875rem", color: "#991b1b", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
               Try again
             </button>

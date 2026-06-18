@@ -7,7 +7,7 @@ import { signUp } from "@/lib/cognito";
 import Navbar from "@/components/Navbar";
 
 const FREE_FEATURES = [
-  "3 curated long-form articles in your interests daily",
+  "1 curated long-form article daily",
   "1 podcast recommendation daily",
   "15 interest categories to choose from",
   "Daily email digest",
@@ -16,10 +16,10 @@ const FREE_FEATURES = [
 
 const PRO_FEATURES = [
   "Everything in Free",
-  "6 sub-topics per category (granular selection)",
+  "3 interests, 3 articles daily",
+  "6 sub-topics per interest category",
   "Personalised prompt — AI picks articles for your specific focus",
   "3 podcast recommendations daily",
-  "3 video recommendations daily",
   "Weekly trend report every Sunday",
 ];
 
@@ -157,7 +157,7 @@ export default function RegisterPage() {
             Read what matters to you.
           </h1>
           <p style={{ fontSize: "1.0625rem", color: "var(--ink-soft)", maxWidth: 500, margin: "0 auto", lineHeight: 1.75 }}>
-            Every morning, three long-form articles selected for your interests — delivered to your inbox before you start your day.
+            Every morning, a curated article and a podcast episode selected for your interests — delivered to your inbox before you start your day.
           </p>
         </div>
       </div>
@@ -203,7 +203,7 @@ export default function RegisterPage() {
             <div style={{ marginBottom: 24 }}>
               <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)" }}>Pro</span>
               <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)", marginTop: 8, marginBottom: 8 }}>Go deeper</h2>
-              <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.65 }}>For serious readers. Granular personalisation, podcasts, videos, and weekly reports.</p>
+              <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.65 }}>For serious readers. More interests, deeper personalisation, and weekly reading reports.</p>
             </div>
             <ul style={{ flex: 1, listStyle: "none", marginBottom: 28, display: "flex", flexDirection: "column", gap: 12 }}>
               {PRO_FEATURES.map(f => (

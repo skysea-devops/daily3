@@ -24,13 +24,13 @@ function InterestsForm() {
 
   function toggleCategory(id: string) {
     if (selected.includes(id)) { setSelected(selected.filter(c => c !== id)); setSaved(false); return; }
-    if (selected.length === 3) return;
+    if (selected.length === 1) { setSelected([id]); setSaved(false); return; }
     setSelected([...selected, id]);
     setSaved(false);
   }
 
   async function handleSave() {
-    if (selected.length !== 3 || !user) return;
+    if (selected.length !== 1 || !user) return;
     setLoading(true);
     setSaved(false);
     setShowTomorrow(false);
@@ -62,7 +62,7 @@ function InterestsForm() {
           Your interests
         </h1>
         <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: 32 }}>
-          Select exactly 3 topics. Your articles refresh every morning at 07:00.
+          Select 1 topic. Your content refreshes every morning at 07:00.
         </p>
 
         {showTomorrow && (
@@ -84,15 +84,15 @@ function InterestsForm() {
         <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", marginBottom: 40 }}>
           {CATEGORIES.map(cat => {
             const isSelected = selected.includes(cat.id);
-            const isDisabled = !isSelected && selected.length === 3;
+            const isDisabled = false;
             return (
               <button key={cat.id} onClick={() => toggleCategory(cat.id)} disabled={isDisabled}
                 style={{
                   borderRadius: 12, padding: "18px 20px", textAlign: "left",
-                  cursor: isDisabled ? "not-allowed" : "pointer",
+                  cursor: "pointer",
                   border: isSelected ? "2px solid var(--accent)" : "1px solid var(--rule)",
                   background: isSelected ? "var(--accent)" : isDisabled ? "var(--paper-warm)" : "var(--white)",
-                  opacity: isDisabled ? 0.45 : 1,
+                  opacity: 1,
                   transition: "all 0.15s",
                 }}>
                 <span style={{ fontSize: "1.5rem" }}>{cat.emoji}</span>
@@ -109,14 +109,14 @@ function InterestsForm() {
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>
-            {selected.length === 3 ? "Ready to save." : `Select ${3 - selected.length} more`}
+            {selected.length === 1 ? `${selected[0]} selected` : "Pick one topic"}
           </p>
-          <button onClick={handleSave} disabled={selected.length !== 3 || loading || showTomorrow}
+          <button onClick={handleSave} disabled={selected.length !== 1 || loading || showTomorrow}
             style={{
               background: saved ? "#166534" : "var(--ink)",
               color: "var(--white)", border: "none", borderRadius: 10,
               padding: "12px 28px", fontSize: "0.9375rem", fontWeight: 600,
-              cursor: "pointer", opacity: (selected.length !== 3 || loading || showTomorrow) ? 0.3 : 1,
+              cursor: "pointer", opacity: (selected.length !== 1 || loading || showTomorrow) ? 0.3 : 1,
             }}>
             {loading ? "Saving..." : saved ? "Saved! ✓" : "Save interests"}
           </button>

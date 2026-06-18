@@ -5,7 +5,7 @@ import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { PollyClient, SynthesizeSpeechCommand } from "@aws-sdk/client-polly";
 import { S3Client, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { createHash } from "crypto";
-import { Article, DailyArticles, Keys } from "../../../shared/types";
+import { Article, Podcast, DailyArticles, Keys } from "../../../shared/types";
 
 const dynamo  = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const bedrock = new BedrockRuntimeClient({ region: process.env.AWS_REGION });
@@ -19,7 +19,7 @@ const SES_FROM_EMAIL   = process.env.SES_FROM_EMAIL!;
 const CORS_ORIGIN      = process.env.CORS_ORIGIN ?? "*";
 const AUDIO_BUCKET     = process.env.AUDIO_BUCKET_NAME!;
 
-// ─── RSS source map ───────────────────────────────────────────────────────────
+// ─── Article RSS source map ───────────────────────────────────────────────────
 
 const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
 
@@ -151,6 +151,106 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
 };
 
+// ─── Podcast RSS source map (all URLs verified) ─────────────────────────────
+const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
+
+  "Software & DevOps": [
+    { name: "Software Engineering Daily",  url: "https://softwareengineeringdaily.com/feed/podcast/" },
+    { name: "The Changelog",               url: "https://changelog.com/podcast/feed" },
+    { name: "Darknet Diaries",             url: "https://feeds.megaphone.fm/darknetdiaries" },
+    { name: "Hanselminutes",               url: "https://feeds.simplecast.com/gvtxUiIf" },
+    { name: "CoRecursive",                 url: "https://corecursive.com/feed" },
+  ],
+
+  "Technology": [
+    { name: "Lex Fridman Podcast",         url: "https://lexfridman.com/feed/podcast/" },
+    { name: "Hard Fork",                   url: "https://feeds.simplecast.com/l2i9YnTd" },
+    { name: "StarTalk Radio",              url: "https://feeds.simplecast.com/4T39_jAj" },
+    { name: "Wired Podcast",               url: "https://www.wired.com/feed/podcast/wired-podcast/rss" },
+    { name: "MIT Technology Review",       url: "https://www.technologyreview.com/feed/podcast/" },
+  ],
+
+  "World Politics": [
+    { name: "War on the Rocks",            url: "https://warontherocks.com/feed/podcast/" },
+    { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
+    { name: "BBC Global News Podcast",     url: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss" },
+    { name: "The Take (Al Jazeera)",       url: "https://feeds.megaphone.fm/aljazeera-the-take" },
+    { name: "From Our Own Correspondent",  url: "https://podcasts.files.bbci.co.uk/b006qjlq.rss" },
+  ],
+
+  "Business": [
+    { name: "The Tim Ferriss Show",        url: "https://rss.art19.com/tim-ferriss-show" },
+    { name: "How I Built This",            url: "https://feeds.npr.org/510313/podcast.xml" },
+    { name: "Masters of Scale",            url: "https://rss.art19.com/masters-of-scale" },
+    { name: "Invest Like the Best",        url: "https://feeds.megaphone.fm/investlikethebest" },
+    { name: "The Knowledge Project",       url: "https://fs.blog/knowledge-project-podcast/feed/" },
+  ],
+
+  "Economics": [
+    { name: "Planet Money",                url: "https://feeds.npr.org/510289/podcast.xml" },
+    { name: "EconTalk",                    url: "https://feeds.simplecast.com/wgl4xEgL" },
+    { name: "The Indicator",               url: "https://feeds.npr.org/510325/podcast.xml" },
+    { name: "Freakonomics Radio",          url: "https://feeds.simplecast.com/Y8lFbOT4" },
+    { name: "Fresh Air (Economics)",       url: "https://feeds.npr.org/381444908/podcast.xml" },
+  ],
+
+  "Science": [
+    { name: "In Our Time",                 url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
+    { name: "Science Friday",              url: "https://feeds.feedburner.com/sciencefriday" },
+    { name: "Huberman Lab",                url: "https://feeds.megaphone.fm/hubermanlab" },
+    { name: "Fresh Air (Science)",         url: "https://feeds.npr.org/381444908/podcast.xml" },
+    { name: "Lex Fridman Podcast",         url: "https://lexfridman.com/feed/podcast/" },
+  ],
+
+  "Productivity": [
+    { name: "Huberman Lab",                url: "https://feeds.megaphone.fm/hubermanlab" },
+    { name: "Hidden Brain",                url: "https://feeds.npr.org/510308/podcast.xml" },
+    { name: "The Tim Ferriss Show",        url: "https://rss.art19.com/tim-ferriss-show" },
+    { name: "The Knowledge Project",       url: "https://fs.blog/knowledge-project-podcast/feed/" },
+    { name: "Fresh Air",                   url: "https://feeds.npr.org/381444908/podcast.xml" },
+  ],
+
+  "History": [
+    { name: "Hardcore History",            url: "https://feeds.feedburner.com/dancarlin/history" },
+    { name: "In Our Time",                 url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
+    { name: "Throughline",                 url: "https://feeds.npr.org/510333/podcast.xml" },
+    { name: "American History Tellers",    url: "https://rss.art19.com/american-history-tellers" },
+    { name: "Fresh Air (History)",         url: "https://feeds.npr.org/381444908/podcast.xml" },
+  ],
+
+  "Arts & Culture": [
+    { name: "Switched on Pop",             url: "https://feeds.megaphone.fm/switchedonpop" },
+    { name: "99% Invisible",               url: "https://feeds.simplecast.com/BqbsxVfO" },
+    { name: "TED Talks Daily",             url: "https://feeds.megaphone.fm/TED9718394730" },
+    { name: "Fresh Air (Arts)",            url: "https://feeds.npr.org/381444908/podcast.xml" },
+    { name: "Friday Night Comedy (BBC)",   url: "https://podcasts.files.bbci.co.uk/p02pc9pj.rss" },
+  ],
+
+  "Military": [
+    { name: "War on the Rocks",            url: "https://warontherocks.com/feed/podcast/" },
+    { name: "Modern War Institute",        url: "https://mwi.westpoint.edu/category/podcasts/feed/" },
+    { name: "BBC Global News Podcast",     url: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss" },
+    { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
+    { name: "Throughline",                 url: "https://feeds.npr.org/510333/podcast.xml" },
+  ],
+
+  "Health": [
+    { name: "Huberman Lab",                url: "https://feeds.megaphone.fm/hubermanlab" },
+    { name: "Hidden Brain",                url: "https://feeds.npr.org/510308/podcast.xml" },
+    { name: "Fresh Air (Health)",          url: "https://feeds.npr.org/381444908/podcast.xml" },
+    { name: "In Our Time (Medicine)",      url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
+    { name: "Science Friday",              url: "https://feeds.feedburner.com/sciencefriday" },
+  ],
+
+  "Environment": [
+    { name: "How to Save a Planet",        url: "https://feeds.megaphone.fm/howtosaveaplanet" },
+    { name: "Costing the Earth",           url: "https://podcasts.files.bbci.co.uk/b006r4wn.rss" },
+    { name: "Fresh Air (Environment)",     url: "https://feeds.npr.org/381444908/podcast.xml" },
+    { name: "BBC Global News Podcast",     url: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss" },
+    { name: "Throughline",                 url: "https://feeds.npr.org/510333/podcast.xml" },
+  ],
+};
+
 // ─── RSS fetch & parse ────────────────────────────────────────────────────────
 
 interface RSSItem {
@@ -160,6 +260,7 @@ interface RSSItem {
   pubDate:      string;
   pubTimestamp: number;
   sourceName:   string;
+  duration?:    string; // podcast episodları için
 }
 
 function extractText(xml: string, tag: string): string {
@@ -198,7 +299,6 @@ function extractItems(xml: string, sourceName: string): RSSItem[] {
         .replace(/<[^>]+>/g, "").trim();
       const rawUrl = extractText(seg, "link") ||
         seg.match(/<link[^>]+href="([^"]+)"/)?.[1] || "";
-      // URL'deki HTML entity'leri temizle
       const url = rawUrl
         .replace(/&#038;/g, "&").replace(/&amp;/g, "&")
         .replace(/&#\d+;/g, "").trim();
@@ -210,6 +310,13 @@ function extractItems(xml: string, sourceName: string): RSSItem[] {
         extractText(seg, "pubDate") ||
         extractText(seg, "published") ||
         extractText(seg, "updated");
+
+      // Podcast duration — itunes:duration veya duration tag'inden
+      const durationRaw =
+        extractText(seg, "itunes:duration") ||
+        extractText(seg, "duration") || "";
+      const duration = durationRaw ? formatDuration(durationRaw) : "";
+
       const cleanDesc = description
         .replace(/<[^>]+>/g, " ")
         .replace(/&amp;/g, "&")
@@ -232,15 +339,26 @@ function extractItems(xml: string, sourceName: string): RSSItem[] {
         pubDate:      pubDateRaw,
         pubTimestamp: parsePubDate(pubDateRaw),
         sourceName,
+        duration,
       };
     })
     .filter((i) => i.title && i.url);
 }
 
+// "3600" → "60 min" | "1:02:30" → "62 min" | "45:00" → "45 min"
+function formatDuration(raw: string): string {
+  const parts = raw.split(":").map(Number);
+  let minutes = 0;
+  if (parts.length === 1)      minutes = Math.round(parts[0] / 60);
+  else if (parts.length === 2) minutes = parts[0] * 60 + parts[1];
+  else if (parts.length === 3) minutes = parts[0] * 60 + parts[1];
+  return minutes > 0 ? `${minutes} min` : "";
+}
+
 async function fetchRSSFeed(source: { name: string; url: string }): Promise<RSSItem[]> {
   const res = await fetch(source.url, {
     headers: {
-      "User-Agent": "Daily3Bot/1.0 (RSS Reader; +https://daily3.io)",
+      "User-Agent": "CoglettaBot/1.0 (RSS Reader; +https://cogletta.com)",
       Accept:       "application/rss+xml, application/atom+xml, application/xml, text/xml",
     },
     signal: AbortSignal.timeout(8000),
@@ -273,7 +391,7 @@ async function fetchRecentHistory(userId: string): Promise<RecentHistory> {
           ":pk":      Keys.userPK(userId),
           ":skStart": skStart,
         },
-        ProjectionExpression: "articles",
+        ProjectionExpression: "articles, podcast",
       })
     );
 
@@ -283,6 +401,10 @@ async function fetchRecentHistory(userId: string): Promise<RecentHistory> {
         if (a.url)    seenUrls.add(a.url);
         if (a.source) seenSources.set(a.source, (seenSources.get(a.source) ?? 0) + 1);
       }
+      // Podcast URL'sini de geçmişe ekle
+      const podcast = item.podcast as Podcast | null;
+      if (podcast?.url) seenUrls.add(podcast.url);
+      if (podcast?.source) seenSources.set(podcast.source, (seenSources.get(podcast.source) ?? 0) + 1);
     }
   } catch (err) {
     console.warn("Failed to fetch recent history:", err);
@@ -329,62 +451,42 @@ const CATEGORY_EMOJI: Record<string, string> = {
   "Environment":      "🌿",
 };
 
-function buildEmailHtml(articles: Article[]): string {
+function buildEmailHtml(article: Article, podcast: Podcast | null): string {
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 
-  const categoryBadges = articles
-    .filter((a) => a.url && a.url !== "https://news.ycombinator.com")
-    .map((a) => {
-      const emoji = CATEGORY_EMOJI[a.category] ?? "📄";
-      return `<span style="display:inline-block;margin:0 6px 6px 0;padding:4px 10px;background:#f3f4f6;border-radius:20px;font-size:11px;color:#6b7280;font-weight:500;">${emoji} ${a.category}</span>`;
-    })
-    .join("");
+  const emoji = CATEGORY_EMOJI[article.category] ?? "📄";
 
-  const articleBlocks = articles
-    .filter((a) => a.url && a.url !== "https://news.ycombinator.com")
-    .map((a, i) => {
-      const emoji = CATEGORY_EMOJI[a.category] ?? "📄";
-      return `
+  const podcastBlock = podcast ? `
         <tr>
-          <td style="padding:32px 0;">
-            <!-- Article number + category -->
-            <table width="100%" cellpadding="0" cellspacing="0">
+          <td style="padding:32px 0 0 0;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #f3f4f6;padding-top:24px;">
               <tr>
                 <td>
-                  <span style="font-size:11px;font-weight:700;color:#d1d5db;margin-right:8px;">${String(i + 1).padStart(2, "0")}</span>
-                  <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">${emoji} ${a.category}</span>
+                  <span style="font-size:11px;font-weight:700;color:#d1d5db;margin-right:8px;">🎙</span>
+                  <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">Podcast · ${podcast.category}</span>
                 </td>
               </tr>
             </table>
-
-            <!-- Title -->
-            <h2 style="margin:10px 0 4px 0;font-size:21px;font-weight:700;line-height:1.3;color:#111827;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-              <a href="${a.url}" style="color:#111827;text-decoration:none;">${a.title}</a>
+            <h2 style="margin:10px 0 4px 0;font-size:18px;font-weight:700;line-height:1.3;color:#111827;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+              <a href="${podcast.url}" style="color:#111827;text-decoration:none;">${podcast.title}</a>
             </h2>
-
-            <!-- Source -->
             <p style="margin:0 0 14px 0;font-size:13px;color:#6b7280;font-weight:500;">
-              ${a.source} &nbsp;·&nbsp; ${a.readingTime}
+              ${podcast.source} &nbsp;·&nbsp; ${podcast.duration}
             </p>
-
-            <!-- Summary inline with Read more link -->
             <p style="margin:0;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-              ${a.summary} <a href="${a.url}" style="color:#111827;font-weight:600;text-decoration:none;white-space:nowrap;">Read full article &rarr;</a>
+              ${podcast.summary} <a href="${podcast.url}" style="color:#111827;font-weight:600;text-decoration:none;white-space:nowrap;">Listen &rarr;</a>
             </p>
           </td>
-        </tr>
-        ${i < 2 ? `<tr><td style="border-bottom:1px solid #f3f4f6;"></td></tr>` : ""}`;
-    })
-    .join("");
+        </tr>` : "";
 
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Your Daily3</title>
+  <title>Your Cogletta</title>
 </head>
 <body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;">
@@ -398,7 +500,7 @@ function buildEmailHtml(articles: Article[]): string {
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td>
-                    <span style="font-size:13px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#111827;">Daily3</span>
+                    <span style="font-size:13px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#111827;">Cogletta</span>
                     <p style="margin:4px 0 0 0;font-size:13px;color:#9ca3af;">${today}</p>
                   </td>
                   <td align="right" valign="top">
@@ -406,19 +508,38 @@ function buildEmailHtml(articles: Article[]): string {
                   </td>
                 </tr>
               </table>
-
               <p style="margin:16px 0 12px 0;font-size:22px;font-weight:700;color:#111827;line-height:1.3;">
-                Your 3 articles for today are ready.
+                Your article for today is ready.
               </p>
-              <div>${categoryBadges}</div>
+              <span style="display:inline-block;margin:0 6px 6px 0;padding:4px 10px;background:#f3f4f6;border-radius:20px;font-size:11px;color:#6b7280;font-weight:500;">${emoji} ${article.category}</span>
             </td>
           </tr>
 
-          <!-- Articles -->
+          <!-- Article -->
           <tr>
             <td style="padding:0 36px;">
               <table width="100%" cellpadding="0" cellspacing="0">
-                ${articleBlocks}
+                <tr>
+                  <td style="padding:32px 0;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td>
+                          <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">${emoji} ${article.category}</span>
+                        </td>
+                      </tr>
+                    </table>
+                    <h2 style="margin:10px 0 4px 0;font-size:21px;font-weight:700;line-height:1.3;color:#111827;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                      <a href="${article.url}" style="color:#111827;text-decoration:none;">${article.title}</a>
+                    </h2>
+                    <p style="margin:0 0 14px 0;font-size:13px;color:#6b7280;font-weight:500;">
+                      ${article.source} &nbsp;·&nbsp; ${article.readingTime}
+                    </p>
+                    <p style="margin:0;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+                      ${article.summary} <a href="${article.url}" style="color:#111827;font-weight:600;text-decoration:none;white-space:nowrap;">Read full article &rarr;</a>
+                    </p>
+                  </td>
+                </tr>
+                ${podcastBlock}
               </table>
             </td>
           </tr>
@@ -427,7 +548,7 @@ function buildEmailHtml(articles: Article[]): string {
           <tr>
             <td style="padding:24px 36px;background:#f9fafb;border-top:1px solid #f3f4f6;">
               <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
-                Daily3 &nbsp;·&nbsp; Curated by AI, delivered every morning at 07:00.<br>
+                Cogletta &nbsp;·&nbsp; Curated by AI, delivered every morning at 07:00.<br>
                 <a href="#" style="color:#9ca3af;">Unsubscribe</a> &nbsp;·&nbsp; <a href="#" style="color:#9ca3af;">View in browser</a>
               </p>
             </td>
@@ -441,29 +562,21 @@ function buildEmailHtml(articles: Article[]): string {
 </html>`;
 }
 
-function buildEmailText(articles: Article[]): string {
+function buildEmailText(article: Article, podcast: Podcast | null): string {
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long", day: "numeric", month: "long",
   });
 
-  const lines = articles
-    .filter((a) => a.url && a.url !== "https://news.ycombinator.com")
-    .map((a) =>
-      `${a.category} — ${a.source}\n${a.title}\n${a.reason}\n${a.url}`
-    )
-    .join("\n\n---\n\n");
+  const podcastLine = podcast
+    ? `\n\n---\n\n🎙 Podcast · ${podcast.category} — ${podcast.source}\n${podcast.title}\n${podcast.reason}\n${podcast.url}`
+    : "";
 
-  return `Daily3 — ${today}\n\nYour three articles for today:\n\n${lines}\n\nNew articles arrive every morning at 07:00.`;
+  return `Cogletta — ${today}\n\nYour article for today:\n\n${article.category} — ${article.source}\n${article.title}\n${article.reason}\n${article.url}${podcastLine}\n\nNew content arrives every morning at 07:00.`;
 }
 
-async function sendDailyEmail(toEmail: string, articles: Article[]): Promise<void> {
-  const realArticles = articles.filter(
-    (a) => a.url && a.url !== "https://news.ycombinator.com"
-  );
-
-  // Tüm makaleler fallback ise email gönderme
-  if (realArticles.length === 0) {
-    console.warn(`No real articles to email for ${toEmail}, skipping`);
+async function sendDailyEmail(toEmail: string, article: Article, podcast: Podcast | null): Promise<void> {
+  if (!article.url || article.url === "https://news.ycombinator.com") {
+    console.warn(`No real article to email for ${toEmail}, skipping`);
     return;
   }
 
@@ -477,12 +590,12 @@ async function sendDailyEmail(toEmail: string, articles: Article[]): Promise<voi
       Destination: { ToAddresses: [toEmail] },
       Message: {
         Subject: {
-          Data:    `Your Daily3 for ${today} is ready`,
+          Data:    `Your Cogletta for ${today} is ready`,
           Charset: "UTF-8",
         },
         Body: {
-          Html: { Data: buildEmailHtml(articles), Charset: "UTF-8" },
-          Text: { Data: buildEmailText(articles), Charset: "UTF-8" },
+          Html: { Data: buildEmailHtml(article, podcast), Charset: "UTF-8" },
+          Text: { Data: buildEmailText(article, podcast), Charset: "UTF-8" },
         },
       },
     })
@@ -505,7 +618,8 @@ const VIDEO_URL_PATTERN = /\/(video|videos|watch)\//i;
 
 function scoreAndFilter(
   items: RSSItem[],
-  history: RecentHistory
+  history: RecentHistory,
+  isPodcast = false
 ): ScoredCandidate[] {
   const now       = Date.now();
   const oneDayMs  = 24 * 60 * 60 * 1000;
@@ -525,9 +639,10 @@ function scoreAndFilter(
     })
     .filter((item) => !history.seenUrls.has(item.url))
     .filter((item) => !ROUNDUP_PATTERNS.test(item.title))
-    .filter((item) => !PODCAST_PATTERNS.test(item.title))
     .filter((item) => !VIDEO_PATTERNS.test(item.title))
     .filter((item) => !VIDEO_URL_PATTERN.test(item.url))
+    // Makaleler için podcast filtresi; podcast feed'leri için bu filtreyi atla
+    .filter((item) => isPodcast || !PODCAST_PATTERNS.test(item.title))
     .sort((a, b) => {
       const freshnessScore = (f: string) => f === "today" ? 2 : f === "recent" ? 1 : 0;
       const diff = freshnessScore(b.freshness) - freshnessScore(a.freshness);
@@ -567,7 +682,7 @@ async function selectBestArticle(
     ? `\nIMPORTANT: The user has recently seen articles from: ${recentSourcesList}. Prefer a different source today if possible.`
     : "";
 
-  const prompt = `You are an editorial assistant for Daily3, a daily long-form article curation app for professionals who want to learn deeply.
+  const prompt = `You are an editorial assistant for Cogletta, a daily long-form article curation app for professionals who want to learn deeply.
 
 User interest: "${interest}"
 ${diversityNote}
@@ -610,7 +725,6 @@ Respond ONLY with valid JSON (no markdown):
     .replace(/\s*```$/i, "");
   const parsed = JSON.parse(text) as BedrockSelection;
 
-  // Bedrock çıktısındaki entity'leri temizle
   const cleanStr = (s: string) => s
     .replace(/&#8217;/g, "'").replace(/&#8216;/g, "'")
     .replace(/&#8220;/g, '"').replace(/&#8221;/g, '"')
@@ -624,7 +738,91 @@ Respond ONLY with valid JSON (no markdown):
   };
 }
 
-// ─── Fallback ─────────────────────────────────────────────────────────────────
+// ─── Bedrock: pick best podcast episode ──────────────────────────────────────
+
+interface BedrockPodcastSelection {
+  selectedIndex: number;
+  summary:       string;
+  reason:        string;
+  duration:      string;
+}
+
+async function selectBestPodcast(
+  candidates: ScoredCandidate[],
+  interest:   string,
+  history:    RecentHistory
+): Promise<BedrockPodcastSelection> {
+  const recentSourcesList = [...history.seenSources.entries()]
+    .filter(([, count]) => count >= 2)
+    .map(([src]) => src)
+    .join(", ");
+
+  const candidateList = candidates
+    .map(
+      (c, i) =>
+        `[${i}] "${c.title}" — ${c.sourceName}${c.duration ? ` (${c.duration})` : ""} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    ${c.description.slice(0, 300)}`
+    )
+    .join("\n\n");
+
+  const diversityNote = recentSourcesList
+    ? `\nIMPORTANT: The user has recently seen content from: ${recentSourcesList}. Prefer a different podcast show today if possible.`
+    : "";
+
+  const prompt = `You are an editorial assistant for Cogletta, a daily content curation app.
+
+User interest: "${interest}"
+${diversityNote}
+
+Select the single best PODCAST EPISODE from the candidates below. Prioritise:
+1. RELEVANCE — the episode must directly address the user's interest area
+2. DEPTH — prefer substantive interviews, investigations, or documentary-style episodes over news recaps
+3. Freshness — prefer recent episodes (marked "today" or "recent") but older landmark episodes are fine if clearly superior
+4. Source variety — avoid shows marked "[source shown recently]" unless clearly superior
+
+Candidates:
+${candidateList}
+
+Respond ONLY with valid JSON (no markdown):
+{
+  "selectedIndex": <0-${candidates.length - 1}>,
+  "summary": "<Write 2-3 sentences (~50 words) as if recommending this episode to a curious friend. Say what the episode is actually about and why it's worth listening to. Be specific, not generic.>",
+  "reason": "<One short sentence, max 20 words. Say specifically why THIS episode is worth listening to today.>",
+  "duration": "<episode duration from the feed if available, e.g. '45 min', or estimate>"
+}`;
+
+  const command = new InvokeModelCommand({
+    modelId:     "eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+    contentType: "application/json",
+    accept:      "application/json",
+    body: JSON.stringify({
+      anthropic_version: "bedrock-2023-05-31",
+      max_tokens:        300,
+      messages:          [{ role: "user", content: prompt }],
+    }),
+  });
+
+  const response = await bedrock.send(command);
+  const raw      = JSON.parse(new TextDecoder().decode(response.body));
+  const text     = raw.content[0].text
+    .trim()
+    .replace(/^```json\s*/i, "")
+    .replace(/\s*```$/i, "");
+  const parsed = JSON.parse(text) as BedrockPodcastSelection;
+
+  const cleanStr = (s: string) => s
+    .replace(/&#8217;/g, "'").replace(/&#8216;/g, "'")
+    .replace(/&#8220;/g, '"').replace(/&#8221;/g, '"')
+    .replace(/&#8230;/g, "…").replace(/&#\d+;/g, "")
+    .replace(/&amp;/g, "&").replace(/&quot;/g, '"');
+
+  return {
+    ...parsed,
+    summary: cleanStr(parsed.summary ?? ""),
+    reason:  cleanStr(parsed.reason ?? ""),
+  };
+}
+
+// ─── Fallbacks ────────────────────────────────────────────────────────────────
 
 function fallbackArticle(interest: string): Article {
   return {
@@ -660,13 +858,11 @@ async function generateAudio(article: Article): Promise<string | null> {
   const id    = articleId(article.url);
   const s3Key = `audio/${id}/en.mp3`;
 
-  // Shared cache — başka kullanıcı için zaten üretilmişse atla
   if (await audioExists(s3Key)) {
     console.log(`Audio cache hit: ${s3Key}`);
     return `https://${AUDIO_BUCKET}.s3.amazonaws.com/${s3Key}`;
   }
 
-  // Polly'ye gönderilecek metin: title + summary + reason
   const text = [
     article.title,
     article.summary,
@@ -713,107 +909,131 @@ async function generateAudio(article: Article): Promise<string | null> {
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 interface GenerateEvent {
-  userId:    string;
-  interests: string[];
-  userEmail?: string; // daily-trigger'dan direk geçilebilir, yoksa DynamoDB'den çekilir
+  userId:     string;
+  interests:  string[];
+  userEmail?: string;
 }
 
 export const handler = async (event: GenerateEvent): Promise<void> => {
   const { userId, interests } = event;
 
-  if (!userId || !Array.isArray(interests) || interests.length !== 3) {
-    throw new Error("userId and exactly 3 interests are required.");
+  if (!userId || !Array.isArray(interests) || interests.length < 1) {
+    throw new Error("userId and at least 1 interest are required.");
   }
 
-  console.log(`Generating for user=${userId} interests=${interests.join(", ")}`);
+  // Free plan: 1 interest → 1 article + 1 podcast
+  const interest = interests[0];
+
+  console.log(`Generating for user=${userId} interest=${interest}`);
 
   const history = await fetchRecentHistory(userId);
   console.log(`History: ${history.seenUrls.size} seen URLs, ${history.seenSources.size} sources`);
 
-  const articleResults = await Promise.allSettled(
-    interests.map(async (interest): Promise<Article> => {
-      const sources = RSS_SOURCES[interest];
-      if (!sources) throw new Error(`No RSS sources for interest: ${interest}`);
+  // ── Article ──────────────────────────────────────────────────────────────────
+  let article: Article;
+  try {
+    const sources = RSS_SOURCES[interest];
+    if (!sources) throw new Error(`No RSS sources for interest: ${interest}`);
 
-      const feedResults = await Promise.allSettled(sources.map(fetchRSSFeed));
+    const feedResults = await Promise.allSettled(sources.map(fetchRSSFeed));
+    const allItems: RSSItem[] = [];
+    feedResults.forEach((r, i) => {
+      if (r.status === "fulfilled") allItems.push(...r.value);
+      else console.warn(`Article feed failed: ${sources[i].url}`, r.reason);
+    });
 
-      const allItems: RSSItem[] = [];
-      feedResults.forEach((r, i) => {
-        if (r.status === "fulfilled") {
-          allItems.push(...r.value);
-        } else {
-          console.warn(`Feed failed: ${sources[i].url}`, r.reason);
-        }
-      });
+    if (allItems.length === 0) throw new Error(`All article feeds failed for: ${interest}`);
 
-      if (allItems.length === 0) {
-        throw new Error(`All feeds failed for interest: ${interest}`);
-      }
+    const candidates = scoreAndFilter(allItems, history, false);
+    if (candidates.length === 0) throw new Error(`No fresh articles for: ${interest}`);
 
-      const candidates = scoreAndFilter(allItems, history);
+    console.log(`${interest}: ${allItems.length} raw → ${candidates.length} article candidates`);
 
-      if (candidates.length === 0) {
-        throw new Error(`No fresh unseen articles for interest: ${interest}`);
-      }
+    const top10     = candidates.slice(0, 10);
+    const selection = await selectBestArticle(top10, interest, history);
+    const chosen    = top10[Math.min(selection.selectedIndex, top10.length - 1)];
 
-      console.log(
-        `${interest}: ${allItems.length} raw → ${candidates.length} candidates ` +
-        `(today: ${candidates.filter(c => c.freshness === "today").length})`
-      );
+    article = {
+      category:    interest,
+      title:       chosen.title,
+      summary:     selection.summary || chosen.description || "Click to read the full article.",
+      reason:      selection.reason,
+      url:         chosen.url,
+      source:      chosen.sourceName,
+      readingTime: selection.readingTime,
+      publishedAt: chosen.pubDate || new Date().toISOString(),
+    };
+  } catch (err) {
+    console.error(`Article generation failed for "${interest}":`, err);
+    article = fallbackArticle(interest);
+  }
 
-      const top10     = candidates.slice(0, 10);
-      const selection = await selectBestArticle(top10, interest, history);
-      const chosen    = top10[Math.min(selection.selectedIndex, top10.length - 1)];
+  // Audio Edition
+  if (article.url !== "https://news.ycombinator.com") {
+    const audioUrl = await generateAudio(article);
+    if (audioUrl) article = { ...article, audioUrl } as Article & { audioUrl: string };
+  }
 
-      return {
-        category:    interest,
-        title:       chosen.title,
-        summary:     selection.summary || chosen.description || "Click to read the full article.",
-        reason:      selection.reason,
-        url:         chosen.url,
-        source:      chosen.sourceName,
-        readingTime: selection.readingTime,
-        publishedAt: chosen.pubDate || new Date().toISOString(),
-      };
-    })
-  );
+  // ── Podcast ──────────────────────────────────────────────────────────────────
+  let podcast: Podcast | null = null;
+  try {
+    const podSources = PODCAST_SOURCES[interest];
+    if (!podSources) throw new Error(`No podcast sources for interest: ${interest}`);
 
-  const articles: Article[] = articleResults.map((result, i) => {
-    if (result.status === "fulfilled") return result.value;
-    console.error(`Failed for "${interests[i]}":`, result.reason);
-    return fallbackArticle(interests[i]);
-  });
+    const podFeedResults = await Promise.allSettled(podSources.map(fetchRSSFeed));
+    const podItems: RSSItem[] = [];
+    podFeedResults.forEach((r, i) => {
+      if (r.status === "fulfilled") podItems.push(...r.value);
+      else console.warn(`Podcast feed failed: ${podSources[i].url}`, r.reason);
+    });
 
-  // Audio Edition — Polly TTS (fire-and-forget per article, shared cache)
-  const articlesWithAudio = await Promise.all(
-    articles.map(async (article) => {
-      if (article.url === "https://news.ycombinator.com") return article;
-      const audioUrl = await generateAudio(article);
-      return audioUrl ? { ...article, audioUrl } : article;
-    })
-  );
+    if (podItems.length === 0) throw new Error(`All podcast feeds failed for: ${interest}`);
 
-  // DynamoDB'e yaz
+    const podCandidates = scoreAndFilter(podItems, history, true);
+    if (podCandidates.length === 0) throw new Error(`No fresh podcast episodes for: ${interest}`);
+
+    console.log(`${interest}: ${podItems.length} raw → ${podCandidates.length} podcast candidates`);
+
+    const top10pod    = podCandidates.slice(0, 10);
+    const podSelection = await selectBestPodcast(top10pod, interest, history);
+    const chosenPod   = top10pod[Math.min(podSelection.selectedIndex, top10pod.length - 1)];
+
+    podcast = {
+      category:    interest,
+      title:       chosenPod.title,
+      summary:     podSelection.summary || chosenPod.description || "Click to listen.",
+      reason:      podSelection.reason,
+      url:         chosenPod.url,
+      source:      chosenPod.sourceName,
+      duration:    podSelection.duration || chosenPod.duration || "—",
+      publishedAt: chosenPod.pubDate || new Date().toISOString(),
+    };
+  } catch (err) {
+    console.warn(`Podcast generation failed for "${interest}":`, err);
+    // Podcast başarısız olursa null bırak — makale yine de kaydedilsin
+  }
+
+  // ── DynamoDB'e yaz ───────────────────────────────────────────────────────────
   const now  = new Date();
   const item: DailyArticles = {
     PK:          Keys.userPK(userId),
     SK:          Keys.dateSK(now),
-    articles:    articlesWithAudio,
+    articles:    [article],
+    podcast:     podcast,
     generatedAt: now.toISOString(),
     ttl:         Keys.ttl30Days(),
   };
 
   await dynamo.send(new PutCommand({ TableName: ARTICLES_TABLE, Item: item }));
-  console.log(`Wrote ${articlesWithAudio.length} articles for user=${userId} date=${Keys.dateSK(now)}`);
+  console.log(`Wrote article + podcast for user=${userId} date=${Keys.dateSK(now)}`);
 
-  // Email gönder — SES_FROM_EMAIL tanımlıysa
+  // ── Email gönder ─────────────────────────────────────────────────────────────
   if (SES_FROM_EMAIL) {
     const userEmail = event.userEmail ?? await fetchUserEmail(userId);
     if (userEmail) {
       try {
-        await sendDailyEmail(userEmail, articlesWithAudio);
+        await sendDailyEmail(userEmail, article, podcast);
       } catch (err) {
-        // Email hatası makale üretimini engellemesin
         console.error("Failed to send email notification:", err);
       }
     } else {

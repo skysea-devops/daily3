@@ -66,7 +66,7 @@ export const handler = async (
     // Sadece bugün hiç makale üretilmemişse generate tetikle
     // (interests değişikliği artık stale sayılmıyor — ertesi gün yansır)
     if (!item) {
-      if (userInterests && userInterests.length === 3) {
+      if (userInterests && userInterests.length >= 1) {
         await lambda.send(
           new InvokeCommand({
             FunctionName:   GENERATE_ARTICLES_FUNCTION,
