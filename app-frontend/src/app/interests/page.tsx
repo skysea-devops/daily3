@@ -30,7 +30,7 @@ function InterestsForm() {
   }
 
   async function handleSave() {
-    if (selected.length !== 1 || !user) return;
+    if (selected.length !== 3 || !user) return;
     setLoading(true);
     setSaved(false);
     setShowTomorrow(false);
@@ -62,7 +62,7 @@ function InterestsForm() {
           Your interests
         </h1>
         <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: 32 }}>
-          Select 1 topic. Your content refreshes every morning at 07:00.
+          Pick 3 topics. Your content refreshes every morning at 07:00.
         </p>
 
         {showTomorrow && (
@@ -109,14 +109,14 @@ function InterestsForm() {
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>
-            {selected.length === 1 ? `${selected[0]} selected` : "Pick one topic"}
+            {selected.length === 3 ? "Ready! 3 topics selected" : `${selected.length}/3 selected`}
           </p>
-          <button onClick={handleSave} disabled={selected.length !== 1 || loading || showTomorrow}
+          <button onClick={handleSave} disabled={selected.length !== 3 || loading || showTomorrow}
             style={{
               background: saved ? "#166534" : "var(--ink)",
               color: "var(--white)", border: "none", borderRadius: 10,
               padding: "12px 28px", fontSize: "0.9375rem", fontWeight: 600,
-              cursor: "pointer", opacity: (selected.length !== 1 || loading || showTomorrow) ? 0.3 : 1,
+              cursor: "pointer", opacity: (selected.length !== 3 || loading || showTomorrow) ? 0.3 : 1,
             }}>
             {loading ? "Saving..." : saved ? "Saved! ✓" : "Save interests"}
           </button>

@@ -302,7 +302,7 @@ export default function HomePage() {
             <h2 className="lp-h2">Simple by design. Powerful under the hood.</h2>
             <div className="lp-steps">
               {[
-                { n: "01", title: "Choose your topic", body: "Pick one interest area from 15 categories — history, economics, science, world politics, and more." },
+                { n: "01", title: "Choose your topics", body: "Pick three interest areas from 15 categories — history, economics, science, world politics, and more." },
                 { n: "02", title: "AI reads the web", body: "Every day, hundreds of sources are scanned. Only the best long-form article per category makes the cut." },
                 { n: "03", title: "Ready at 07:00", body: "Your article and podcast episode arrive every morning — on your dashboard and in your inbox, ready to read." },
               ].map(s => (
@@ -322,7 +322,7 @@ export default function HomePage() {
           <h2 className="lp-h2">Everything you need to build a reading habit.</h2>
           <div className="lp-features">
             {[
-              { icon: "📰", title: "1 curated article daily", body: "Long-form, substantive pieces from think-tanks, academic journals, and quality publications. No clickbait." },
+              { icon: "📰", title: "1 curated article daily", body: "Picked from across your 3 interests — long-form, substantive pieces from think-tanks, academic journals, and quality publications." },
               { icon: "✉️", title: "Daily email digest", body: "Your article and podcast delivered to your inbox every morning at 07:00. Clean, readable." },
               { icon: "💡", title: "Why we picked this for you", body: "Each article comes with a short editorial note — why this piece, why today, why it's worth your time." },
               { icon: "🎙", title: "1 podcast episode daily", body: "A carefully selected episode from top podcasts in your interest area — paired with your article every morning." },

@@ -946,45 +946,49 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
     throw new Error("userId and at least 1 interest are required.");
   }
 
-  // Free plan: 1 interest → 1 article + 1 podcast
-  const interest = interests[0];
-
-  console.log(`Generating for user=${userId} interest=${interest}`);
+  const interestsLabel = interests.join(", ");
+  console.log(`Generating for user=${userId} interests=${interestsLabel}`);
 
   const history = await fetchRecentHistory(userId);
   console.log(`History: ${history.seenUrls.size} seen URLs, ${history.seenSources.size} sources`);
 
-  // ── Article ──────────────────────────────────────────────────────────────────
+  // ── Article — tüm interest'lerin feed'lerini birleştir ───────────────────────
   let article: Article;
   try {
-    const sources = RSS_SOURCES[interest];
-    if (!sources) throw new Error(`No RSS sources for interest: ${interest}`);
+    // Her interest için RSS kaynaklarını topla
+    const allSources = interests.flatMap(i => RSS_SOURCES[i] ?? []);
+    if (allSources.length === 0) throw new Error(`No RSS sources for interests: ${interestsLabel}`);
 
-    const feedResults = await Promise.allSettled(sources.map(fetchRSSFeed));
+    const feedResults = await Promise.allSettled(allSources.map(fetchRSSFeed));
     const allItems: RSSItem[] = [];
     feedResults.forEach((r, i) => {
       if (r.status === "fulfilled") allItems.push(...r.value);
-      else console.warn(`Article feed failed: ${sources[i].url}`, r.reason);
+      else console.warn(`Article feed failed: ${allSources[i].url}`, r.reason);
     });
 
-    if (allItems.length === 0) throw new Error(`All article feeds failed for: ${interest}`);
+    if (allItems.length === 0) throw new Error(`All article feeds failed for: ${interestsLabel}`);
 
     const candidates = scoreAndFilter(allItems, history, false);
-    if (candidates.length === 0) throw new Error(`No fresh articles for: ${interest}`);
+    if (candidates.length === 0) throw new Error(`No fresh articles for: ${interestsLabel}`);
 
-    console.log(`${interest}: ${allItems.length} raw → ${candidates.length} article candidates`);
+    console.log(`${interestsLabel}: ${allItems.length} raw → ${candidates.length} article candidates`);
 
     const top10     = candidates.slice(0, 10);
-    const selection = await selectBestArticle(top10, interest, history);
+    const selection = await selectBestArticle(top10, interestsLabel, history);
     const idx       = typeof selection.selectedIndex === "number" && !isNaN(selection.selectedIndex)
                       ? Math.max(0, Math.min(selection.selectedIndex, top10.length - 1))
                       : 0;
     const chosen    = top10[idx] ?? top10[0];
 
-    if (!chosen) throw new Error(`No candidate available after selection for: ${interest}`);
+    if (!chosen) throw new Error(`No candidate available after selection for: ${interestsLabel}`);
+
+    // Makalenin kategorisini kaynak feed'den bul
+    const articleCategory = interests.find(i =>
+      (RSS_SOURCES[i] ?? []).some(s => s.name === chosen.sourceName)
+    ) ?? interests[0];
 
     article = {
-      category:    interest,
+      category:    articleCategory,
       title:       chosen.title,
       summary:     selection.summary || chosen.description || "Click to read the full article.",
       reason:      selection.reason,
@@ -994,8 +998,8 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
       publishedAt: chosen.pubDate || new Date().toISOString(),
     };
   } catch (err) {
-    console.error(`Article generation failed for "${interest}":`, err);
-    article = fallbackArticle(interest);
+    console.error(`Article generation failed for "${interestsLabel}":`, err);
+    article = fallbackArticle(interests[0]);
   }
 
   // Audio Edition
@@ -1004,37 +1008,41 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
     if (audioUrl) article = { ...article, audioUrl } as Article & { audioUrl: string };
   }
 
-  // ── Podcast ──────────────────────────────────────────────────────────────────
+  // ── Podcast — tüm interest'lerin podcast feed'lerini birleştir ───────────────
   let podcast: Podcast | null = null;
   try {
-    const podSources = PODCAST_SOURCES[interest];
-    if (!podSources) throw new Error(`No podcast sources for interest: ${interest}`);
+    const allPodSources = interests.flatMap(i => PODCAST_SOURCES[i] ?? []);
+    if (allPodSources.length === 0) throw new Error(`No podcast sources for: ${interestsLabel}`);
 
-    const podFeedResults = await Promise.allSettled(podSources.map(fetchRSSFeed));
+    const podFeedResults = await Promise.allSettled(allPodSources.map(fetchRSSFeed));
     const podItems: RSSItem[] = [];
     podFeedResults.forEach((r, i) => {
       if (r.status === "fulfilled") podItems.push(...r.value);
-      else console.warn(`Podcast feed failed: ${podSources[i].url}`, r.reason);
+      else console.warn(`Podcast feed failed: ${allPodSources[i].url}`, r.reason);
     });
 
-    if (podItems.length === 0) throw new Error(`All podcast feeds failed for: ${interest}`);
+    if (podItems.length === 0) throw new Error(`All podcast feeds failed for: ${interestsLabel}`);
 
     const podCandidates = scoreAndFilter(podItems, history, true);
-    if (podCandidates.length === 0) throw new Error(`No fresh podcast episodes for: ${interest}`);
+    if (podCandidates.length === 0) throw new Error(`No fresh podcast episodes for: ${interestsLabel}`);
 
-    console.log(`${interest}: ${podItems.length} raw → ${podCandidates.length} podcast candidates`);
+    console.log(`${interestsLabel}: ${podItems.length} raw → ${podCandidates.length} podcast candidates`);
 
     const top10pod     = podCandidates.slice(0, 10);
-    const podSelection = await selectBestPodcast(top10pod, interest, history);
+    const podSelection = await selectBestPodcast(top10pod, interestsLabel, history);
     const podIdx       = typeof podSelection.selectedIndex === "number" && !isNaN(podSelection.selectedIndex)
                          ? Math.max(0, Math.min(podSelection.selectedIndex, top10pod.length - 1))
                          : 0;
     const chosenPod    = top10pod[podIdx] ?? top10pod[0];
 
-    if (!chosenPod) throw new Error(`No podcast candidate after selection for: ${interest}`);
+    if (!chosenPod) throw new Error(`No podcast candidate after selection for: ${interestsLabel}`);
+
+    const podCategory = interests.find(i =>
+      (PODCAST_SOURCES[i] ?? []).some(s => s.name === chosenPod.sourceName)
+    ) ?? interests[0];
 
     podcast = {
-      category:    interest,
+      category:    podCategory,
       title:       chosenPod.title,
       summary:     podSelection.summary || chosenPod.description || "Click to listen.",
       reason:      podSelection.reason,
@@ -1044,8 +1052,7 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
       publishedAt: chosenPod.pubDate || new Date().toISOString(),
     };
   } catch (err) {
-    console.warn(`Podcast generation failed for "${interest}":`, err);
-    // Podcast başarısız olursa null bırak — makale yine de kaydedilsin
+    console.warn(`Podcast generation failed for "${interestsLabel}":`, err);
   }
 
   // ── DynamoDB'e yaz ───────────────────────────────────────────────────────────

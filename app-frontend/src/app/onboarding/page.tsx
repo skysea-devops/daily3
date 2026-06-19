@@ -29,13 +29,14 @@ function OnboardingForm() {
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  function selectCategory(id: string) {
-    // Free plan: sadece 1 seçim — öncekinin üzerine yaz
-    setSelected([id]);
+  function toggleCategory(id: string) {
+    if (selected.includes(id)) { setSelected(selected.filter(c => c !== id)); return; }
+    if (selected.length === 3) return;
+    setSelected([...selected, id]);
   }
 
   async function continueToDashboard() {
-    if (selected.length !== 1 || !user) return;
+    if (selected.length !== 3 || !user) return;
     setLoading(true);
     try {
       await updateUserInterests(selected, user.accessToken);
@@ -60,11 +61,11 @@ function OnboardingForm() {
         </p>
 
         <h1 style={{ fontSize: "2.25rem", fontWeight: 700, color: "var(--ink)", marginBottom: 12, lineHeight: 1.2 }}>
-          Choose your interest
+          Choose your interests
         </h1>
 
         <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: 32 }}>
-          Cogletta will curate one in-depth article and one podcast episode for you every day.
+          Pick 3 topics. Every morning, Cogletta selects one article and one podcast from across your interests.
         </p>
 
         <div style={{
@@ -78,7 +79,7 @@ function OnboardingForm() {
             return (
               <button
                 key={cat.id}
-                onClick={() => selectCategory(cat.id)}
+                onClick={() => toggleCategory(cat.id)}
                 style={{
                   border: `1.5px solid ${isSelected ? "var(--ink)" : "var(--rule)"}`,
                   borderRadius: 16,
@@ -112,14 +113,14 @@ function OnboardingForm() {
 
         <div style={{ marginTop: 32, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>
-            {selected.length === 1
-              ? `${CATEGORIES.find(c => c.id === selected[0])?.emoji} ${selected[0]} selected`
-              : "Pick one topic to get started"}
+            {selected.length === 3
+              ? "Ready! 3 topics selected"
+              : `${selected.length}/3 selected`}
           </p>
 
           <button
             onClick={continueToDashboard}
-            disabled={selected.length !== 1 || loading}
+            disabled={selected.length !== 3 || loading}
             style={{
               background: "var(--ink)",
               color: "var(--white)",
@@ -129,7 +130,7 @@ function OnboardingForm() {
               fontSize: "0.9375rem",
               fontWeight: 600,
               cursor: selected.length !== 1 || loading ? "not-allowed" : "pointer",
-              opacity: selected.length !== 1 || loading ? 0.3 : 1,
+              opacity: selected.length !== 3 || loading ? 0.3 : 1,
               transition: "opacity 0.15s",
             }}
           >

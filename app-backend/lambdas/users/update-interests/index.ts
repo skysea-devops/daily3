@@ -62,13 +62,13 @@ export const handler = async (
 
     if (
       !Array.isArray(interests) ||
-      interests.length !== 1 ||
+      interests.length !== 3 ||
       !interests.every((i) => typeof i === "string" && i.trim().length > 0)
     ) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ message: "Exactly 1 non-empty interest string is required." }),
+        body: JSON.stringify({ message: "Exactly 3 non-empty interest strings are required." }),
       };
     }
 
