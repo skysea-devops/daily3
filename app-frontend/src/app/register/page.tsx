@@ -7,9 +7,9 @@ import { signUp } from "@/lib/cognito";
 import Navbar from "@/components/Navbar";
 
 const FREE_FEATURES = [
-  "1 curated long-form article daily",
+  "1 curated article daily, across your 3 interests",
   "1 podcast recommendation daily",
-  "15 interest categories to choose from",
+  "Choose 3 from 15 interest categories",
   "Daily email digest",
   "Editorial commentary on each article",
 ];
