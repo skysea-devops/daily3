@@ -98,6 +98,7 @@ export const handler = async (
       body: JSON.stringify({
         status:      "ready",
         articles:    item.articles ?? [],
+        podcast:     item.podcast ?? null,
         generatedAt: item.generatedAt ?? null,
       }),
     };
