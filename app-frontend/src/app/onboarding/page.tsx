@@ -129,7 +129,7 @@ function OnboardingForm() {
               padding: "12px 24px",
               fontSize: "0.9375rem",
               fontWeight: 600,
-              cursor: selected.length !== 1 || loading ? "not-allowed" : "pointer",
+              cursor: selected.length !== 3 || loading ? "not-allowed" : "pointer",
               opacity: selected.length !== 3 || loading ? 0.3 : 1,
               transition: "opacity 0.15s",
             }}
