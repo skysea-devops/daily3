@@ -24,7 +24,7 @@ function InterestsForm() {
 
   function toggleCategory(id: string) {
     if (selected.includes(id)) { setSelected(selected.filter(c => c !== id)); setSaved(false); return; }
-    if (selected.length === 1) { setSelected([id]); setSaved(false); return; }
+    if (selected.length >= 3) return;
     setSelected([...selected, id]);
     setSaved(false);
   }

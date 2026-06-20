@@ -214,15 +214,6 @@ function DashboardContent() {
   const [podcast, setPodcast]         = useState<Podcast | null>(null);
   const [status, setStatus]           = useState<"loading" | "ready" | "pending" | "error">("loading");
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
-  const [interest, setInterest]       = useState<string>("");
-
-  useEffect(() => {
-    const stored = localStorage.getItem("cogletta-categories");
-    if (stored) {
-      const cats = JSON.parse(stored) as string[];
-      if (cats.length > 0) setInterest(cats[0]);
-    }
-  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -267,19 +258,6 @@ function DashboardContent() {
           </p>
         </div>
 
-        {/* Interest badge */}
-        {interest && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 32 }}>
-            <span style={{
-              background: "var(--white)", border: "1px solid var(--rule)",
-              borderRadius: 20, padding: "5px 14px", fontSize: "0.8125rem",
-              fontWeight: 500, color: "var(--ink-soft)",
-            }}>
-              {CATEGORY_EMOJI[interest]} {interest}
-            </span>
-          </div>
-        )}
-
         {/* Loading */}
         {status === "loading" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -305,8 +283,8 @@ function DashboardContent() {
                 We're finding the best article and podcast for you. This takes about 30 seconds.
               </p>
             </div>
-            {interest && <PendingCard category={interest} type="article" />}
-            {interest && <PendingCard category={interest} type="podcast" />}
+            <PendingCard category="" type="article" />
+            <PendingCard category="" type="podcast" />
           </div>
         )}
 
