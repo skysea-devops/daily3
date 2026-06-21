@@ -9,8 +9,8 @@ provider "aws" {
 
 resource "aws_acm_certificate" "cogletta" {
   provider                  = aws.us_east_1
-  domain_name               = "cogletta.com"
-  subject_alternative_names = ["www.cogletta.com"]
+  domain_name               = var.domain_name
+  subject_alternative_names = length(var.domain_aliases) > 1 ? slice(var.domain_aliases, 1, length(var.domain_aliases)) : []
   validation_method         = "DNS"
 
   lifecycle {
@@ -108,9 +108,6 @@ resource "aws_s3_bucket_policy" "frontend" {
 
 # ==============================================================================
 # CloudFront Function — URL Rewrite (Next.js static export routing)
-# /register       → /register/index.html
-# /register/      → /register/index.html
-# /               → /index.html  (default_root_object handles this)
 # ==============================================================================
 
 resource "aws_cloudfront_function" "rewrite" {
@@ -142,7 +139,7 @@ resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
   is_ipv6_enabled     = true
   default_root_object = "index.html"
-  aliases             = ["cogletta.com", "www.cogletta.com"]
+  aliases             = var.domain_aliases
   price_class         = "PriceClass_100"
 
   origin {
@@ -173,7 +170,6 @@ resource "aws_cloudfront_distribution" "frontend" {
     max_ttl     = 86400
   }
 
-  # Next.js static export — fallback for unmatched paths
   custom_error_response {
     error_code            = 404
     response_code         = 200
@@ -202,24 +198,14 @@ resource "aws_cloudfront_distribution" "frontend" {
 }
 
 # ==============================================================================
-# Route53 — A records → CloudFront
+# Route53 — A records → CloudFront (her alias için)
 # ==============================================================================
 
-resource "aws_route53_record" "root" {
-  zone_id = data.aws_route53_zone.cogletta.zone_id
-  name    = "cogletta.com"
-  type    = "A"
+resource "aws_route53_record" "frontend_aliases" {
+  for_each = toset(var.domain_aliases)
 
-  alias {
-    name                   = aws_cloudfront_distribution.frontend.domain_name
-    zone_id                = aws_cloudfront_distribution.frontend.hosted_zone_id
-    evaluate_target_health = false
-  }
-}
-
-resource "aws_route53_record" "www" {
   zone_id = data.aws_route53_zone.cogletta.zone_id
-  name    = "www.cogletta.com"
+  name    = each.value
   type    = "A"
 
   alias {
@@ -246,12 +232,5 @@ output "cloudfront_url" {
 }
 
 output "site_url" {
-  value = "https://www.cogletta.com"
+  value = "https://${var.domain_aliases[0]}"
 }
-
-
-
-
-
-
-

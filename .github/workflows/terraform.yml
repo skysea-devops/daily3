@@ -2,17 +2,13 @@ name: Deploy
 
 on:
   pull_request:
+    types:
+      - opened
+      - synchronize
+      - closed
     branches:
       - main
-    paths:
-      - "infra/terraform/**"
-      - "app-backend/**"
-      - "app-frontend/**"
-      - ".github/workflows/terraform.yml"
-
-  push:
-    branches:
-      - main
+      - prod
     paths:
       - "infra/terraform/**"
       - "app-backend/**"
@@ -23,6 +19,15 @@ permissions:
   id-token: write
   contents: read
   pull-requests: read
+
+# Branch → environment mapping:
+#   PR to main   → dev  environment (plan only)
+#   push to main → dev  environment (apply + deploy)
+#   PR to prod   → prod environment (plan only)
+#   push to prod → prod environment (apply + deploy)
+
+env:
+  TARGET_ENV: ${{ github.base_ref == 'prod' && 'prod' || 'dev' }}
 
 jobs:
   # ────────────────────────────────────────────────────────────────────────────
@@ -67,6 +72,7 @@ jobs:
   build-frontend:
     name: Build frontend
     runs-on: ubuntu-latest
+    environment: ${{ env.TARGET_ENV }}
     steps:
       - uses: actions/checkout@v4
 
@@ -102,6 +108,7 @@ jobs:
     name: Terraform
     runs-on: ubuntu-latest
     needs: [build-lambdas, build-frontend]
+    environment: ${{ env.TARGET_ENV }}
     defaults:
       run:
         working-directory: infra/terraform
@@ -124,8 +131,33 @@ jobs:
         with:
           terraform_version: 1.10.5
 
+      - name: Select tfvars file
+        id: tfvars
+        run: |
+          if [ "${{ env.TARGET_ENV }}" = "prod" ]; then
+            echo "file=prod.tfvars" >> $GITHUB_OUTPUT
+          else
+            echo "file=dev.tfvars" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Select backend config
+        id: backend
+        run: |
+          if [ "${{ env.TARGET_ENV }}" = "prod" ]; then
+            echo "bucket=cogletta-prod-tfstate" >> $GITHUB_OUTPUT
+            echo "key=cogletta/prod/terraform.tfstate" >> $GITHUB_OUTPUT
+          else
+            echo "bucket=daily3-dev-tfstate" >> $GITHUB_OUTPUT
+            echo "key=daily3/dev/terraform.tfstate" >> $GITHUB_OUTPUT
+          fi
+
       - name: Terraform Init
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ steps.backend.outputs.bucket }}" \
+            -backend-config="key=${{ steps.backend.outputs.key }}" \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -reconfigure
 
       - name: Terraform Validate
         run: terraform validate
@@ -134,15 +166,14 @@ jobs:
         env:
           TF_VAR_google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-        run: terraform plan -out=tfplan
-       
+        run: terraform plan -var-file=${{ steps.tfvars.outputs.file }} -out=tfplan
 
       - name: Terraform Apply
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: terraform apply -auto-approve tfplan
+        if: github.event.pull_request.merged == true
         env:
           TF_VAR_google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: terraform apply -auto-approve tfplan
 
   # ────────────────────────────────────────────────────────────────────────────
   # 4. Deploy frontend to S3 + invalidate CloudFront
@@ -150,8 +181,9 @@ jobs:
   deploy-frontend:
     name: Deploy frontend
     runs-on: ubuntu-latest
-    needs: [build-frontend]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [build-frontend, terraform]
+    environment: ${{ env.TARGET_ENV }}
+    if: github.event.pull_request.merged == true
     steps:
       - name: Download frontend artifacts
         uses: actions/download-artifact@v4
@@ -167,10 +199,8 @@ jobs:
 
       - name: Sync to S3
         run: |
-          # Remove RSC payload .txt files (not needed for static hosting)
           find out/ -name "*.txt" -delete
 
-          # Sync HTML files with correct content-type and no-cache
           find out/ -name "*.html" | while read f; do
             key="${f#out/}"
             aws s3 cp "$f" "s3://${{ vars.FRONTEND_BUCKET_NAME }}/$key" \
@@ -178,11 +208,9 @@ jobs:
               --cache-control "no-cache, no-store, must-revalidate"
           done
 
-          # Sync static assets with long cache
           aws s3 sync out/_next/ "s3://${{ vars.FRONTEND_BUCKET_NAME }}/_next/" \
             --cache-control "public, max-age=31536000, immutable"
 
-          # Sync remaining files (favicon, etc)
           aws s3 sync out/ "s3://${{ vars.FRONTEND_BUCKET_NAME }}/" \
             --exclude "_next/*" \
             --exclude "*.html" \
