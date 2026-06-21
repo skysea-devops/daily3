@@ -2,22 +2,17 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand, QueryCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-import { PollyClient, SynthesizeSpeechCommand } from "@aws-sdk/client-polly";
-import { S3Client, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
-import { createHash } from "crypto";
+
 import { Article, Podcast, DailyArticles, Keys } from "../../../shared/types";
 
 const dynamo  = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const bedrock = new BedrockRuntimeClient({ region: process.env.AWS_REGION });
 const ses     = new SESClient({ region: process.env.AWS_REGION });
-const polly   = new PollyClient({ region: "us-east-1" }); // Generative engine only in us-east-1
-const s3      = new S3Client({ region: process.env.AWS_REGION });
 
 const ARTICLES_TABLE   = process.env.ARTICLES_TABLE_NAME!;
 const USERS_TABLE      = process.env.USERS_TABLE_NAME!;
 const SES_FROM_EMAIL   = process.env.SES_FROM_EMAIL!;
 const CORS_ORIGIN      = process.env.CORS_ORIGIN ?? "*";
-const AUDIO_BUCKET     = process.env.AUDIO_BUCKET_NAME!;
 
 // ─── Article RSS source map ───────────────────────────────────────────────────
 
@@ -862,75 +857,6 @@ function fallbackArticle(interest: string): Article {
   };
 }
 
-// ─── Audio Edition: Polly TTS + S3 shared cache ───────────────────────────────
-
-function articleId(url: string): string {
-  return createHash("sha256").update(url).digest("hex").slice(0, 32);
-}
-
-async function audioExists(s3Key: string): Promise<boolean> {
-  try {
-    await s3.send(new HeadObjectCommand({ Bucket: AUDIO_BUCKET, Key: s3Key }));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function generateAudio(article: Article): Promise<string | null> {
-  if (!AUDIO_BUCKET) return null;
-
-  const id    = articleId(article.url);
-  const s3Key = `audio/${id}/en.mp3`;
-
-  if (await audioExists(s3Key)) {
-    console.log(`Audio cache hit: ${s3Key}`);
-    return `https://${AUDIO_BUCKET}.s3.amazonaws.com/${s3Key}`;
-  }
-
-  const text = [
-    article.title,
-    article.summary,
-    `Why this article? ${article.reason}`,
-  ].join(". ");
-
-  try {
-    const response = await polly.send(
-      new SynthesizeSpeechCommand({
-        Text:         text,
-        OutputFormat: "mp3",
-        VoiceId:      "Ruth",
-        Engine:       "generative",
-        TextType:     "text",
-      })
-    );
-
-    if (!response.AudioStream) return null;
-
-    const chunks: Uint8Array[] = [];
-    for await (const chunk of response.AudioStream as AsyncIterable<Uint8Array>) {
-      chunks.push(chunk);
-    }
-    const audioBuffer = Buffer.concat(chunks);
-
-    await s3.send(
-      new PutObjectCommand({
-        Bucket:      AUDIO_BUCKET,
-        Key:         s3Key,
-        Body:        audioBuffer,
-        ContentType: "audio/mpeg",
-        CacheControl: "public, max-age=86400",
-      })
-    );
-
-    console.log(`Audio generated and uploaded: ${s3Key}`);
-    return `https://${AUDIO_BUCKET}.s3.amazonaws.com/${s3Key}`;
-  } catch (err) {
-    console.error(`Polly failed for article "${article.title}":`, err);
-    return null;
-  }
-}
-
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 interface GenerateEvent {
@@ -1000,12 +926,6 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
   } catch (err) {
     console.error(`Article generation failed for "${interestsLabel}":`, err);
     article = fallbackArticle(interests[0]);
-  }
-
-  // Audio Edition
-  if (article.url !== "https://news.ycombinator.com") {
-    const audioUrl = await generateAudio(article);
-    if (audioUrl) article = { ...article, audioUrl } as Article & { audioUrl: string };
   }
 
   // ── Podcast — tüm interest'lerin podcast feed'lerini birleştir ───────────────

@@ -18,7 +18,6 @@ const PRO_FEATURES = [
   "Everything in Free",
   "3 interests, 3 articles daily",
   "6 sub-topics per interest category",
-  "Personalised prompt — AI picks articles for your specific focus",
   "3 podcast recommendations daily",
   "Weekly trend report every Sunday",
 ];
@@ -163,8 +162,8 @@ export default function RegisterPage() {
       </div>
 
       {/* Plans */}
-      <div style={{ maxWidth: 860, margin: "0 auto", padding: "60px 5vw" }}>
-        <div style={{ display: "grid", gap: 20, gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))" }}>
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "60px 5vw" }}>
+        <div style={{ display: "grid", gap: 20, gridTemplateColumns: "repeat(2, 1fr)" }}>
 
           {/* Free */}
           <div style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: 16, padding: 36, display: "flex", flexDirection: "column" }}>
@@ -202,7 +201,11 @@ export default function RegisterPage() {
             </div>
             <div style={{ marginBottom: 24 }}>
               <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)" }}>Pro</span>
-              <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)", marginTop: 8, marginBottom: 8 }}>Go deeper</h2>
+              <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)", marginTop: 8, marginBottom: 4 }}>Go deeper</h2>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+                <span style={{ fontFamily: "'Lora', serif", fontSize: "2rem", fontWeight: 600, color: "var(--ink)" }}>$4.80</span>
+                <span style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>/ month</span>
+              </div>
               <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.65 }}>For serious readers. More interests, deeper personalisation, and weekly reading reports.</p>
             </div>
             <ul style={{ flex: 1, listStyle: "none", marginBottom: 28, display: "flex", flexDirection: "column", gap: 12 }}>
