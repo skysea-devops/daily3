@@ -53,7 +53,7 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Wilson Center",          url: "https://www.wilsoncenter.org/rss.xml" },
     { name: "The Conversation (Pol)", url: "https://theconversation.com/politics/articles.atom" },
     { name: "Le Monde Diplomatique",  url: "https://mondediplo.com/spip.php?page=backend" },
-    { name: "Al Jazeera",             url: "https://www.aljazeera.com/xml/rss/all.xml" },
+    { name: "The Diplomat",           url: "https://thediplomat.com/feed/" },
   ],
 
   "Business": [
@@ -615,6 +615,8 @@ const ROUNDUP_PATTERNS  = /\b(weekly|roundup|link list|best of|this week in|top 
 const PODCAST_PATTERNS  = /\b(podcast|transcript|episode|listen now|audio|ep\.|ep \d+)\b/i;
 const VIDEO_PATTERNS    = /\b(video|watch|newsfeed|news feed)\b/i;
 const VIDEO_URL_PATTERN = /\/(video|videos|watch)\//i;
+const BREAKING_PATTERNS = /\b(breaking|live|live blog|live updates|live coverage|as it happened|in pictures|in maps)\b/i;
+const LIVEBLOG_URL_PATTERN = /\/(liveblog|live-blog|live_blog|breaking|live\/)\//i;
 
 function scoreAndFilter(
   items: RSSItem[],
@@ -641,6 +643,8 @@ function scoreAndFilter(
     .filter((item) => !ROUNDUP_PATTERNS.test(item.title))
     .filter((item) => !VIDEO_PATTERNS.test(item.title))
     .filter((item) => !VIDEO_URL_PATTERN.test(item.url))
+    .filter((item) => !BREAKING_PATTERNS.test(item.title))
+    .filter((item) => !LIVEBLOG_URL_PATTERN.test(item.url))
     // Makaleler için podcast filtresi; podcast feed'leri için bu filtreyi atla
     .filter((item) => isPodcast || !PODCAST_PATTERNS.test(item.title))
     .sort((a, b) => {
@@ -689,11 +693,12 @@ ${diversityNote}
 
 Select the single best LONG-FORM ARTICLE from the candidates below. You must strictly prioritise:
 1. DEPTH over brevity — prefer essays, research summaries, analysis pieces, and think-tank reports. Reject short news items, press releases, and articles under ~800 words.
-2. SUBSTANCE — the piece should contain original analysis, research findings, or expert insight. Not just a summary of events.
-3. FORMAT — reject podcast transcripts, interview Q&A transcripts, episode summaries, "listen now" style content, video reports, and newsfeed items. Only written long-form articles intended to be read.
-4. Freshness — prefer articles published TODAY or recently (marked "today" or "recent")
-5. Source variety — avoid sources marked "[source shown recently]" unless clearly superior
-6. Strong relevance to "${interest}"
+2. NO breaking news, liveblogs, live updates, or news dispatches — only analytical pieces written after events have unfolded.
+3. SUBSTANCE — the piece should contain original analysis, research findings, or expert insight. Not just a summary of events.
+4. FORMAT — reject podcast transcripts, interview Q&A transcripts, episode summaries, "listen now" style content, video reports, and newsfeed items. Only written long-form articles intended to be read.
+5. Freshness — prefer articles published TODAY or recently (marked "today" or "recent")
+6. Source variety — avoid sources marked "[source shown recently]" unless clearly superior
+7. Strong relevance to "${interest}"
 
 Candidates:
 ${candidateList}

@@ -235,18 +235,6 @@ resource "aws_iam_role_policy" "generate_articles_lambda_policy" {
         Action   = ["ses:SendEmail", "ses:SendRawEmail"]
         Resource = "*"
       },
-      {
-        Sid      = "PollyTTS"
-        Effect   = "Allow"
-        Action   = ["polly:SynthesizeSpeech"]
-        Resource = "*"
-      },
-      {
-        Sid      = "AudioS3Write"
-        Effect   = "Allow"
-        Action   = ["s3:PutObject", "s3:HeadObject", "s3:GetObject"]
-        Resource = "arn:aws:s3:::${aws_s3_bucket.audio.id}/*"
-      },
     ]
   })
 }
@@ -274,7 +262,6 @@ resource "aws_lambda_function" "generate_articles" {
       SES_FROM_EMAIL      = var.ses_from_email
       CORS_ORIGIN         = var.cors_origin
       BEDROCK_REGION      = var.aws_region
-      AUDIO_BUCKET_NAME   = aws_s3_bucket.audio.id
       NODE_OPTIONS        = "--enable-source-maps"
     }
   }
@@ -466,55 +453,7 @@ resource "aws_lambda_permission" "allow_eventbridge" {
   source_arn    = aws_cloudwatch_event_rule.daily_07_00.arn
 }
 
-# ==============================================================================
-# Audio Edition — S3 Bucket (shared Polly TTS cache)
-# ==============================================================================
 
-resource "aws_s3_bucket" "audio" {
-  bucket = "daily3-dev-audio" # kept for backward compat — contains existing audio files
-}
-
-resource "aws_s3_bucket_public_access_block" "audio" {
-  bucket = aws_s3_bucket.audio.id
-
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-}
-
-resource "aws_s3_bucket_policy" "audio_public_read" {
-  bucket     = aws_s3_bucket.audio.id
-  depends_on = [aws_s3_bucket_public_access_block.audio]
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Sid       = "PublicReadAudio"
-      Effect    = "Allow"
-      Principal = "*"
-      Action    = "s3:GetObject"
-      Resource  = "${aws_s3_bucket.audio.arn}/*"
-    }]
-  })
-}
-
-resource "aws_s3_bucket_lifecycle_configuration" "audio" {
-  bucket = aws_s3_bucket.audio.id
-
-  rule {
-    id     = "expire-audio-30-days"
-    status = "Enabled"
-
-    filter {
-      prefix = "audio/"
-    }
-
-    expiration {
-      days = 30
-    }
-  }
-}
 
 
 
