@@ -1,0 +1,9 @@
+environment          = "dev"
+app_url              = "https://dev.cogletta.com"
+contact_email        = "read@cogletta.com"
+app_name             = "Cogletta"
+ses_from_email       = "read@cogletta.com"
+cors_origin          = "https://dev.cogletta.com"
+cors_allowed_origins = ["https://dev.cogletta.com"]
+domain_name          = "dev.cogletta.com"
+domain_aliases       = ["dev.cogletta.com"]
