@@ -6,7 +6,7 @@ resource "aws_cognito_user_pool" "main" {
 
   email_configuration {
     email_sending_account = "DEVELOPER"
-    source_arn            = "arn:aws:ses:eu-central-1:117647030196:identity/cogletta.com"
+    source_arn            = "arn:aws:ses:${var.aws_region}:${data.aws_caller_identity.current.account_id}:identity/cogletta.com"
     from_email_address    = "Cogletta <read@cogletta.com>"
   }
 
