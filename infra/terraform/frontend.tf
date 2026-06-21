@@ -15,11 +15,21 @@ resource "aws_acm_certificate" "cogletta" {
 
   lifecycle {
     create_before_destroy = true
+    ignore_changes        = [subject_alternative_names]
+  }
+}
+
+resource "aws_acm_certificate_validation" "cogletta" {
+  provider        = aws.us_east_1
+  certificate_arn = aws_acm_certificate.cogletta.arn
+
+  timeouts {
+    create = "45m"
   }
 }
 
 # ==============================================================================
-# Route53 — Hosted Zone (zaten var, data olarak çek)
+# Route53 — Hosted Zone
 # ==============================================================================
 
 data "aws_route53_zone" "cogletta" {
@@ -27,7 +37,6 @@ data "aws_route53_zone" "cogletta" {
   private_zone = false
 }
 
-# ACM DNS validation kayıtları
 resource "aws_route53_record" "cert_validation" {
   for_each = {
     for dvo in aws_acm_certificate.cogletta.domain_validation_options : dvo.domain_name => {
@@ -37,15 +46,13 @@ resource "aws_route53_record" "cert_validation" {
     }
   }
 
-  zone_id = data.aws_route53_zone.cogletta.zone_id
-  name    = each.value.name
-  type    = each.value.type
-  records = [each.value.record]
-  ttl     = 60
+  zone_id         = data.aws_route53_zone.cogletta.zone_id
+  name            = each.value.name
+  type            = each.value.type
+  records         = [each.value.record]
+  ttl             = 60
+  allow_overwrite = true
 }
-
-# NOT: ACM certificate validation DNS tabanlı — Route53 kayıtları eklendi,
-# AWS otomatik validate eder. Terraform burada bekletmiyor.
 
 # ==============================================================================
 # S3 — Frontend bucket
@@ -104,7 +111,7 @@ resource "aws_s3_bucket_policy" "frontend" {
 }
 
 # ==============================================================================
-# CloudFront Function — URL Rewrite (Next.js static export routing)
+# CloudFront Function — URL Rewrite
 # ==============================================================================
 
 resource "aws_cloudfront_function" "rewrite" {
@@ -186,16 +193,16 @@ resource "aws_cloudfront_distribution" "frontend" {
   }
 
   viewer_certificate {
-    acm_certificate_arn      = aws_acm_certificate.cogletta.arn
+    acm_certificate_arn      = aws_acm_certificate_validation.cogletta.certificate_arn
     ssl_support_method       = "sni-only"
     minimum_protocol_version = "TLSv1.2_2021"
   }
 
-  depends_on = [aws_acm_certificate.cogletta]
+  depends_on = [aws_acm_certificate_validation.cogletta]
 }
 
 # ==============================================================================
-# Route53 — A records → CloudFront (her alias için)
+# Route53 — A records → CloudFront
 # ==============================================================================
 
 resource "aws_route53_record" "frontend_aliases" {
