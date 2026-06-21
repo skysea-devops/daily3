@@ -22,9 +22,9 @@ permissions:
 
 # Branch → environment mapping:
 #   PR to main   → dev  environment (plan only)
-#   push to main → dev  environment (apply + deploy)
+#   merge to main → dev  environment (apply + deploy)
 #   PR to prod   → prod environment (plan only)
-#   push to prod → prod environment (apply + deploy)
+#   merge to prod → prod environment (apply + deploy)
 
 env:
   TARGET_ENV: ${{ github.base_ref == 'prod' && 'prod' || 'dev' }}
@@ -72,7 +72,7 @@ jobs:
   build-frontend:
     name: Build frontend
     runs-on: ubuntu-latest
-    environment: ${{ env.TARGET_ENV }}
+    environment: ${{ github.base_ref == 'prod' && 'prod' || 'dev' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -108,7 +108,7 @@ jobs:
     name: Terraform
     runs-on: ubuntu-latest
     needs: [build-lambdas, build-frontend]
-    environment: ${{ env.TARGET_ENV }}
+    environment: ${{ github.base_ref == 'prod' && 'prod' || 'dev' }}
     defaults:
       run:
         working-directory: infra/terraform
@@ -134,7 +134,7 @@ jobs:
       - name: Select tfvars file
         id: tfvars
         run: |
-          if [ "${{ env.TARGET_ENV }}" = "prod" ]; then
+          if [ "${{ github.base_ref == 'prod' && 'prod' || 'dev' }}" = "prod" ]; then
             echo "file=prod.tfvars" >> $GITHUB_OUTPUT
           else
             echo "file=dev.tfvars" >> $GITHUB_OUTPUT
@@ -143,7 +143,7 @@ jobs:
       - name: Select backend config
         id: backend
         run: |
-          if [ "${{ env.TARGET_ENV }}" = "prod" ]; then
+          if [ "${{ github.base_ref == 'prod' && 'prod' || 'dev' }}" = "prod" ]; then
             echo "bucket=cogletta-prod-tfstate" >> $GITHUB_OUTPUT
             echo "key=cogletta/prod/terraform.tfstate" >> $GITHUB_OUTPUT
           else
@@ -182,7 +182,7 @@ jobs:
     name: Deploy frontend
     runs-on: ubuntu-latest
     needs: [build-frontend, terraform]
-    environment: ${{ env.TARGET_ENV }}
+    environment: ${{ github.base_ref == 'prod' && 'prod' || 'dev' }}
     if: github.event.pull_request.merged == true
     steps:
       - name: Download frontend artifacts
