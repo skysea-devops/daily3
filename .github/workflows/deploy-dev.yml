@@ -73,6 +73,16 @@ jobs:
         working-directory: app-frontend
         run: npm ci
 
+      - name: Debug environment variables
+        run: |
+          echo "POOL_ID length: ${#NEXT_PUBLIC_COGNITO_USER_POOL_ID}"
+          echo "CLIENT_ID length: ${#NEXT_PUBLIC_COGNITO_CLIENT_ID}"
+          echo "API_URL: $NEXT_PUBLIC_API_BASE_URL"
+        env:
+          NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ vars.NEXT_PUBLIC_COGNITO_USER_POOL_ID }}
+          NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ vars.NEXT_PUBLIC_COGNITO_CLIENT_ID }}
+          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+
       - name: Build
         working-directory: app-frontend
         run: npm run build
