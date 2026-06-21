@@ -2,17 +2,22 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand, QueryCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-
+import { PollyClient, SynthesizeSpeechCommand } from "@aws-sdk/client-polly";
+import { S3Client, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { createHash } from "crypto";
 import { Article, Podcast, DailyArticles, Keys } from "../../../shared/types";
 
 const dynamo  = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const bedrock = new BedrockRuntimeClient({ region: process.env.AWS_REGION });
 const ses     = new SESClient({ region: process.env.AWS_REGION });
+const polly   = new PollyClient({ region: "us-east-1" }); // Generative engine only in us-east-1
+const s3      = new S3Client({ region: process.env.AWS_REGION });
 
 const ARTICLES_TABLE   = process.env.ARTICLES_TABLE_NAME!;
 const USERS_TABLE      = process.env.USERS_TABLE_NAME!;
 const SES_FROM_EMAIL   = process.env.SES_FROM_EMAIL!;
 const CORS_ORIGIN      = process.env.CORS_ORIGIN ?? "*";
+const AUDIO_BUCKET     = process.env.AUDIO_BUCKET_NAME!;
 
 // ─── Article RSS source map ───────────────────────────────────────────────────
 
@@ -48,7 +53,7 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Wilson Center",          url: "https://www.wilsoncenter.org/rss.xml" },
     { name: "The Conversation (Pol)", url: "https://theconversation.com/politics/articles.atom" },
     { name: "Le Monde Diplomatique",  url: "https://mondediplo.com/spip.php?page=backend" },
-    { name: "Al Jazeera",             url: "https://www.aljazeera.com/xml/rss/all.xml" },
+    { name: "The Diplomat",           url: "https://thediplomat.com/feed/" },
   ],
 
   "Business": [
@@ -610,6 +615,8 @@ const ROUNDUP_PATTERNS  = /\b(weekly|roundup|link list|best of|this week in|top 
 const PODCAST_PATTERNS  = /\b(podcast|transcript|episode|listen now|audio|ep\.|ep \d+)\b/i;
 const VIDEO_PATTERNS    = /\b(video|watch|newsfeed|news feed)\b/i;
 const VIDEO_URL_PATTERN = /\/(video|videos|watch)\//i;
+const BREAKING_PATTERNS = /\b(breaking|live|live blog|live updates|live coverage|as it happened|in pictures|in maps)\b/i;
+const LIVEBLOG_URL_PATTERN = /\/(liveblog|live-blog|live_blog|breaking|live\/)\//i;
 
 function scoreAndFilter(
   items: RSSItem[],
@@ -636,6 +643,8 @@ function scoreAndFilter(
     .filter((item) => !ROUNDUP_PATTERNS.test(item.title))
     .filter((item) => !VIDEO_PATTERNS.test(item.title))
     .filter((item) => !VIDEO_URL_PATTERN.test(item.url))
+    .filter((item) => !BREAKING_PATTERNS.test(item.title))
+    .filter((item) => !LIVEBLOG_URL_PATTERN.test(item.url))
     // Makaleler için podcast filtresi; podcast feed'leri için bu filtreyi atla
     .filter((item) => isPodcast || !PODCAST_PATTERNS.test(item.title))
     .sort((a, b) => {
@@ -684,11 +693,12 @@ ${diversityNote}
 
 Select the single best LONG-FORM ARTICLE from the candidates below. You must strictly prioritise:
 1. DEPTH over brevity — prefer essays, research summaries, analysis pieces, and think-tank reports. Reject short news items, press releases, and articles under ~800 words.
-2. SUBSTANCE — the piece should contain original analysis, research findings, or expert insight. Not just a summary of events.
-3. FORMAT — reject podcast transcripts, interview Q&A transcripts, episode summaries, "listen now" style content, video reports, and newsfeed items. Only written long-form articles intended to be read.
-4. Freshness — prefer articles published TODAY or recently (marked "today" or "recent")
-5. Source variety — avoid sources marked "[source shown recently]" unless clearly superior
-6. Strong relevance to "${interest}"
+2. NO breaking news, liveblogs, live updates, or news dispatches — only analytical pieces written after events have unfolded.
+3. SUBSTANCE — the piece should contain original analysis, research findings, or expert insight. Not just a summary of events.
+4. FORMAT — reject podcast transcripts, interview Q&A transcripts, episode summaries, "listen now" style content, video reports, and newsfeed items. Only written long-form articles intended to be read.
+5. Freshness — prefer articles published TODAY or recently (marked "today" or "recent")
+6. Source variety — avoid sources marked "[source shown recently]" unless clearly superior
+7. Strong relevance to "${interest}"
 
 Candidates:
 ${candidateList}
@@ -857,6 +867,75 @@ function fallbackArticle(interest: string): Article {
   };
 }
 
+// ─── Audio Edition: Polly TTS + S3 shared cache ───────────────────────────────
+
+function articleId(url: string): string {
+  return createHash("sha256").update(url).digest("hex").slice(0, 32);
+}
+
+async function audioExists(s3Key: string): Promise<boolean> {
+  try {
+    await s3.send(new HeadObjectCommand({ Bucket: AUDIO_BUCKET, Key: s3Key }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function generateAudio(article: Article): Promise<string | null> {
+  if (!AUDIO_BUCKET) return null;
+
+  const id    = articleId(article.url);
+  const s3Key = `audio/${id}/en.mp3`;
+
+  if (await audioExists(s3Key)) {
+    console.log(`Audio cache hit: ${s3Key}`);
+    return `https://${AUDIO_BUCKET}.s3.amazonaws.com/${s3Key}`;
+  }
+
+  const text = [
+    article.title,
+    article.summary,
+    `Why this article? ${article.reason}`,
+  ].join(". ");
+
+  try {
+    const response = await polly.send(
+      new SynthesizeSpeechCommand({
+        Text:         text,
+        OutputFormat: "mp3",
+        VoiceId:      "Ruth",
+        Engine:       "generative",
+        TextType:     "text",
+      })
+    );
+
+    if (!response.AudioStream) return null;
+
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of response.AudioStream as AsyncIterable<Uint8Array>) {
+      chunks.push(chunk);
+    }
+    const audioBuffer = Buffer.concat(chunks);
+
+    await s3.send(
+      new PutObjectCommand({
+        Bucket:      AUDIO_BUCKET,
+        Key:         s3Key,
+        Body:        audioBuffer,
+        ContentType: "audio/mpeg",
+        CacheControl: "public, max-age=86400",
+      })
+    );
+
+    console.log(`Audio generated and uploaded: ${s3Key}`);
+    return `https://${AUDIO_BUCKET}.s3.amazonaws.com/${s3Key}`;
+  } catch (err) {
+    console.error(`Polly failed for article "${article.title}":`, err);
+    return null;
+  }
+}
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 interface GenerateEvent {
@@ -926,6 +1005,12 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
   } catch (err) {
     console.error(`Article generation failed for "${interestsLabel}":`, err);
     article = fallbackArticle(interests[0]);
+  }
+
+  // Audio Edition
+  if (article.url !== "https://news.ycombinator.com") {
+    const audioUrl = await generateAudio(article);
+    if (audioUrl) article = { ...article, audioUrl } as Article & { audioUrl: string };
   }
 
   // ── Podcast — tüm interest'lerin podcast feed'lerini birleştir ───────────────

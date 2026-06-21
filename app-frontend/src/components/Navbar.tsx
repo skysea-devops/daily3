@@ -44,6 +44,9 @@ export default function Navbar() {
         <nav style={{ display: "flex", alignItems: "center", gap: 20 }}>
           {!loading && user ? (
             <>
+              <span style={{ ...navLink, color: "var(--ink)", fontWeight: 600 }}>
+                {user.email.split("@")[0]}
+              </span>
               <Link href="/dashboard" style={navLink}>Dashboard</Link>
               <Link href="/interests" style={navLink}>Interests</Link>
               <button onClick={handleSignOut} style={{ ...navLink, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
