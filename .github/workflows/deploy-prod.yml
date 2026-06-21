@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy (prod)
 
 on:
   pull_request:
@@ -7,32 +7,22 @@ on:
       - synchronize
       - closed
     branches:
-      - main
       - prod
     paths:
       - "infra/terraform/**"
       - "app-backend/**"
       - "app-frontend/**"
-      - ".github/workflows/terraform.yml"
+      - ".github/workflows/deploy-prod.yml"
 
 permissions:
   id-token: write
   contents: read
   pull-requests: read
 
-# Branch → environment mapping:
-#   PR to main   → dev  environment (plan only)
-#   merge to main → dev  environment (apply + deploy)
-#   PR to prod   → prod environment (plan only)
-#   merge to prod → prod environment (apply + deploy)
-
-env:
-  TARGET_ENV: ${{ github.base_ref == 'prod' && 'prod' || 'dev' }}
+# PR to prod   → prod environment (plan only)
+# merge to prod → prod environment (apply + deploy)
 
 jobs:
-  # ────────────────────────────────────────────────────────────────────────────
-  # 1. Build Lambda functions
-  # ────────────────────────────────────────────────────────────────────────────
   build-lambdas:
     name: Build Lambda functions
     runs-on: ubuntu-latest
@@ -66,13 +56,10 @@ jobs:
           path: app-backend/lambdas/**/dist/
           retention-days: 1
 
-  # ────────────────────────────────────────────────────────────────────────────
-  # 2. Build Next.js frontend
-  # ────────────────────────────────────────────────────────────────────────────
   build-frontend:
     name: Build frontend
     runs-on: ubuntu-latest
-    environment: ${{ github.base_ref == 'prod' && 'prod' || 'dev' }}
+    environment: prod
     steps:
       - uses: actions/checkout@v4
 
@@ -101,14 +88,11 @@ jobs:
           path: app-frontend/out/
           retention-days: 1
 
-  # ────────────────────────────────────────────────────────────────────────────
-  # 3. Terraform plan / apply
-  # ────────────────────────────────────────────────────────────────────────────
   terraform:
     name: Terraform
     runs-on: ubuntu-latest
     needs: [build-lambdas, build-frontend]
-    environment: ${{ github.base_ref == 'prod' && 'prod' || 'dev' }}
+    environment: prod
     defaults:
       run:
         working-directory: infra/terraform
@@ -131,31 +115,11 @@ jobs:
         with:
           terraform_version: 1.10.5
 
-      - name: Select tfvars file
-        id: tfvars
-        run: |
-          if [ "${{ github.base_ref == 'prod' && 'prod' || 'dev' }}" = "prod" ]; then
-            echo "file=prod.tfvars" >> $GITHUB_OUTPUT
-          else
-            echo "file=dev.tfvars" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Select backend config
-        id: backend
-        run: |
-          if [ "${{ github.base_ref == 'prod' && 'prod' || 'dev' }}" = "prod" ]; then
-            echo "bucket=cogletta-prod-tfstate" >> $GITHUB_OUTPUT
-            echo "key=cogletta/prod/terraform.tfstate" >> $GITHUB_OUTPUT
-          else
-            echo "bucket=daily3-dev-tfstate" >> $GITHUB_OUTPUT
-            echo "key=daily3/dev/terraform.tfstate" >> $GITHUB_OUTPUT
-          fi
-
       - name: Terraform Init
         run: |
           terraform init \
-            -backend-config="bucket=${{ steps.backend.outputs.bucket }}" \
-            -backend-config="key=${{ steps.backend.outputs.key }}" \
+            -backend-config="bucket=cogletta-prod-tfstate" \
+            -backend-config="key=cogletta/prod/terraform.tfstate" \
             -backend-config="region=${{ vars.AWS_REGION }}" \
             -reconfigure
 
@@ -166,7 +130,7 @@ jobs:
         env:
           TF_VAR_google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-        run: terraform plan -var-file=${{ steps.tfvars.outputs.file }} -out=tfplan
+        run: terraform plan -var-file=prod.tfvars -out=tfplan
 
       - name: Terraform Apply
         if: github.event.pull_request.merged == true
@@ -175,14 +139,11 @@ jobs:
           TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: terraform apply -auto-approve tfplan
 
-  # ────────────────────────────────────────────────────────────────────────────
-  # 4. Deploy frontend to S3 + invalidate CloudFront
-  # ────────────────────────────────────────────────────────────────────────────
   deploy-frontend:
     name: Deploy frontend
     runs-on: ubuntu-latest
     needs: [build-frontend, terraform]
-    environment: ${{ github.base_ref == 'prod' && 'prod' || 'dev' }}
+    environment: prod
     if: github.event.pull_request.merged == true
     steps:
       - name: Download frontend artifacts
