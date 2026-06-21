@@ -44,11 +44,8 @@ resource "aws_route53_record" "cert_validation" {
   ttl     = 60
 }
 
-resource "aws_acm_certificate_validation" "cogletta" {
-  provider                = aws.us_east_1
-  certificate_arn         = aws_acm_certificate.cogletta.arn
-  validation_record_fqdns = [for r in aws_route53_record.cert_validation : r.fqdn]
-}
+# NOT: ACM certificate validation DNS tabanlı — Route53 kayıtları eklendi,
+# AWS otomatik validate eder. Terraform burada bekletmiyor.
 
 # ==============================================================================
 # S3 — Frontend bucket
@@ -189,12 +186,12 @@ resource "aws_cloudfront_distribution" "frontend" {
   }
 
   viewer_certificate {
-    acm_certificate_arn      = aws_acm_certificate_validation.cogletta.certificate_arn
+    acm_certificate_arn      = aws_acm_certificate.cogletta.arn
     ssl_support_method       = "sni-only"
     minimum_protocol_version = "TLSv1.2_2021"
   }
 
-  depends_on = [aws_acm_certificate_validation.cogletta]
+  depends_on = [aws_acm_certificate.cogletta]
 }
 
 # ==============================================================================
