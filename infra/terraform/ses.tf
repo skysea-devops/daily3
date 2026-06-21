@@ -29,10 +29,7 @@ resource "aws_route53_record" "ses_verification" {
   records = [aws_ses_domain_identity.cogletta.verification_token]
 }
 
-resource "aws_ses_domain_identity_verification" "cogletta" {
-  domain     = aws_ses_domain_identity.cogletta.id
-  depends_on = [aws_route53_record.ses_verification]
-}
+# NOT: SES domain verification manuel yapılıyor — Terraform burada bekletmiyor
 
 # MX kaydı — read@cogletta.com'a email alabilmek için
 resource "aws_route53_record" "mx" {
