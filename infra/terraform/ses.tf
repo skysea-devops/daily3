@@ -18,6 +18,10 @@ resource "aws_route53_record" "ses_dkim" {
   type    = "CNAME"
   ttl     = 300
   records = ["${aws_ses_domain_dkim.cogletta.dkim_tokens[count.index]}.dkim.amazonses.com"]
+
+  lifecycle {
+    ignore_changes = all
+  }
 }
 
 # SES domain verification TXT kaydı
@@ -27,9 +31,11 @@ resource "aws_route53_record" "ses_verification" {
   type    = "TXT"
   ttl     = 300
   records = [aws_ses_domain_identity.cogletta.verification_token]
-}
 
-# NOT: SES domain verification manuel yapılıyor — Terraform burada bekletmiyor
+  lifecycle {
+    ignore_changes = all
+  }
+}
 
 # MX kaydı — read@cogletta.com'a email alabilmek için
 resource "aws_route53_record" "mx" {
@@ -38,6 +44,10 @@ resource "aws_route53_record" "mx" {
   type    = "MX"
   ttl     = 300
   records = ["10 inbound-smtp.eu-central-1.amazonaws.com"]
+
+  lifecycle {
+    ignore_changes = all
+  }
 }
 
 # SPF kaydı — email deliverability
@@ -47,6 +57,10 @@ resource "aws_route53_record" "spf" {
   type    = "TXT"
   ttl     = 300
   records = ["v=spf1 include:amazonses.com ~all"]
+
+  lifecycle {
+    ignore_changes = all
+  }
 }
 
 # DMARC kaydı
@@ -56,4 +70,8 @@ resource "aws_route53_record" "dmarc" {
   type    = "TXT"
   ttl     = 300
   records = ["v=DMARC1; p=quarantine; rua=mailto:read@cogletta.com"]
+
+  lifecycle {
+    ignore_changes = all
+  }
 }
