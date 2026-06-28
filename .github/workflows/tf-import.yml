@@ -11,10 +11,7 @@ on:
         options:
           - dev
           - prod
-
-permissions:
-  id-token: write
-  contents: read
+          
 
 jobs:
   import-dev:
