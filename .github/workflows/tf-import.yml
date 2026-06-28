@@ -1,0 +1,67 @@
+name: Terraform Import
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment (dev or prod)"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prod
+      resource_address:
+        description: "Terraform resource address (e.g. aws_route53_record.mx)"
+        required: true
+      resource_id:
+        description: "AWS resource ID"
+        required: true
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+
+      - name: Terraform Init (dev)
+        if: github.event.inputs.environment == 'dev'
+        run: |
+          terraform init \
+            -backend-config="bucket=daily3-dev-tfstate" \
+            -backend-config="key=daily3/dev/terraform.tfstate" \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -reconfigure
+
+      - name: Terraform Init (prod)
+        if: github.event.inputs.environment == 'prod'
+        run: |
+          terraform init \
+            -backend-config="bucket=cogletta-prod-tfstate" \
+            -backend-config="key=cogletta/prod/terraform.tfstate" \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -reconfigure
+
+      - name: Terraform Import
+        env:
+          TF_VAR_google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
+          TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: |
+          terraform import \
+            -var-file=${{ github.event.inputs.environment }}.tfvars \
+            "${{ github.event.inputs.resource_address }}" \
+            "${{ github.event.inputs.resource_id }}"
