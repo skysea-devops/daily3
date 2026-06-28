@@ -206,7 +206,8 @@ resource "aws_cloudfront_distribution" "frontend" {
 # ==============================================================================
 
 resource "aws_route53_record" "frontend_aliases" {
-  for_each = toset(var.domain_aliases)
+  for_each        = toset(var.domain_aliases)
+  allow_overwrite = true
 
   zone_id = data.aws_route53_zone.cogletta.zone_id
   name    = each.value
