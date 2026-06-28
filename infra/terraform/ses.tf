@@ -80,3 +80,6 @@ resource "aws_route53_record" "dmarc" {
     ignore_changes = all
   }
 }
+
+
+
