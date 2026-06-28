@@ -11,12 +11,6 @@ on:
         options:
           - dev
           - prod
-      resource_address:
-        description: "Terraform resource address (e.g. aws_route53_record.mx)"
-        required: true
-      resource_id:
-        description: "AWS resource ID"
-        required: true
 
 jobs:
   import:
@@ -56,12 +50,46 @@ jobs:
             -backend-config="region=${{ vars.AWS_REGION }}" \
             -reconfigure
 
-      - name: Terraform Import
+      - name: Import dev Route53 records
+        if: github.event.inputs.environment == 'dev'
         env:
           TF_VAR_google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          ZONE_ID: "Z01030371BF8ZEYMLLIMW"
         run: |
-          terraform import \
-            -var-file=${{ github.event.inputs.environment }}.tfvars \
-            "${{ github.event.inputs.resource_address }}" \
-            "${{ github.event.inputs.resource_id }}"
+          import() {
+            echo "Importing $1 → $2"
+            terraform import -var-file=dev.tfvars "$1" "$2" || echo "SKIP: $1 already in state or failed"
+          }
+
+          import "aws_route53_record.mx"               "${ZONE_ID}_cogletta.com_MX"
+          import "aws_route53_record.spf"              "${ZONE_ID}_cogletta.com_TXT"
+          import "aws_route53_record.dmarc"            "${ZONE_ID}__dmarc.cogletta.com_TXT"
+          import "aws_route53_record.ses_verification" "${ZONE_ID}__amazonses.cogletta.com_TXT"
+          import 'aws_route53_record.ses_dkim[0]'      "${ZONE_ID}_jwjtjlhhofgtgerk3osiu2tkje4cnr4r._domainkey.cogletta.com_CNAME"
+          import 'aws_route53_record.ses_dkim[1]'      "${ZONE_ID}_3jjtgke7qshlhug7gbpkpzm7757e3hkd._domainkey.cogletta.com_CNAME"
+          import 'aws_route53_record.ses_dkim[2]'      "${ZONE_ID}_l6uenve6dp4qn6gsit3c7qzovnoqty6m._domainkey.cogletta.com_CNAME"
+          import 'aws_route53_record.frontend_aliases["dev.cogletta.com"]' "${ZONE_ID}_dev.cogletta.com_CNAME"
+          import 'aws_route53_record.cert_validation["dev.cogletta.com"]'  "${ZONE_ID}__db04904f98b9cd80a6149af033a752dc.dev.cogletta.com._CNAME"
+
+      - name: Import prod Route53 records
+        if: github.event.inputs.environment == 'prod'
+        env:
+          TF_VAR_google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
+          TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          ZONE_ID: "Z03485131CCMLXWDW7024"
+        run: |
+          import() {
+            echo "Importing $1 → $2"
+            terraform import -var-file=prod.tfvars "$1" "$2" || echo "SKIP: $1 already in state or failed"
+          }
+
+          import "aws_route53_record.mx"               "${ZONE_ID}_cogletta.com_MX"
+          import "aws_route53_record.spf"              "${ZONE_ID}_cogletta.com_TXT"
+          import "aws_route53_record.dmarc"            "${ZONE_ID}__dmarc.cogletta.com_TXT"
+          import "aws_route53_record.ses_verification" "${ZONE_ID}__amazonses.cogletta.com_TXT"
+          import 'aws_route53_record.ses_dkim[0]'      "${ZONE_ID}_l32lm3zdawzijvl5czhrmpd2vsetcn5a._domainkey.cogletta.com_CNAME"
+          import 'aws_route53_record.ses_dkim[1]'      "${ZONE_ID}_p3ukthlebr7gpxhfvblrnpj3egudm6vq._domainkey.cogletta.com_CNAME"
+          import 'aws_route53_record.ses_dkim[2]'      "${ZONE_ID}_sf5zlzhumegwmhyvipunknfdte5u2q7l._domainkey.cogletta.com_CNAME"
+          import 'aws_route53_record.frontend_aliases["cogletta.com"]' "${ZONE_ID}_cogletta.com_A"
+          import 'aws_route53_record.cert_validation["cogletta.com"]'  "${ZONE_ID}__2ac400cd6f92cf2f2e304a487e65f188.cogletta.com._CNAME"
