@@ -793,7 +793,7 @@ ${diversityNote}
 
 Select the single best PODCAST EPISODE from the candidates below. Prioritise:
 1. RELEVANCE — the episode must directly address the user's interest area
-2. DEPTH — prefer substantive interviews, investigations, or documentary-style episodes over news recaps
+2. DEPTH — prefer substantive interviews, investigations, long-form analysis, or documentary-style episodes. STRICTLY AVOID daily news bulletins, breaking news recaps, news digests, and episodes whose primary purpose is reporting recent events or headlines.
 3. Freshness — prefer recent episodes (marked "today" or "recent") but older landmark episodes are fine if clearly superior
 4. Source variety — avoid shows marked "[source shown recently]" unless clearly superior
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signUp } from "@/lib/cognito";
 import Navbar from "@/components/Navbar";
+import { useAuth } from "@/lib/auth-context";
 
 const FREE_FEATURES = [
   "1 curated article daily, across your 3 interests",
@@ -138,6 +139,57 @@ function RegisterModal({ plan, onClose }: { plan: "free" | "pro"; onClose: () =>
   );
 }
 
+function ProNotifyButton() {
+  const { user } = useAuth();
+  const [notified, setNotified] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("cogletta-pro-notify") === "true";
+  });
+
+  // Sign in olmamışsa eski disabled buton
+  if (!user) {
+    return (
+      <button disabled style={{
+        width: "100%", background: "var(--paper-warm)", color: "var(--ink-muted)",
+        border: "none", borderRadius: 10, padding: "13px 24px",
+        fontSize: "0.9375rem", fontWeight: 600, cursor: "not-allowed",
+      }}>
+        Notify me when Pro launches
+      </button>
+    );
+  }
+
+  // Sign in olmuş — aktif buton
+  if (notified) {
+    return (
+      <div style={{
+        width: "100%", background: "#f0fdf4", border: "1px solid #bbf7d0",
+        borderRadius: 10, padding: "13px 24px", textAlign: "center",
+        fontSize: "0.9375rem", fontWeight: 600, color: "#166534",
+        boxSizing: "border-box",
+      }}>
+        ✓ We'll let you know when Pro launches
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => {
+        localStorage.setItem("cogletta-pro-notify", "true");
+        setNotified(true);
+      }}
+      style={{
+        width: "100%", background: "var(--accent)", color: "var(--white)",
+        border: "none", borderRadius: 10, padding: "13px 24px",
+        fontSize: "0.9375rem", fontWeight: 600, cursor: "pointer",
+      }}
+    >
+      Notify me when Pro launches →
+    </button>
+  );
+}
+
 export default function RegisterPage() {
   const [modal, setModal] = useState<"free" | "pro" | null>(null);
 
@@ -190,7 +242,7 @@ export default function RegisterPage() {
           </div>
 
           {/* Pro */}
-          <div style={{ background: "var(--white)", border: "2px solid var(--accent)", borderRadius: 16, padding: 36, display: "flex", flexDirection: "column", position: "relative" }}>
+          <div id="pro" style={{ background: "var(--white)", border: "2px solid var(--accent)", borderRadius: 16, padding: 36, display: "flex", flexDirection: "column", position: "relative" }}>
             <div style={{
               position: "absolute", top: -13, left: 28,
               background: "var(--accent)", color: "var(--white)",
@@ -216,13 +268,7 @@ export default function RegisterPage() {
                 </li>
               ))}
             </ul>
-            <button disabled style={{
-              width: "100%", background: "var(--paper-warm)", color: "var(--ink-muted)",
-              border: "none", borderRadius: 10, padding: "13px 24px",
-              fontSize: "0.9375rem", fontWeight: 600, cursor: "not-allowed",
-            }}>
-              Notify me when Pro launches
-            </button>
+            <ProNotifyButton />
           </div>
 
         </div>

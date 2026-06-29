@@ -24,9 +24,11 @@ const CATEGORY_EMOJI: Record<string, string> = {
   "Environment":      "🌿",
 };
 
-function extractKeywords(title: string): string {
-  const stop = new Set(["the","a","an","of","in","on","at","to","for","is","are","was","were","and","or","but","how","why","what","when","who","will","can","has","have","its","by","with","from","as","this","that","these","those","be","been","being"]);
-  return title.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w=>w.length>2&&!stop.has(w)).slice(0,3).join(" ");
+function extractKeywords(title: string, category: string): string {
+  const stop = new Set(["the","a","an","of","in","on","at","to","for","is","are","was","were","and","or","but","how","why","what","when","who","will","can","has","have","its","by","with","from","as","this","that","these","those","be","been","being","do","you","lose","when","says","why","new","your"]);
+  const titleWords = title.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w=>w.length>3&&!stop.has(w)).slice(0,2).join(" ");
+  const catWord = category.split(" ")[0].toLowerCase();
+  return titleWords ? `${titleWords} ${catWord}` : catWord;
 }
 
 interface UnsplashPhoto { url: string; authorName: string; authorUrl: string; }
@@ -34,7 +36,7 @@ interface UnsplashPhoto { url: string; authorName: string; authorUrl: string; }
 function useUnsplashPhoto(title: string, category: string): UnsplashPhoto | null {
   const [photo, setPhoto] = useState<UnsplashPhoto | null>(null);
   useEffect(() => {
-    const kw = extractKeywords(title) || category;
+    const kw = extractKeywords(title, category);
     const key = `unsplash:${kw}`;
     const cached = sessionStorage.getItem(key);
     if (cached) { setPhoto(JSON.parse(cached)); return; }
@@ -141,14 +143,11 @@ function ArticleCard({ article }: { article: Article }) {
 }
 
 function PodcastCard({ podcast }: { podcast: Podcast }) {
-  const emoji = CATEGORY_EMOJI[podcast.category] ?? "🎙";
-
   return (
     <article style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: 16, overflow: "hidden" }}>
       <div style={{ padding: "28px 28px 32px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <div style={{ flex: 1 }}>
-            {/* Header row */}
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: "0.9rem" }}>🎙</span>
               <span style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-muted)" }}>
@@ -205,6 +204,40 @@ function PendingCard({ category, type = "article" }: { category: string; type?: 
         <div style={{ height: 16, background: "var(--paper-warm)", borderRadius: 6, width: "50%" }} />
       </div>
     </article>
+  );
+}
+
+const PRO_NUDGES = [
+  { text: "Loved today's edition? Start every morning with 3 thoughtfully selected articles for every interest you follow.", cta: "Unlock Cogletta Pro →" },
+  { text: "Enjoyed today's read? Pro delivers 3 handpicked articles for each of your interests — every morning.", cta: "Explore Cogletta Pro →" },
+];
+
+function ProNudge() {
+  const nudge = PRO_NUDGES[Math.floor(Math.random() * PRO_NUDGES.length)];
+  return (
+    <div style={{
+      borderTop: "1px solid var(--rule)",
+      paddingTop: 24,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 16,
+      flexWrap: "wrap",
+    }}>
+      <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)", lineHeight: 1.6 }}>
+        {nudge.text}
+      </p>
+      <a href="/register#pro" style={{
+        flexShrink: 0,
+        fontSize: "0.875rem",
+        fontWeight: 600,
+        color: "var(--accent)",
+        textDecoration: "none",
+        whiteSpace: "nowrap",
+      }}>
+        {nudge.cta}
+      </a>
+    </div>
   );
 }
 
@@ -292,9 +325,10 @@ function DashboardContent() {
         {status === "ready" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {article && <ArticleCard article={article} />}
+            <ProNudge />
             {podcast && <PodcastCard podcast={podcast} />}
             {generatedAt && (
-              <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--ink-muted)", paddingTop: 8 }}>
+              <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--ink-muted)", paddingTop: 4 }}>
                 Curated at {new Date(generatedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · Refreshes tomorrow at 07:00
               </p>
             )}
