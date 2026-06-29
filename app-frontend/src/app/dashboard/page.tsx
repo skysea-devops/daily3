@@ -24,9 +24,11 @@ const CATEGORY_EMOJI: Record<string, string> = {
   "Environment":      "🌿",
 };
 
-function extractKeywords(title: string): string {
-  const stop = new Set(["the","a","an","of","in","on","at","to","for","is","are","was","were","and","or","but","how","why","what","when","who","will","can","has","have","its","by","with","from","as","this","that","these","those","be","been","being"]);
-  return title.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w=>w.length>2&&!stop.has(w)).slice(0,3).join(" ");
+function extractKeywords(title: string, category: string): string {
+  const stop = new Set(["the","a","an","of","in","on","at","to","for","is","are","was","were","and","or","but","how","why","what","when","who","will","can","has","have","its","by","with","from","as","this","that","these","those","be","been","being","do","you","lose","when","says","why","new","your"]);
+  const titleWords = title.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w=>w.length>3&&!stop.has(w)).slice(0,2).join(" ");
+  const catWord = category.split(" ")[0].toLowerCase();
+  return titleWords ? `${titleWords} ${catWord}` : catWord;
 }
 
 interface UnsplashPhoto { url: string; authorName: string; authorUrl: string; }
@@ -34,7 +36,7 @@ interface UnsplashPhoto { url: string; authorName: string; authorUrl: string; }
 function useUnsplashPhoto(title: string, category: string): UnsplashPhoto | null {
   const [photo, setPhoto] = useState<UnsplashPhoto | null>(null);
   useEffect(() => {
-    const kw = extractKeywords(title) || category;
+    const kw = extractKeywords(title, category);
     const key = `unsplash:${kw}`;
     const cached = sessionStorage.getItem(key);
     if (cached) { setPhoto(JSON.parse(cached)); return; }
