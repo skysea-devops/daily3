@@ -10,6 +10,32 @@ resource "aws_ses_domain_dkim" "cogletta" {
   domain = aws_ses_domain_identity.cogletta.domain
 }
 
+# Custom MAIL FROM domain — teknik gönderici adresi hizalaması için
+resource "aws_ses_domain_mail_from" "cogletta" {
+  domain           = aws_ses_domain_identity.cogletta.domain
+  mail_from_domain = "mail.cogletta.com"
+}
+
+# MAIL FROM MX kaydı
+resource "aws_route53_record" "ses_mail_from_mx" {
+  allow_overwrite = true
+  zone_id         = data.aws_route53_zone.cogletta.zone_id
+  name            = "mail.cogletta.com"
+  type            = "MX"
+  ttl             = 300
+  records         = ["10 feedback-smtp.eu-central-1.amazonses.com"]
+}
+
+# MAIL FROM SPF kaydı
+resource "aws_route53_record" "ses_mail_from_spf" {
+  allow_overwrite = true
+  zone_id         = data.aws_route53_zone.cogletta.zone_id
+  name            = "mail.cogletta.com"
+  type            = "TXT"
+  ttl             = 300
+  records         = ["v=spf1 include:amazonses.com ~all"]
+}
+
 # Route53'e DKIM kayıtları ekle (otomatik)
 resource "aws_route53_record" "ses_dkim" {
   count           = 3
@@ -80,6 +106,3 @@ resource "aws_route53_record" "dmarc" {
     ignore_changes = all
   }
 }
-
-
-
