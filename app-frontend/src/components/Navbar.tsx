@@ -157,7 +157,7 @@ export default function Navbar() {
                           background: "none",
                           borderTop: "1px solid var(--rule)",
                           border: "none",
-                          borderTop: "1px solid var(--rule)",
+                        
                           fontSize: "0.875rem", color: "#c0392b",
                           cursor: "pointer",
                         }}
