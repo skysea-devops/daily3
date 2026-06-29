@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { signUp } from "@/lib/cognito";
+import { useAuth } from "@/lib/auth-context";
 
 function RegisterModal({ onClose }: { onClose: () => void }) {
   const router = useRouter();
@@ -135,6 +136,7 @@ function RegisterModal({ onClose }: { onClose: () => void }) {
 
 export default function HomePage() {
   const [showModal, setShowModal] = useState(false);
+  const { user, loading } = useAuth();
 
   return (
     <>
@@ -227,10 +229,19 @@ export default function HomePage() {
         <nav className="lp-nav">
           <a href="/" className="lp-logo">Cogletta</a>
           <div className="lp-nav-links">
-            <Link href="/login">Sign in</Link>
-            <Link href="/register" className="lp-btn-nav" style={{ background: "var(--ink)", color: "var(--white)", padding: "8px 18px", borderRadius: 6, fontWeight: 500, fontSize: "0.875rem", textDecoration: "none" }}>
-              Start reading
-            </Link>
+            {!loading && user ? (
+              <>
+                <Link href="/dashboard" style={{ fontSize: "0.875rem", color: "var(--ink-soft)", textDecoration: "none" }}>Dashboard</Link>
+                <Link href="/interests" style={{ fontSize: "0.875rem", color: "var(--ink-soft)", textDecoration: "none" }}>Interests</Link>
+              </>
+            ) : (
+              <>
+                <Link href="/login">Sign in</Link>
+                <Link href="/register" className="lp-btn-nav" style={{ background: "var(--ink)", color: "var(--white)", padding: "8px 18px", borderRadius: 6, fontWeight: 500, fontSize: "0.875rem", textDecoration: "none" }}>
+                  Start reading
+                </Link>
+              </>
+            )}
           </div>
         </nav>
 
