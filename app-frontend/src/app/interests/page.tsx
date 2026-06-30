@@ -92,6 +92,7 @@ function SubtopicModal({
     if (picked.includes(topic)) {
       setPicked(picked.filter(t => t !== topic));
     } else {
+      if (picked.length >= 3) return;
       setPicked([...picked, topic]);
     }
   }
@@ -118,7 +119,7 @@ function SubtopicModal({
             {category}
           </h3>
           <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.6 }}>
-            Select the areas you want to focus on. Leave all unselected to get content from across the whole category.
+            Select up to 3 sub-topics. Leave all unselected to get content from across the whole category.
           </p>
         </div>
 
