@@ -14,33 +14,31 @@ import type { CognitoUserSession } from "amazon-cognito-identity-js";
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface AuthUser {
-  sub: string;
-  email: string;
+  sub:         string;
+  email:       string;
   accessToken: string;
-  idToken: string;
+  idToken:     string;
 }
 
 interface AuthContextValue {
-  user: AuthUser | null;
-  /** true while the initial session check is running */
-  loading: boolean;
-  /** true if the user has completed onboarding (interests saved) */
-  hasInterests: boolean;
-  signOut: () => void;
-  /** Call after a successful login to refresh context immediately */
-  refreshSession: () => Promise<void>;
-  /** Call after interests are saved */
+  user:               AuthUser | null;
+  loading:            boolean;
+  hasInterests:       boolean;
+  plan:               "free" | "pro";
+  signOut:            () => void;
+  refreshSession:     () => Promise<void>;
   markInterestsSaved: () => void;
 }
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
 const AuthContext = createContext<AuthContextValue>({
-  user: null,
-  loading: true,
-  hasInterests: false,
-  signOut: () => {},
-  refreshSession: async () => {},
+  user:               null,
+  loading:            true,
+  hasInterests:       false,
+  plan:               "free",
+  signOut:            () => {},
+  refreshSession:     async () => {},
   markInterestsSaved: () => {},
 });
 
@@ -51,9 +49,10 @@ export function useAuth() {
 // ─── Provider ────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser]               = useState<AuthUser | null>(null);
+  const [loading, setLoading]         = useState(true);
   const [hasInterests, setHasInterests] = useState(false);
+  const [plan, setPlan]               = useState<"free" | "pro">("free");
 
   const loadSession = useCallback(async () => {
     return new Promise<void>((resolve) => {
@@ -77,13 +76,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           const claims = session.getIdToken().decodePayload();
 
-          // Sync tokens to localStorage (api.ts reads access_token)
           const accessToken = session.getAccessToken().getJwtToken();
-          const idToken = session.getIdToken().getJwtToken();
+          const idToken     = session.getIdToken().getJwtToken();
 
           setUser({
-            sub: claims["sub"] as string,
-            email: claims["email"] as string,
+            sub:         claims["sub"] as string,
+            email:       claims["email"] as string,
             accessToken,
             idToken,
           });
@@ -91,23 +89,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem("access_token", accessToken);
           localStorage.setItem("id_token", idToken);
 
-          // Fetch interests from DynamoDB (source of truth)
-          // and sync to localStorage so dashboard can read them
           try {
             const profile = await getUserProfile(accessToken);
             if (profile.interests && profile.interests.length === 3) {
-              localStorage.setItem(
-                "cogletta-categories",
-                JSON.stringify(profile.interests)
-              );
+              localStorage.setItem("cogletta-categories", JSON.stringify(profile.interests));
               setHasInterests(true);
             } else {
               setHasInterests(false);
             }
+            setPlan(profile.plan === "pro" ? "pro" : "free");
           } catch {
-            // Fallback to localStorage if API fails
             const saved = localStorage.getItem("cogletta-categories");
             setHasInterests(!!saved);
+            setPlan("free");
           }
 
           setLoading(false);
@@ -133,6 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("cogletta-categories");
     setUser(null);
     setHasInterests(false);
+    setPlan("free");
   }, []);
 
   const markInterestsSaved = useCallback(() => {
@@ -141,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, hasInterests, signOut, refreshSession, markInterestsSaved }}
+      value={{ user, loading, hasInterests, plan, signOut, refreshSession, markInterestsSaved }}
     >
       {children}
     </AuthContext.Provider>
