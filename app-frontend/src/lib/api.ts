@@ -44,6 +44,7 @@ export async function getUserProfile(accessToken: string): Promise<{
   interests: string[];
   email: string | null;
   plan?: "free" | "pro";
+  subTopics?: Record<string, string[]>;
 }> {
   if (!API_BASE_URL) {
     throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");

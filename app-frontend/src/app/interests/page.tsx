@@ -188,12 +188,34 @@ function InterestsForm() {
   const [freeOverlay, setFreeOverlay]     = useState<string | null>(null);   // category label
 
   useEffect(() => {
-    const stored = localStorage.getItem("cogletta-categories");
-    if (stored) setSelected(JSON.parse(stored));
-    const storedSubs = localStorage.getItem("cogletta-subtopics");
-    if (storedSubs) setSubTopics(JSON.parse(storedSubs));
-    // Not: subTopics ayrıca get-profile'dan da yüklenebilir (şimdilik localStorage yeterli)
-  }, []);
+    if (!user) return;
+    async function loadProfile() {
+      try {
+        const { getUserProfile } = await import("@/lib/api");
+        const profile = await getUserProfile(user!.accessToken);
+        if (profile.interests?.length === 3) {
+          setSelected(profile.interests);
+          localStorage.setItem("cogletta-categories", JSON.stringify(profile.interests));
+        } else {
+          const stored = localStorage.getItem("cogletta-categories");
+          if (stored) setSelected(JSON.parse(stored));
+        }
+        if (profile.subTopics && Object.keys(profile.subTopics).length > 0) {
+          setSubTopics(profile.subTopics);
+          localStorage.setItem("cogletta-subtopics", JSON.stringify(profile.subTopics));
+        } else {
+          const storedSubs = localStorage.getItem("cogletta-subtopics");
+          if (storedSubs) setSubTopics(JSON.parse(storedSubs));
+        }
+      } catch {
+        const stored = localStorage.getItem("cogletta-categories");
+        if (stored) setSelected(JSON.parse(stored));
+        const storedSubs = localStorage.getItem("cogletta-subtopics");
+        if (storedSubs) setSubTopics(JSON.parse(storedSubs));
+      }
+    }
+    loadProfile();
+  }, [user]);
 
   function toggleCategory(id: string) {
     if (selected.includes(id)) {
