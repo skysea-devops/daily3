@@ -56,9 +56,10 @@ export const handler = async (
       return { statusCode: 401, headers, body: JSON.stringify({ message: "Unauthorized" }) };
     }
 
-    const body = JSON.parse(event.body ?? "{}") as { interests?: unknown; email?: unknown };
+    const body = JSON.parse(event.body ?? "{}") as { interests?: unknown; email?: unknown; subTopics?: unknown };
     const { interests } = body;
     const emailFromBody = typeof body.email === "string" ? body.email : null;
+    const subTopics = body.subTopics && typeof body.subTopics === "object" ? body.subTopics : {};
 
     if (
       !Array.isArray(interests) ||
@@ -86,11 +87,12 @@ export const handler = async (
         TableName: USERS_TABLE_NAME,
         Key: { PK: `USER#${userId}`, SK: "PROFILE" },
         UpdateExpression:
-          "SET interests = :interests, updatedAt = :now, email = :email",
+          "SET interests = :interests, updatedAt = :now, email = :email, subTopics = :subTopics",
         ExpressionAttributeValues: {
-          ":interests": interests,
-          ":now":       now,
-          ":email":     emailFromBody ?? (claims["email"] as string | undefined) ?? null,
+          ":interests":  interests,
+          ":now":        now,
+          ":email":      emailFromBody ?? (claims["email"] as string | undefined) ?? null,
+          ":subTopics":  subTopics,
         },
       })
     );

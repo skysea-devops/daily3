@@ -127,3 +127,46 @@ export function confirmForgotPassword(
     });
   });
 }
+
+export function updateDisplayName(
+  givenName: string,
+  familyName: string
+): Promise<void> {
+  const cognitoUser = userPool.getCurrentUser();
+  if (!cognitoUser) return Promise.reject(new Error("Not signed in"));
+
+  return new Promise((resolve, reject) => {
+    cognitoUser.getSession((err: Error | null) => {
+      if (err) { reject(err); return; }
+
+      const attributes = [
+        new CognitoUserAttribute({ Name: "given_name", Value: givenName }),
+        new CognitoUserAttribute({ Name: "family_name", Value: familyName || "-" }),
+      ];
+
+      cognitoUser.updateAttributes(attributes, (error) => {
+        if (error) { reject(error); return; }
+        resolve();
+      });
+    });
+  });
+}
+
+export function changePassword(
+  oldPassword: string,
+  newPassword: string
+): Promise<void> {
+  const cognitoUser = userPool.getCurrentUser();
+  if (!cognitoUser) return Promise.reject(new Error("Not signed in"));
+
+  return new Promise((resolve, reject) => {
+    cognitoUser.getSession((err: Error | null) => {
+      if (err) { reject(err); return; }
+
+      cognitoUser.changePassword(oldPassword, newPassword, (error) => {
+        if (error) { reject(error); return; }
+        resolve();
+      });
+    });
+  });
+}

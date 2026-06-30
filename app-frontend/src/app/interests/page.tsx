@@ -192,6 +192,7 @@ function InterestsForm() {
     if (stored) setSelected(JSON.parse(stored));
     const storedSubs = localStorage.getItem("cogletta-subtopics");
     if (storedSubs) setSubTopics(JSON.parse(storedSubs));
+    // Not: subTopics ayrıca get-profile'dan da yüklenebilir (şimdilik localStorage yeterli)
   }, []);
 
   function toggleCategory(id: string) {
@@ -218,7 +219,7 @@ function InterestsForm() {
     setSaved(false);
     setShowTomorrow(false);
     try {
-      const result = await updateUserInterests(selected, user.accessToken, user.email);
+      const result = await updateUserInterests(selected, user.accessToken, user.email, subTopics);
       localStorage.setItem("cogletta-categories", JSON.stringify(selected));
       markInterestsSaved();
       setSaved(true);

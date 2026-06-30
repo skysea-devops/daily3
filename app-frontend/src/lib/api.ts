@@ -11,7 +11,8 @@ function handleUnauthorized() {
 export async function updateUserInterests(
   interests: string[],
   accessToken: string,
-  email?: string
+  email?: string,
+  subTopics?: Record<string, string[]>
 ) {
   if (!API_BASE_URL) {
     throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
@@ -23,7 +24,7 @@ export async function updateUserInterests(
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ interests, email }),
+    body: JSON.stringify({ interests, email, subTopics }),
   });
 
   if (response.status === 401) {
