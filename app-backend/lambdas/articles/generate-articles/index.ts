@@ -632,7 +632,7 @@ interface BedrockSelection {
   readingTime:   string;
 }
 
-async function selectBestArticle(candidates: ScoredCandidate[], interest: string, history: RecentHistory): Promise<BedrockSelection> {
+async function selectBestArticle(candidates: ScoredCandidate[], interest: string, history: RecentHistory, subTopicContext = ""): Promise<BedrockSelection> {
   const recentSourcesList = [...history.seenSources.entries()]
     .filter(([, count]) => count >= 2).map(([src]) => src).join(", ");
 
@@ -646,7 +646,7 @@ async function selectBestArticle(candidates: ScoredCandidate[], interest: string
 
   const prompt = `You are an editorial assistant for Cogletta, a daily long-form article curation app for professionals who want to learn deeply.
 
-User interest: "${interest}"
+User interest: "${interest}"${subTopicContext}
 ${diversityNote}
 
 Select the single best LONG-FORM ARTICLE from the candidates below. Strictly prioritise:
@@ -712,7 +712,7 @@ interface BedrockPodcastSelection {
   duration:      string;
 }
 
-async function selectBestPodcast(candidates: ScoredCandidate[], interest: string, history: RecentHistory): Promise<BedrockPodcastSelection> {
+async function selectBestPodcast(candidates: ScoredCandidate[], interest: string, history: RecentHistory, subTopicContext = ""): Promise<BedrockPodcastSelection> {
   const recentSourcesList = [...history.seenSources.entries()]
     .filter(([, count]) => count >= 2).map(([src]) => src).join(", ");
 
@@ -726,7 +726,7 @@ async function selectBestPodcast(candidates: ScoredCandidate[], interest: string
 
   const prompt = `You are an editorial assistant for Cogletta, a daily content curation app.
 
-User interest: "${interest}"
+User interest: "${interest}"${subTopicContext}
 ${diversityNote}
 
 Select the single best PODCAST EPISODE from the candidates below. Prioritise:
@@ -802,18 +802,30 @@ function fallbackArticle(interest: string): Article {
 interface GenerateEvent {
   userId:     string;
   interests:  string[];
+  subTopics?: Record<string, string[]>;
   userEmail?: string;
+  email?:     string;
 }
 
 export const handler = async (event: GenerateEvent): Promise<void> => {
-  const { userId, interests } = event;
+  const { userId, interests, subTopics = {} } = event;
 
   if (!userId || !Array.isArray(interests) || interests.length < 1) {
     throw new Error("userId and at least 1 interest are required.");
   }
 
   const interestsLabel = interests.join(", ");
-  console.log(`Generating for user=${userId} interests=${interestsLabel}`);
+
+  // Sub-topic bilgisini prompt için hazırla
+  const subTopicLines = interests
+    .filter(i => subTopics[i] && subTopics[i].length > 0)
+    .map(i => `  - ${i}: ${subTopics[i].join(", ")}`)
+    .join("\n");
+  const subTopicContext = subTopicLines
+    ? `\n\nUser's selected sub-topics:\n${subTopicLines}\nStrongly prefer articles that fall within these sub-topics.`
+    : "";
+
+  console.log(`Generating for user=${userId} interests=${interestsLabel}${subTopicLines ? " with sub-topics" : ""}`);
 
   const history = await fetchRecentHistory(userId);
   console.log(`History: ${history.seenUrls.size} seen URLs, ${history.seenSources.size} sources`);
@@ -839,7 +851,7 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
     console.log(`${interestsLabel}: ${allItems.length} raw → ${candidates.length} article candidates`);
 
     const top10     = candidates.slice(0, 10);
-    const selection = await selectBestArticle(top10, interestsLabel, history);
+    const selection = await selectBestArticle(top10, interestsLabel, history, subTopicContext);
     const idx       = typeof selection.selectedIndex === "number" && !isNaN(selection.selectedIndex)
                       ? Math.max(0, Math.min(selection.selectedIndex, top10.length - 1))
                       : 0;
@@ -886,7 +898,7 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
     console.log(`${interestsLabel}: ${podItems.length} raw → ${podCandidates.length} podcast candidates`);
 
     const top10pod     = podCandidates.slice(0, 10);
-    const podSelection = await selectBestPodcast(top10pod, interestsLabel, history);
+    const podSelection = await selectBestPodcast(top10pod, interestsLabel, history, subTopicContext);
     const podIdx       = typeof podSelection.selectedIndex === "number" && !isNaN(podSelection.selectedIndex)
                          ? Math.max(0, Math.min(podSelection.selectedIndex, top10pod.length - 1))
                          : 0;
@@ -927,7 +939,7 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
 
   // ── Email ─────────────────────────────────────────────────────────────────
   if (SES_FROM_EMAIL) {
-    const userEmail = event.userEmail ?? await fetchUserEmail(userId);
+    const userEmail = event.userEmail ?? event.email ?? await fetchUserEmail(userId);
     if (userEmail) {
       try {
         await sendDailyEmail(userEmail, article, podcast);

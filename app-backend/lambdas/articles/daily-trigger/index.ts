@@ -13,7 +13,7 @@ export const handler = async (): Promise<void> => {
 
   // Tüm kullanıcıları tara — interests olan kayıtları çek
   let lastEvaluatedKey: Record<string, unknown> | undefined;
-  const users: { userId: string; interests: string[] }[] = [];
+  const users: { userId: string; interests: string[]; subTopics?: Record<string, string[]>; email?: string }[] = [];
 
   do {
     const result = await dynamo.send(
@@ -21,7 +21,7 @@ export const handler = async (): Promise<void> => {
         TableName:                 USERS_TABLE,
         FilterExpression:          "SK = :profile AND attribute_exists(interests)",
         ExpressionAttributeValues: { ":profile": "PROFILE" },
-        ProjectionExpression:      "PK, interests",
+        ProjectionExpression:      "PK, interests, subTopics, email",
         ExclusiveStartKey:         lastEvaluatedKey,
       })
     );
@@ -31,7 +31,12 @@ export const handler = async (): Promise<void> => {
       if (Array.isArray(interests) && interests.length === 3) {
         // PK formatı: USER#<cognito-sub>
         const userId = (item.PK as string).replace("USER#", "");
-        users.push({ userId, interests });
+        users.push({
+          userId,
+          interests,
+          subTopics: (item.subTopics as Record<string, string[]> | undefined) ?? {},
+          email: (item.email as string | undefined),
+        });
       }
     }
 
@@ -47,13 +52,13 @@ export const handler = async (): Promise<void> => {
     const batch = users.slice(i, i + BATCH_SIZE);
 
     await Promise.allSettled(
-      batch.map(({ userId, interests }) =>
+      batch.map(({ userId, interests, subTopics, email }) =>
         lambda.send(
           new InvokeCommand({
             FunctionName:   GENERATE_ARTICLES_FUNCTION,
             InvocationType: "Event", // fire-and-forget
             Payload:        Buffer.from(
-              JSON.stringify({ userId, interests })
+              JSON.stringify({ userId, interests, subTopics, email })
             ),
           })
         ).then(() => {
