@@ -6,24 +6,7 @@ import Navbar from "@/components/Navbar";
 import { updateUserInterests } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireOnboarding } from "@/components/Guards";
-
-export const CATEGORIES: { id: string; label: string; emoji: string; description: string }[] = [
-  { id: "Software & DevOps",    label: "Software & DevOps",    emoji: "🛠️", description: "Architecture, system design, cloud, CI/CD" },
-  { id: "Technology",           label: "Technology",           emoji: "💡", description: "AI, product, innovation, industry trends" },
-  { id: "World Politics",       label: "World Politics",       emoji: "🌍", description: "Geopolitics, policy, international affairs" },
-  { id: "Business",             label: "Business",             emoji: "📈", description: "Strategy, leadership, management thinking" },
-  { id: "Economics",            label: "Economics",            emoji: "💰", description: "Markets, finance, economic trends" },
-  { id: "Science",              label: "Science",              emoji: "🔬", description: "Research, discoveries, physics, biology" },
-  { id: "Productivity",         label: "Productivity",         emoji: "⚡", description: "Focus, habits, tools, mental models" },
-  { id: "History",              label: "History",              emoji: "🏛️", description: "Ancient to modern, events, civilizations" },
-  { id: "Arts & Culture",       label: "Arts & Culture",       emoji: "🎭", description: "Literature, film, music, criticism" },
-  { id: "Military",             label: "Military",             emoji: "⚔️", description: "Strategy, defense policy, military history" },
-  { id: "Health",               label: "Health",               emoji: "🧬", description: "Medicine, mental health, longevity, well-being" },
-  { id: "Environment",          label: "Environment",          emoji: "🌿", description: "Climate, ecology, sustainability, energy" },
-  { id: "Sports",               label: "Sports",               emoji: "🏅", description: "Athletics, strategy, sports science, culture" },
-  { id: "Fashion & Style",      label: "Fashion & Style",      emoji: "👗", description: "Design, industry, sustainability, culture" },
-  { id: "Life & Relationships", label: "Life & Relationships", emoji: "💛", description: "Relationships, family, personal growth, well-being" },
-];
+import { CATEGORIES } from "@/lib/constants";
 
 function OnboardingForm() {
   const router = useRouter();

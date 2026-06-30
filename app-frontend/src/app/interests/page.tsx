@@ -6,9 +6,10 @@ import Navbar from "@/components/Navbar";
 import { updateUserInterests } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
-import { CATEGORIES } from "@/app/onboarding/page";
+import { CATEGORIES, SUB_TOPICS } from "@/lib/constants";
 
 function ProSubtopicOverlay({ category, onClose }: { category: string; onClose: () => void }) {
+  const subTopics = SUB_TOPICS[category] ?? [];
   return (
     <div
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
@@ -20,32 +21,49 @@ function ProSubtopicOverlay({ category, onClose }: { category: string; onClose: 
       }}
     >
       <div style={{
-        width: "100%", maxWidth: 400,
+        width: "100%", maxWidth: 420,
         background: "var(--white)",
         border: "1px solid var(--rule)",
         borderRadius: 16, padding: "36px 32px",
-        textAlign: "center",
       }}>
-        <p style={{ fontSize: "1.5rem", marginBottom: 12 }}>✦</p>
-        <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1.25rem", fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}>
-          Sub-topics are a Pro feature
-        </h3>
-        <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", lineHeight: 1.7, marginBottom: 24 }}>
-          With Pro, you can narrow down <strong style={{ color: "var(--ink)" }}>{category}</strong> to the specific areas you care about most — so every article is even more relevant.
-        </p>
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 6 }}>Pro feature</p>
+          <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1.25rem", fontWeight: 600, color: "var(--ink)", marginBottom: 6 }}>
+            {category} — sub-topics
+          </h3>
+          <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.6 }}>
+            With Pro, choose the areas within {category} you want to focus on. Every article will be even more relevant.
+          </p>
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
+          {subTopics.map(topic => (
+            <span key={topic} style={{
+              padding: "6px 14px",
+              border: "1px solid var(--rule)",
+              borderRadius: 20,
+              fontSize: "0.8125rem",
+              color: "var(--ink-soft)",
+              background: "var(--paper-warm)",
+            }}>
+              {topic}
+            </span>
+          ))}
+        </div>
+
         <a href="/register#pro" style={{
-          display: "inline-block",
+          display: "block", textAlign: "center",
           background: "var(--accent)", color: "var(--white)",
           borderRadius: 10, padding: "11px 24px",
           fontSize: "0.9375rem", fontWeight: 600,
-          textDecoration: "none", marginBottom: 12,
+          textDecoration: "none", marginBottom: 10,
         }}>
-          Learn about Pro →
+          Unlock with Pro →
         </a>
-        <br />
         <button onClick={onClose} style={{
+          display: "block", width: "100%", textAlign: "center",
           background: "none", border: "none", cursor: "pointer",
-          fontSize: "0.875rem", color: "var(--ink-muted)", marginTop: 4,
+          fontSize: "0.875rem", color: "var(--ink-muted)",
         }}>
           Continue with Free
         </button>
