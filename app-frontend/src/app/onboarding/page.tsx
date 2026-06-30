@@ -6,21 +6,7 @@ import Navbar from "@/components/Navbar";
 import { updateUserInterests } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireOnboarding } from "@/components/Guards";
-
-export const CATEGORIES: { id: string; label: string; emoji: string; description: string }[] = [
-  { id: "Software & DevOps", label: "Software & DevOps", emoji: "🛠️", description: "Architecture, system design, cloud, CI/CD" },
-  { id: "Technology", label: "Technology", emoji: "💡", description: "AI, product, innovation, industry trends" },
-  { id: "World Politics", label: "World Politics", emoji: "🌍", description: "Geopolitics, policy, international affairs" },
-  { id: "Business", label: "Business", emoji: "📈", description: "Strategy, leadership, management thinking" },
-  { id: "Economics", label: "Economics", emoji: "💰", description: "Markets, finance, economic trends" },
-  { id: "Science", label: "Science", emoji: "🔬", description: "Research, discoveries, physics, biology" },
-  { id: "Productivity", label: "Productivity", emoji: "⚡", description: "Focus, habits, tools, mental models" },
-  { id: "History", label: "History", emoji: "🏛️", description: "Ancient to modern, events, civilizations" },
-  { id: "Arts & Culture", label: "Arts & Culture", emoji: "🎭", description: "Literature, film, music, criticism" },
-  { id: "Military", label: "Military", emoji: "⚔️", description: "Strategy, defense policy, military history" },
-  { id: "Health", label: "Health", emoji: "🧬", description: "Medicine, mental health, longevity, well-being" },
-  { id: "Environment", label: "Environment", emoji: "🌿", description: "Climate, ecology, sustainability, energy" },
-];
+import { CATEGORIES } from "@/lib/constants";
 
 function OnboardingForm() {
   const router = useRouter();
@@ -54,7 +40,7 @@ function OnboardingForm() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <Navbar />
-      <main style={{ maxWidth: 800, margin: "0 auto", padding: "48px 24px" }}>
+      <main style={{ maxWidth: 900, margin: "0 auto", padding: "48px 24px" }}>
 
         <p style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--ink-muted)", marginBottom: 12 }}>
           Step 1 of 1
@@ -75,7 +61,6 @@ function OnboardingForm() {
         }}>
           {CATEGORIES.map((cat) => {
             const isSelected = selected.includes(cat.id);
-
             return (
               <button
                 key={cat.id}
@@ -113,9 +98,7 @@ function OnboardingForm() {
 
         <div style={{ marginTop: 32, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>
-            {selected.length === 3
-              ? "Ready! 3 topics selected"
-              : `${selected.length}/3 selected`}
+            {selected.length === 3 ? "Ready! 3 topics selected" : `${selected.length}/3 selected`}
           </p>
 
           <button
