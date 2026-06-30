@@ -333,10 +333,10 @@ export default function HomePage() {
           <h2 className="lp-h2">Everything you need to build a reading habit.</h2>
           <div className="lp-features">
             {[
-              { icon: "📰", title: "1 curated article daily", body: "Picked from across your 3 interests — long-form, substantive pieces from think-tanks, academic journals, and quality publications." },
+              { icon: "📰", title: "3 curated article daily (1 in free plan)" , body: "Picked from across your 3 interests — long-form, substantive pieces from think-tanks, academic journals, and quality publications." },
               { icon: "✉️", title: "Daily email digest", body: "Your article and podcast delivered to your inbox every morning at 07:00. Clean, readable." },
               { icon: "💡", title: "Why we picked this for you", body: "Each article comes with a short editorial note — why this piece, why today, why it's worth your time." },
-              { icon: "🎙", title: "1 podcast episode daily", body: "A carefully selected episode from top podcasts in your interest area — paired with your article every morning." },
+              { icon: "🎙", title: "3 podcast episode daily (1 in free plan)", body: "A carefully selected episode from top podcasts in your interest area — paired with your article every morning." },
             ].map(f => (
               <div key={f.title} className="lp-feature">
                 <div className="lp-feature-icon">{f.icon}</div>
@@ -382,18 +382,17 @@ export default function HomePage() {
         <div className="lp-cta-bottom">
           <h2>Start your morning ritual.</h2>
           <p>
-            We don't advertise, we don't manipulate algorithms.
             We grow because readers share us with people they trust.
           </p>
           <button onClick={() => setShowModal(true)} className="lp-cta">
             Start reading for free →
           </button>
-          <span className="lp-note">Free forever · Takes 30 seconds to set up</span>
+          <span className="lp-note">Takes 30 seconds to set up</span>
         </div>
 
         {/* FOOTER */}
         <footer className="lp-footer">
-          <p>© 2026 Cogletta · 1 article + 1 podcast, every morning</p>
+          <p>© 2026 Cogletta · 3 articles + 3 podcasts, every morning</p>
           <p>
             <Link href="/login">Sign in</Link>
             {" · "}

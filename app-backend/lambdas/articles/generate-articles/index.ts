@@ -34,7 +34,7 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Stanford HAI",           url: "https://hai.stanford.edu/news/feed" },
     { name: "The Conversation (Tech)",url: "https://theconversation.com/technology/articles.atom" },
     { name: "Eurozine",               url: "https://www.eurozine.com/feed/" },
-    { name: "3 Quarks Daily",         url: "https://3quarksdaily.com/3quarksdaily/atom.xml" },
+    { name: "Rest of World",           url: "https://restofworld.org/feed/" },
   ],
 
   "World Politics": [
@@ -78,7 +78,7 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Aeon",                   url: "https://aeon.co/feed.rss" },
     { name: "The Conversation (Sci)", url: "https://theconversation.com/science/articles.atom" },
     { name: "Knowable Magazine",      url: "https://knowablemagazine.org/rss" },
-    { name: "3 Quarks Daily",         url: "https://3quarksdaily.com/3quarksdaily/atom.xml" },
+    { name: "PLOS Blogs",             url: "https://plos.org/feed/" },
   ],
 
   "Productivity": [
@@ -108,7 +108,7 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Aeon",                   url: "https://aeon.co/feed.rss" },
     { name: "Smithsonian Magazine",   url: "https://www.smithsonianmag.com/rss/latest_articles/" },
     { name: "Public Books",           url: "https://www.publicbooks.org/feed/" },
-    { name: "3 Quarks Daily",         url: "https://3quarksdaily.com/3quarksdaily/atom.xml" },
+    { name: "JSTOR Daily",            url: "https://daily.jstor.org/feed/" },
     { name: "Eurozine",               url: "https://www.eurozine.com/feed/" },
     { name: "Longreads",              url: "https://longreads.com/feed/" },
   ],
@@ -131,7 +131,7 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "The BMJ",                url: "https://www.bmj.com/rss/current.xml" },
     { name: "Knowable Magazine",      url: "https://knowablemagazine.org/rss" },
     { name: "The Conversation (Hlt)", url: "https://theconversation.com/health/articles.atom" },
-    { name: "3 Quarks Daily",         url: "https://3quarksdaily.com/3quarksdaily/atom.xml" },
+    { name: "STAT News",              url: "https://www.statnews.com/feed/" },
   ],
 
   "Environment": [
@@ -144,26 +144,29 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "RAND Environment",       url: "https://www.rand.org/feeds/research.xml" },
   ],
 
-  "Sports": [
-    { name: "BBC Sport",              url: "https://feeds.bbci.co.uk/sport/rss.xml" },
-   
-    { name: "Defector",               url: "https://defector.com/feed" },
-    
-    { name: "Longreads (Sport)",      url: "https://longreads.com/feed/" },
+  "Philosophy & Ethics": [
+    { name: "Aeon",                   url: "https://aeon.co/feed.rss" },
+    { name: "Psyche (Aeon)",          url: "https://psyche.co/feed" },
+    { name: "The Stone (NY Times)",   url: "https://rss.nytimes.com/services/xml/rss/nyt/Philosophy.xml" },
+    { name: "Philosophy Now",         url: "https://philosophynow.org/rss" },
+    { name: "IAI News",               url: "https://iai.tv/articles/rss" },
+    { name: "The Conversation (Phil)",url: "https://theconversation.com/us/articles.atom" },
   ],
 
   "Fashion & Style": [
     { name: "The Fashion Law",        url: "https://www.thefashionlaw.com/feed" },
+    { name: "The Conversation (Arts)",url: "https://theconversation.com/arts/articles.atom" },
     { name: "WWD Fashion",            url: "https://wwd.com/fashion-news/feed" },
-    { name: "Fashionista",            url: "https://fashionista.com/.rss/excerpt" },
+    { name: "Vogue Business",         url: "https://www.voguebusiness.com/rss" },
     { name: "Eurozine",               url: "https://www.eurozine.com/feed/" },
     { name: "Longreads",              url: "https://longreads.com/feed/" },
   ],
 
   "Life & Relationships": [
-    
+    { name: "Greater Good Science Center", url: "https://greatergood.berkeley.edu/feeds/1" },
     { name: "Psyche (Aeon)",          url: "https://psyche.co/feed" },
-    { name: "The Conversation (Rel)", url: "https://theconversation.com/us/articles.atom" },
+    { name: "The Atlantic (Family)",  url: "https://www.theatlantic.com/family/feed/" },
+    { name: "The Conversation (Rel)", url: "https://theconversation.com/relationships/articles.atom" },
     { name: "Aeon",                   url: "https://aeon.co/feed.rss" },
     { name: "Ness Labs",              url: "https://nesslabs.com/feed" },
   ],
@@ -269,12 +272,12 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Throughline",                 url: "https://feeds.npr.org/510333/podcast.xml" },
   ],
 
-  "Sports": [
-    { name: "Against the Rules",           url: "https://feeds.simplecast.com/l9VzgKgR" },
-    { name: "BBC Sport (World Service)",   url: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss" },
-    { name: "Throughline (Sport)",         url: "https://feeds.npr.org/510333/podcast.xml" },
+  "Philosophy & Ethics": [
+    { name: "Philosophy Bites",            url: "https://philosophybites.com/atom.xml" },
+    { name: "In Our Time (Philosophy)",    url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
+    { name: "Philosophize This!",          url: "https://feeds.feedburner.com/philosophizethis" },
+    { name: "The Partially Examined Life", url: "https://partiallyexaminedlife.com/feed/podcast/" },
     { name: "Hidden Brain",                url: "https://feeds.npr.org/510308/podcast.xml" },
-    { name: "Lex Fridman Podcast",         url: "https://lexfridman.com/feed/podcast/" },
   ],
 
   "Fashion & Style": [
@@ -462,7 +465,7 @@ const CATEGORY_EMOJI: Record<string, string> = {
   "Military":           "⚔️",
   "Health":             "🧬",
   "Environment":        "🌿",
-  "Sports":             "🏅",
+  "Philosophy & Ethics": "🧠",
   "Fashion & Style":    "👗",
   "Life & Relationships": "💛",
 };
