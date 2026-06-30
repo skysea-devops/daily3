@@ -6,7 +6,71 @@ import Navbar from "@/components/Navbar";
 import { updateUserInterests } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
-import { CATEGORIES } from "@/app/onboarding/page";
+import { CATEGORIES, SUB_TOPICS } from "@/lib/constants";
+
+function ProSubtopicOverlay({ category, onClose }: { category: string; onClose: () => void }) {
+  const subTopics = SUB_TOPICS[category] ?? [];
+  return (
+    <div
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 300,
+        background: "rgba(26,23,20,0.5)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "0 20px",
+      }}
+    >
+      <div style={{
+        width: "100%", maxWidth: 420,
+        background: "var(--white)",
+        border: "1px solid var(--rule)",
+        borderRadius: 16, padding: "36px 32px",
+      }}>
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 6 }}>Pro feature</p>
+          <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1.25rem", fontWeight: 600, color: "var(--ink)", marginBottom: 6 }}>
+            {category} — sub-topics
+          </h3>
+          <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.6 }}>
+            With Pro, choose the areas within {category} you want to focus on. Every article will be even more relevant.
+          </p>
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
+          {subTopics.map(topic => (
+            <span key={topic} style={{
+              padding: "6px 14px",
+              border: "1px solid var(--rule)",
+              borderRadius: 20,
+              fontSize: "0.8125rem",
+              color: "var(--ink-soft)",
+              background: "var(--paper-warm)",
+            }}>
+              {topic}
+            </span>
+          ))}
+        </div>
+
+        <a href="/register#pro" style={{
+          display: "block", textAlign: "center",
+          background: "var(--accent)", color: "var(--white)",
+          borderRadius: 10, padding: "11px 24px",
+          fontSize: "0.9375rem", fontWeight: 600,
+          textDecoration: "none", marginBottom: 10,
+        }}>
+          Unlock with Pro →
+        </a>
+        <button onClick={onClose} style={{
+          display: "block", width: "100%", textAlign: "center",
+          background: "none", border: "none", cursor: "pointer",
+          fontSize: "0.875rem", color: "var(--ink-muted)",
+        }}>
+          Continue with Free
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function InterestsForm() {
   const router = useRouter();
@@ -16,6 +80,7 @@ function InterestsForm() {
   const [loading, setLoading]           = useState(false);
   const [saved, setSaved]               = useState(false);
   const [showTomorrow, setShowTomorrow] = useState(false);
+  const [proOverlay, setProOverlay]     = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("cogletta-categories");
@@ -56,7 +121,15 @@ function InterestsForm() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--paper)" }}>
       <Navbar />
-      <main style={{ maxWidth: 780, margin: "0 auto", padding: "56px 5vw" }}>
+
+      {proOverlay && (
+        <ProSubtopicOverlay
+          category={proOverlay}
+          onClose={() => setProOverlay(null)}
+        />
+      )}
+
+      <main style={{ maxWidth: 900, margin: "0 auto", padding: "56px 5vw" }}>
 
         <h1 style={{ fontFamily: "'Lora', serif", fontSize: "2rem", fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}>
           Your interests
@@ -81,28 +154,65 @@ function InterestsForm() {
           </div>
         )}
 
-        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", marginBottom: 40 }}>
+        <div style={{
+          display: "grid",
+          gap: 12,
+          gridTemplateColumns: "repeat(3, 1fr)",
+          marginBottom: 40,
+        }}>
           {CATEGORIES.map(cat => {
             const isSelected = selected.includes(cat.id);
-            const isDisabled = false;
             return (
-              <button key={cat.id} onClick={() => toggleCategory(cat.id)} disabled={isDisabled}
-                style={{
-                  borderRadius: 12, padding: "18px 20px", textAlign: "left",
-                  cursor: "pointer",
-                  border: isSelected ? "2px solid var(--accent)" : "1px solid var(--rule)",
-                  background: isSelected ? "var(--accent)" : isDisabled ? "var(--paper-warm)" : "var(--white)",
-                  opacity: 1,
-                  transition: "all 0.15s",
-                }}>
-                <span style={{ fontSize: "1.5rem" }}>{cat.emoji}</span>
-                <p style={{ marginTop: 10, fontWeight: 600, fontSize: "0.9375rem", color: isSelected ? "var(--white)" : "var(--ink)" }}>
-                  {cat.label}
-                </p>
-                <p style={{ marginTop: 3, fontSize: "0.8rem", color: isSelected ? "rgba(255,255,255,0.75)" : "var(--ink-muted)", lineHeight: 1.4 }}>
-                  {cat.description}
-                </p>
-              </button>
+              <div key={cat.id} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                {/* Kategori butonu */}
+                <button
+                  onClick={() => toggleCategory(cat.id)}
+                  style={{
+                    borderRadius: isSelected ? "12px 12px 0 0" : 12,
+                    padding: "18px 20px",
+                    textAlign: "left",
+                    cursor: "pointer",
+                    border: isSelected ? "2px solid var(--accent)" : "1px solid var(--rule)",
+                    borderBottom: isSelected ? "1px solid rgba(255,255,255,0.2)" : undefined,
+                    background: isSelected ? "var(--accent)" : "var(--white)",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  <span style={{ fontSize: "1.5rem" }}>{cat.emoji}</span>
+                  <p style={{ marginTop: 10, fontWeight: 600, fontSize: "0.9375rem", color: isSelected ? "var(--white)" : "var(--ink)" }}>
+                    {cat.label}
+                  </p>
+                  <p style={{ marginTop: 3, fontSize: "0.8rem", color: isSelected ? "rgba(255,255,255,0.75)" : "var(--ink-muted)", lineHeight: 1.4 }}>
+                    {cat.description}
+                  </p>
+                </button>
+
+                {/* Sub-topics butonu — sadece seçili kategorilerde */}
+                {isSelected && (
+                  <button
+                    onClick={() => setProOverlay(cat.label)}
+                    style={{
+                      borderRadius: "0 0 12px 12px",
+                      padding: "10px 20px",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      border: "2px solid var(--accent)",
+                      borderTop: "1px solid rgba(255,255,255,0.15)",
+                      background: "rgba(124,92,62,0.12)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--accent)" }}>
+                      Add sub-topics
+                    </span>
+                    <span style={{ fontSize: "0.7rem", background: "var(--accent)", color: "var(--white)", padding: "2px 7px", borderRadius: 10, fontWeight: 700, letterSpacing: "0.05em" }}>
+                      PRO
+                    </span>
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>
@@ -129,4 +239,3 @@ function InterestsForm() {
 export default function InterestsPage() {
   return <RequireAuth><InterestsForm /></RequireAuth>;
 }
-
