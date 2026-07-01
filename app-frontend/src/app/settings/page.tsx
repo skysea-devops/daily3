@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import { updateDisplayName, changePassword } from "@/lib/cognito";
+import { createCheckoutSession, createPortalSession } from "@/lib/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
@@ -58,14 +59,15 @@ function Row({
   );
 }
 
-function ActionBtn({ label, onClick, style }: { label: string; onClick: () => void; style?: "danger" | "accent" }) {
+function ActionBtn({ label, onClick, disabled, style }: { label: string; onClick: () => void; disabled?: boolean; style?: "danger" | "accent" }) {
   const color = style === "danger" ? "#c0392b" : style === "accent" ? "var(--accent)" : "var(--ink-soft)";
   const border = style === "danger" ? "1px solid #fecaca" : "1px solid var(--rule)";
   return (
-    <button onClick={onClick} style={{
+    <button onClick={onClick} disabled={disabled} style={{
       flexShrink: 0, padding: "7px 14px", borderRadius: 8,
       border, background: "none",
-      fontSize: "0.8125rem", fontWeight: 600, color, cursor: "pointer",
+      fontSize: "0.8125rem", fontWeight: 600, color,
+      cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.6 : 1,
     }}>
       {label}
     </button>
@@ -179,17 +181,19 @@ function DeleteModal({ onConfirm, onCancel, deleting }: { onConfirm: () => void;
   );
 }
 
-function CancelProModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+function CancelProModal({ onConfirm, onCancel, busy }: { onConfirm: () => void; onCancel: () => void; busy: boolean }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 20px" }}>
       <div style={{ background: "var(--white)", borderRadius: 12, padding: "32px", maxWidth: 400, width: "100%", boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
-        <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1.25rem", color: "var(--ink)", margin: "0 0 12px" }}>Cancel Pro?</h3>
+        <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1.25rem", color: "var(--ink)", margin: "0 0 12px" }}>Manage your subscription</h3>
         <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", margin: "0 0 24px", lineHeight: 1.6 }}>
-          You'll keep Pro access until the end of your billing period. After that, your account will revert to the Free plan.
+          You&apos;ll be taken to our secure billing portal, where you can cancel your plan, update your card, or download invoices. If you cancel, you&apos;ll keep Pro access until the end of your billing period.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-          <button onClick={onCancel} style={{ padding: "9px 20px", borderRadius: 6, border: "1px solid var(--rule)", background: "none", fontSize: "0.875rem", color: "var(--ink-soft)", cursor: "pointer" }}>Keep Pro</button>
-          <button onClick={onConfirm} style={{ padding: "9px 20px", borderRadius: 6, border: "none", background: "var(--ink)", color: "white", fontSize: "0.875rem", fontWeight: 600, cursor: "pointer" }}>Cancel subscription</button>
+          <button onClick={onCancel} disabled={busy} style={{ padding: "9px 20px", borderRadius: 6, border: "1px solid var(--rule)", background: "none", fontSize: "0.875rem", color: "var(--ink-soft)", cursor: "pointer" }}>Keep Pro</button>
+          <button onClick={onConfirm} disabled={busy} style={{ padding: "9px 20px", borderRadius: 6, border: "none", background: "var(--ink)", color: "white", fontSize: "0.875rem", fontWeight: 600, cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.7 : 1 }}>
+            {busy ? "Opening..." : "Open billing portal"}
+          </button>
         </div>
       </div>
     </div>
@@ -199,15 +203,61 @@ function CancelProModal({ onConfirm, onCancel }: { onConfirm: () => void; onCanc
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 function SettingsContent() {
-  const { user, plan, signOut } = useAuth();
+  const { user, plan, signOut, refreshSession } = useAuth();
   const router = useRouter();
 
   const [editName, setEditName]         = useState(false);
   const [editPassword, setEditPassword] = useState(false);
   const [modal, setModal]               = useState<"delete" | "cancelPro" | null>(null);
   const [deleting, setDeleting]         = useState(false);
+  const [billingBusy, setBillingBusy]   = useState(false);
+  const [billingError, setBillingError] = useState("");
+  const [banner, setBanner]             = useState<"success" | "cancel" | null>(null);
 
   const displayName = user?.email?.split("@")[0] ?? "";
+
+  // Stripe Checkout dönüşü: ?checkout=success | ?checkout=cancel
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get("checkout");
+    if (checkout === "success") {
+      setBanner("success");
+      // plan webhook ile güncelleniyor — session'ı hemen ve birkaç saniye sonra tazele
+      refreshSession();
+      const t = setTimeout(() => refreshSession(), 3000);
+      window.history.replaceState({}, "", "/settings");
+      return () => clearTimeout(t);
+    }
+    if (checkout === "cancel") {
+      setBanner("cancel");
+      window.history.replaceState({}, "", "/settings");
+    }
+  }, [refreshSession]);
+
+  async function handleUpgrade() {
+    if (!user?.accessToken || billingBusy) return;
+    setBillingBusy(true); setBillingError("");
+    try {
+      const { url } = await createCheckoutSession(user.accessToken, user.email);
+      window.location.href = url;
+    } catch (e: any) {
+      setBillingError(e?.message || "Something went wrong. Please try again.");
+      setBillingBusy(false);
+    }
+  }
+
+  async function handleManageBilling() {
+    if (!user?.accessToken || billingBusy) return;
+    setBillingBusy(true); setBillingError("");
+    try {
+      const { url } = await createPortalSession(user.accessToken);
+      window.location.href = url;
+    } catch (e: any) {
+      setBillingError(e?.message || "Something went wrong. Please try again.");
+      setBillingBusy(false);
+      setModal(null);
+    }
+  }
 
   async function handleDeleteAccount() {
     if (!user?.accessToken) return;
@@ -227,12 +277,6 @@ function SettingsContent() {
     }
   }
 
-  function handleCancelPro() {
-    // TODO: Stripe customer portal
-    setModal(null);
-    alert("Coming soon — Stripe integration pending.");
-  }
-
   return (
     <div style={{ minHeight: "100vh", background: "var(--paper)" }}>
       <Navbar />
@@ -240,6 +284,21 @@ function SettingsContent() {
 
         <h1 style={{ fontFamily: "'Lora', serif", fontSize: "2rem", fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}>Settings</h1>
         <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: 48 }}>Manage your account and preferences.</p>
+
+        {banner === "success" && (
+          <div style={{ marginBottom: 32, padding: "14px 18px", borderRadius: 10, background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+            <p style={{ fontSize: "0.875rem", color: "#166534", margin: 0, lineHeight: 1.5 }}>
+              ✓ Welcome to Cogletta Pro! Your upgrade is confirmed — it may take a few seconds to appear below.
+            </p>
+          </div>
+        )}
+        {banner === "cancel" && (
+          <div style={{ marginBottom: 32, padding: "14px 18px", borderRadius: 10, background: "var(--white)", border: "1px solid var(--rule)" }}>
+            <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", margin: 0, lineHeight: 1.5 }}>
+              Checkout was cancelled — no changes were made. You can upgrade any time.
+            </p>
+          </div>
+        )}
 
         {/* Profile */}
         <Section title="Profile">
@@ -273,19 +332,23 @@ function SettingsContent() {
           <Row label="Current plan" value={plan === "pro" ? "Cogletta Pro — $4.80/month" : "Free"} />
           {plan === "free" && (
             <Row topBorder label="Upgrade to Pro" description="3 articles per interest, sub-topics, weekly trend reports.">
-              <ActionBtn label="Upgrade →" onClick={() => router.push("/register#pro")} style="accent" />
+              <ActionBtn label={billingBusy ? "Redirecting…" : "Upgrade →"} onClick={handleUpgrade} disabled={billingBusy} style="accent" />
             </Row>
           )}
           {plan === "pro" && (
             <>
-              <Row topBorder label="Next billing date" value="—" description="Will appear here after Stripe is connected." />
-              <Row topBorder label="Payment method" description="Manage your card and billing details.">
-                <ActionBtn label="Manage" onClick={() => {}} />
+              <Row topBorder label="Payment method" description="Update your card, view invoices, and manage billing in the secure Stripe portal.">
+                <ActionBtn label={billingBusy ? "Opening…" : "Manage"} onClick={handleManageBilling} disabled={billingBusy} />
               </Row>
               <Row topBorder label="Cancel subscription" description="You'll keep Pro until the end of your billing period.">
-                <ActionBtn label="Cancel Pro" onClick={() => setModal("cancelPro")} style="danger" />
+                <ActionBtn label="Cancel Pro" onClick={() => setModal("cancelPro")} disabled={billingBusy} style="danger" />
               </Row>
             </>
+          )}
+          {billingError && (
+            <div style={{ padding: "0 20px 16px" }}>
+              <p style={{ fontSize: "0.8125rem", color: "#c0392b", margin: 0 }}>{billingError}</p>
+            </div>
           )}
         </Section>
 
@@ -307,7 +370,7 @@ function SettingsContent() {
       </main>
 
       {modal === "delete" && <DeleteModal onConfirm={handleDeleteAccount} onCancel={() => setModal(null)} deleting={deleting} />}
-      {modal === "cancelPro" && <CancelProModal onConfirm={handleCancelPro} onCancel={() => setModal(null)} />}
+      {modal === "cancelPro" && <CancelProModal onConfirm={handleManageBilling} onCancel={() => setModal(null)} busy={billingBusy} />}
     </div>
   );
 }

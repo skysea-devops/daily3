@@ -627,43 +627,51 @@ function scoreAndFilter(items: RSSItem[], history: RecentHistory, isPodcast = fa
 
 interface BedrockSelection {
   selectedIndex: number;
+  category:      string;
   summary:       string;
   reason:        string;
   readingTime:   string;
 }
 
-async function selectBestArticle(candidates: ScoredCandidate[], interest: string, history: RecentHistory, subTopicContext = ""): Promise<BedrockSelection> {
+async function selectBestArticle(candidates: ScoredCandidate[], interests: string[], history: RecentHistory, subTopicContext = ""): Promise<BedrockSelection> {
+  const interest = interests.join(", ");
   const recentSourcesList = [...history.seenSources.entries()]
     .filter(([, count]) => count >= 2).map(([src]) => src).join(", ");
 
   const candidateList = candidates
-    .map((c, i) => `[${i}] "${c.title}" — ${c.sourceName} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    ${c.description.slice(0, 400)}`)
+    .map((c, i) => `[${i}] "${c.title}" — ${c.sourceName} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    URL: ${c.url}\n    ${c.description.slice(0, 400)}`)
     .join("\n\n");
 
   const diversityNote = recentSourcesList
     ? `\nIMPORTANT: The user has recently seen articles from: ${recentSourcesList}. Prefer a different source today if possible.`
     : "";
 
+  const categoryList = interests.map(i => `"${i}"`).join(", ");
+
   const prompt = `You are an editorial assistant for Cogletta, a daily long-form article curation app for professionals who want to learn deeply.
 
-User interest: "${interest}"${subTopicContext}
+The user follows these interests — these are the ONLY valid categories:
+${categoryList}${subTopicContext}
 ${diversityNote}
 
-Select the single best LONG-FORM ARTICLE from the candidates below. Strictly prioritise:
-1. DEPTH — prefer essays, research summaries, analysis pieces, think-tank reports. Reject short news items.
-2. NO breaking news, liveblogs, or news dispatches — only analytical pieces.
-3. SUBSTANCE — original analysis, research findings, or expert insight.
-4. FORMAT — reject podcast transcripts, episode summaries, video reports. Only written long-form articles.
-5. Freshness — prefer articles published TODAY or recently.
-6. Source variety — avoid sources marked "[source shown recently]" unless clearly superior.
-7. Strong relevance to "${interest}".
+Select the single best LONG-FORM ARTICLE that is genuinely ABOUT one of the user's interests above.
+
+HARD REQUIREMENTS — a candidate that fails ANY of these is NOT eligible, no matter how well written:
+- RELEVANCE: the article must clearly belong to one of the user's interests. Judge from the title, the description, AND the URL slug (e.g. a URL containing "fifa-world-cup" is a sports piece and does NOT belong under Fashion & Style, Business, etc.). General-aggregator sources (e.g. Longreads, Aeon, The Conversation) publish on every topic, so never assume relevance from the source name — judge by content.
+- FORMAT: a written long-form article. Reject podcast transcripts, episode summaries, video reports.
+- NO breaking news, liveblogs, or news dispatches.
+
+Among the ELIGIBLE candidates, prefer: (1) depth — essays, research summaries, analysis, think-tank reports; (2) freshness — published today or recently; (3) source variety — avoid sources marked "[source shown recently]" unless clearly superior.
+
+If NONE of the candidates is clearly about one of the user's interests, respond with selectedIndex -1.
 
 Candidates:
 ${candidateList}
 
 Respond ONLY with valid JSON (no markdown):
 {
-  "selectedIndex": <0-${candidates.length - 1}>,
+  "selectedIndex": <0-${candidates.length - 1}, or -1 if no candidate is on-topic>,
+  "category": "<the ONE user interest this article belongs to, copied EXACTLY from the list above; empty string if selectedIndex is -1>",
   "summary": "<3-4 sentences (~75 words). Recommend as if to a smart friend. Direct, curious, specific. No jargon. Don't start with 'This article'. Don't use 'delve', 'explore', 'unpack', 'shed light on'.>",
   "reason": "<One short sentence, max 20 words. Say specifically why THIS article is worth reading today.>",
   "readingTime": "<estimated reading time e.g. '8 min read'>"
@@ -691,7 +699,7 @@ Respond ONLY with valid JSON (no markdown):
     parsed = JSON.parse(text) as BedrockSelection;
   } catch {
     console.warn("Bedrock JSON parse failed, using index 0. Raw:", text.slice(0, 200));
-    parsed = { selectedIndex: 0, summary: "", reason: "", readingTime: "~5 min read" };
+    parsed = { selectedIndex: 0, category: "", summary: "", reason: "", readingTime: "~5 min read" };
   }
 
   if (typeof parsed.selectedIndex !== "number" || isNaN(parsed.selectedIndex)) parsed.selectedIndex = 0;
@@ -702,45 +710,55 @@ Respond ONLY with valid JSON (no markdown):
     .replace(/&#8230;/g, "…").replace(/&#\d+;/g, "")
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"');
 
-  return { ...parsed, summary: cleanStr(parsed.summary ?? ""), reason: cleanStr(parsed.reason ?? "") };
+  return { ...parsed, category: (parsed.category ?? "").trim(), summary: cleanStr(parsed.summary ?? ""), reason: cleanStr(parsed.reason ?? "") };
 }
 
 interface BedrockPodcastSelection {
   selectedIndex: number;
+  category:      string;
   summary:       string;
   reason:        string;
   duration:      string;
 }
 
-async function selectBestPodcast(candidates: ScoredCandidate[], interest: string, history: RecentHistory, subTopicContext = ""): Promise<BedrockPodcastSelection> {
+async function selectBestPodcast(candidates: ScoredCandidate[], interests: string[], history: RecentHistory, subTopicContext = ""): Promise<BedrockPodcastSelection> {
+  const interest = interests.join(", ");
   const recentSourcesList = [...history.seenSources.entries()]
     .filter(([, count]) => count >= 2).map(([src]) => src).join(", ");
 
   const candidateList = candidates
-    .map((c, i) => `[${i}] "${c.title}" — ${c.sourceName}${c.duration ? ` (${c.duration})` : ""} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    ${c.description.slice(0, 300)}`)
+    .map((c, i) => `[${i}] "${c.title}" — ${c.sourceName}${c.duration ? ` (${c.duration})` : ""} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    URL: ${c.url}\n    ${c.description.slice(0, 300)}`)
     .join("\n\n");
 
   const diversityNote = recentSourcesList
     ? `\nIMPORTANT: The user has recently seen content from: ${recentSourcesList}. Prefer a different podcast show today if possible.`
     : "";
 
+  const categoryList = interests.map(i => `"${i}"`).join(", ");
+
   const prompt = `You are an editorial assistant for Cogletta, a daily content curation app.
 
-User interest: "${interest}"${subTopicContext}
+The user follows these interests — these are the ONLY valid categories:
+${categoryList}${subTopicContext}
 ${diversityNote}
 
-Select the single best PODCAST EPISODE from the candidates below. Prioritise:
-1. RELEVANCE — must directly address the user's interest area.
-2. DEPTH — prefer substantive interviews, investigations, long-form analysis. STRICTLY AVOID daily news bulletins and breaking news recaps.
-3. Freshness — prefer recent episodes but older landmark episodes are fine if clearly superior.
-4. Source variety — avoid shows marked "[source shown recently]" unless clearly superior.
+Select the single best PODCAST EPISODE that is genuinely ABOUT one of the user's interests above.
+
+HARD REQUIREMENTS — a candidate that fails ANY of these is NOT eligible:
+- RELEVANCE: the episode must clearly address one of the user's interests. Judge from the title, description AND URL slug. General shows publish on many topics, so never assume relevance from the show name — judge by the episode content.
+- DEPTH: prefer substantive interviews, investigations, long-form analysis. STRICTLY AVOID daily news bulletins and breaking-news recaps.
+
+Among ELIGIBLE candidates, prefer freshness (recent episodes) and source variety (avoid shows marked "[source shown recently]" unless clearly superior).
+
+If NONE of the candidates is clearly about one of the user's interests, respond with selectedIndex -1.
 
 Candidates:
 ${candidateList}
 
 Respond ONLY with valid JSON (no markdown):
 {
-  "selectedIndex": <0-${candidates.length - 1}>,
+  "selectedIndex": <0-${candidates.length - 1}, or -1 if no candidate is on-topic>,
+  "category": "<the ONE user interest this episode belongs to, copied EXACTLY from the list above; empty string if selectedIndex is -1>",
   "summary": "<2-3 sentences (~50 words). Say what the episode is actually about and why it's worth listening to.>",
   "reason": "<One short sentence, max 20 words. Say specifically why THIS episode is worth listening to today.>",
   "duration": "<episode duration e.g. '45 min', or estimate>"
@@ -768,7 +786,7 @@ Respond ONLY with valid JSON (no markdown):
     parsed = JSON.parse(text) as BedrockPodcastSelection;
   } catch {
     console.warn("Podcast Bedrock JSON parse failed, using index 0. Raw:", text.slice(0, 200));
-    parsed = { selectedIndex: 0, summary: "", reason: "", duration: "" };
+    parsed = { selectedIndex: 0, category: "", summary: "", reason: "", duration: "" };
   }
 
   if (typeof parsed.selectedIndex !== "number" || isNaN(parsed.selectedIndex)) parsed.selectedIndex = 0;
@@ -779,7 +797,7 @@ Respond ONLY with valid JSON (no markdown):
     .replace(/&#8230;/g, "…").replace(/&#\d+;/g, "")
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"');
 
-  return { ...parsed, summary: cleanStr(parsed.summary ?? ""), reason: cleanStr(parsed.reason ?? "") };
+  return { ...parsed, category: (parsed.category ?? "").trim(), summary: cleanStr(parsed.summary ?? ""), reason: cleanStr(parsed.reason ?? "") };
 }
 
 // ─── Fallback ─────────────────────────────────────────────────────────────────
@@ -851,27 +869,36 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
     console.log(`${interestsLabel}: ${allItems.length} raw → ${candidates.length} article candidates`);
 
     const top10     = candidates.slice(0, 10);
-    const selection = await selectBestArticle(top10, interestsLabel, history, subTopicContext);
-    const idx       = typeof selection.selectedIndex === "number" && !isNaN(selection.selectedIndex)
-                      ? Math.max(0, Math.min(selection.selectedIndex, top10.length - 1))
-                      : 0;
-    const chosen    = top10[idx] ?? top10[0];
-    if (!chosen) throw new Error(`No candidate available after selection for: ${interestsLabel}`);
+    const selection = await selectBestArticle(top10, interests, history, subTopicContext);
 
-    const articleCategory = interests.find(i =>
-      (RSS_SOURCES[i] ?? []).some(s => s.name === chosen.sourceName)
-    ) ?? interests[0];
+    if (selection.selectedIndex === -1) {
+      // Model, adaylardan hiçbirini kullanıcının ilgi alanlarıyla ilgili bulmadı
+      // (örn. Longreads'ten gelen bir World Cup makalesi) — off-topic makale göstermek yerine fallback
+      console.log(`No on-topic article for ${interestsLabel}; using fallback`);
+      article = fallbackArticle(interests[0]);
+    } else {
+      const idx    = Math.max(0, Math.min(selection.selectedIndex, top10.length - 1));
+      const chosen = top10[idx] ?? top10[0];
+      if (!chosen) throw new Error(`No candidate available after selection for: ${interestsLabel}`);
 
-    article = {
-      category:    articleCategory,
-      title:       chosen.title,
-      summary:     selection.summary || chosen.description || "Click to read the full article.",
-      reason:      selection.reason,
-      url:         chosen.url,
-      source:      chosen.sourceName,
-      readingTime: selection.readingTime || "~5 min read",
-      publishedAt: chosen.pubDate || new Date().toISOString(),
-    };
+      // Kategori MODELDEN gelir (kullanıcının ilgi alanlarına göre doğrulanır),
+      // feed'in hangi kaynak listesinde durduğuna göre DEĞİL. Bu, genel bir
+      // aggregator'ın (Longreads gibi) off-topic bir makaleyi yanlış etiketlemesini önler.
+      const modelCat  = interests.find(i => i.toLowerCase() === selection.category.toLowerCase());
+      const sourceCat = interests.find(i => (RSS_SOURCES[i] ?? []).some(s => s.name === chosen.sourceName));
+      const articleCategory = modelCat ?? sourceCat ?? interests[0];
+
+      article = {
+        category:    articleCategory,
+        title:       chosen.title,
+        summary:     selection.summary || chosen.description || "Click to read the full article.",
+        reason:      selection.reason,
+        url:         chosen.url,
+        source:      chosen.sourceName,
+        readingTime: selection.readingTime || "~5 min read",
+        publishedAt: chosen.pubDate || new Date().toISOString(),
+      };
+    }
   } catch (err) {
     console.error(`Article generation failed for "${interestsLabel}":`, err);
     article = fallbackArticle(interests[0]);
@@ -898,27 +925,30 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
     console.log(`${interestsLabel}: ${podItems.length} raw → ${podCandidates.length} podcast candidates`);
 
     const top10pod     = podCandidates.slice(0, 10);
-    const podSelection = await selectBestPodcast(top10pod, interestsLabel, history, subTopicContext);
-    const podIdx       = typeof podSelection.selectedIndex === "number" && !isNaN(podSelection.selectedIndex)
-                         ? Math.max(0, Math.min(podSelection.selectedIndex, top10pod.length - 1))
-                         : 0;
-    const chosenPod    = top10pod[podIdx] ?? top10pod[0];
-    if (!chosenPod) throw new Error(`No podcast candidate after selection for: ${interestsLabel}`);
+    const podSelection = await selectBestPodcast(top10pod, interests, history, subTopicContext);
 
-    const podCategory = interests.find(i =>
-      (PODCAST_SOURCES[i] ?? []).some(s => s.name === chosenPod.sourceName)
-    ) ?? interests[0];
+    if (podSelection.selectedIndex === -1) {
+      console.log(`No on-topic podcast for ${interestsLabel}; skipping podcast`);
+    } else {
+      const podIdx    = Math.max(0, Math.min(podSelection.selectedIndex, top10pod.length - 1));
+      const chosenPod = top10pod[podIdx] ?? top10pod[0];
+      if (!chosenPod) throw new Error(`No podcast candidate after selection for: ${interestsLabel}`);
 
-    podcast = {
-      category:    podCategory,
-      title:       chosenPod.title,
-      summary:     podSelection.summary || chosenPod.description || "Click to listen.",
-      reason:      podSelection.reason,
-      url:         chosenPod.url,
-      source:      chosenPod.sourceName,
-      duration:    podSelection.duration || chosenPod.duration || "—",
-      publishedAt: chosenPod.pubDate || new Date().toISOString(),
-    };
+      const modelPodCat  = interests.find(i => i.toLowerCase() === podSelection.category.toLowerCase());
+      const sourcePodCat = interests.find(i => (PODCAST_SOURCES[i] ?? []).some(s => s.name === chosenPod.sourceName));
+      const podCategory  = modelPodCat ?? sourcePodCat ?? interests[0];
+
+      podcast = {
+        category:    podCategory,
+        title:       chosenPod.title,
+        summary:     podSelection.summary || chosenPod.description || "Click to listen.",
+        reason:      podSelection.reason,
+        url:         chosenPod.url,
+        source:      chosenPod.sourceName,
+        duration:    podSelection.duration || chosenPod.duration || "—",
+        publishedAt: chosenPod.pubDate || new Date().toISOString(),
+      };
+    }
   } catch (err) {
     console.warn(`Podcast generation failed for "${interestsLabel}":`, err);
   }
