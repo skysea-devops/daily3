@@ -56,10 +56,12 @@ export const handler = async (
       return { statusCode: 401, headers, body: JSON.stringify({ message: "Unauthorized" }) };
     }
 
-    const body = JSON.parse(event.body ?? "{}") as { interests?: unknown; email?: unknown; subTopics?: unknown };
+    const body = JSON.parse(event.body ?? "{}") as { interests?: unknown; email?: unknown; subTopics?: unknown; region?: unknown };
     const { interests } = body;
     const emailFromBody = typeof body.email === "string" ? body.email : null;
     const subTopics = body.subTopics && typeof body.subTopics === "object" ? body.subTopics : {};
+    const ALLOWED_REGIONS = ["EU", "US_EAST", "US_WEST", "ASIA"];
+    const region = typeof body.region === "string" && ALLOWED_REGIONS.includes(body.region) ? body.region : "EU";
 
     if (
       !Array.isArray(interests) ||
@@ -87,12 +89,14 @@ export const handler = async (
         TableName: USERS_TABLE_NAME,
         Key: { PK: `USER#${userId}`, SK: "PROFILE" },
         UpdateExpression:
-          "SET interests = :interests, updatedAt = :now, email = :email, subTopics = :subTopics",
+          "SET interests = :interests, updatedAt = :now, email = :email, subTopics = :subTopics, #region = :region",
+        ExpressionAttributeNames: { "#region": "region" }, // region rezerve kelime olabilir
         ExpressionAttributeValues: {
           ":interests":  interests,
           ":now":        now,
           ":email":      emailFromBody ?? (claims["email"] as string | undefined) ?? null,
           ":subTopics":  subTopics,
+          ":region":     region,
         },
         ReturnValues: "ALL_NEW",
       })

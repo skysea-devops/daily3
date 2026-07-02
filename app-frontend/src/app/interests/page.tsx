@@ -8,6 +8,31 @@ import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import { CATEGORIES, SUB_TOPICS } from "@/lib/constants";
 
+// ─── Saat dilimi → gönderim bölgesi ───────────────────────────────────────────
+// Kullanıcının tarayıcı saat dilimini 4 kovadan birine eşler. Backend her bölge
+// için ayrı bir cron'da (EU≈07:00 TR, ABD-Doğu, ABD-Batı, Asya) mail gönderir.
+function detectRegion(): "EU" | "US_EAST" | "US_WEST" | "ASIA" {
+  let tz = "";
+  try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch { /* ignore */ }
+
+  if (tz.startsWith("America/")) {
+    const west = [
+      "Los_Angeles", "Tijuana", "Vancouver", "Denver", "Phoenix", "Edmonton",
+      "Boise", "Chihuahua", "Mazatlan", "Hermosillo", "Anchorage", "Juneau",
+      "Dawson", "Whitehorse",
+    ];
+    return west.some(c => tz.includes(c)) ? "US_WEST" : "US_EAST";
+  }
+  if (
+    tz.startsWith("Asia/") || tz.startsWith("Australia/") ||
+    tz.startsWith("Pacific/") || tz.startsWith("Indian/")
+  ) {
+    return "ASIA";
+  }
+  // Europe/, Africa/, Atlantic/ veya bilinmeyen → EU (varsayılan)
+  return "EU";
+}
+
 // ─── Free kullanıcı overlay ───────────────────────────────────────────────────
 
 function ProSubtopicOverlay({ category, onClose }: { category: string; onClose: () => void }) {
@@ -241,7 +266,7 @@ function InterestsForm() {
     setSaved(false);
     setShowTomorrow(false);
     try {
-      const result = await updateUserInterests(selected, user.accessToken, user.email, subTopics);
+      const result = await updateUserInterests(selected, user.accessToken, user.email, subTopics, detectRegion());
       localStorage.setItem("cogletta-categories", JSON.stringify(selected));
       markInterestsSaved();
       setSaved(true);
@@ -287,7 +312,7 @@ function InterestsForm() {
           Your interests
         </h1>
         <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: 32 }}>
-          Pick 3 topics. Your content refreshes every morning.
+          Pick 3 topics. Your content refreshes every morning at 07:00.
         </p>
 
         {showTomorrow && (
@@ -297,7 +322,7 @@ function InterestsForm() {
           }}>
             <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#166534" }}>✓ Interests saved!</p>
             <p style={{ fontSize: "0.875rem", color: "#15803d", marginTop: 4 }}>
-              Your new articles will arrive tomorrow morning. Today's articles are still available.
+              Your new articles will arrive tomorrow at 07:00. Today's articles are still available.
             </p>
             <button onClick={() => router.push("/dashboard")}
               style={{ marginTop: 10, fontSize: "0.875rem", fontWeight: 600, color: "#166534", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>

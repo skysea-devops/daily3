@@ -159,7 +159,7 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "WWD Fashion",            url: "https://wwd.com/fashion-news/feed" },
     { name: "Vogue Business",         url: "https://www.voguebusiness.com/rss" },
     { name: "Eurozine",               url: "https://www.eurozine.com/feed/" },
-    { name: "Longreads",              url: "https://longreads.com/feed/" },
+    
   ],
 
   "Life & Relationships": [
