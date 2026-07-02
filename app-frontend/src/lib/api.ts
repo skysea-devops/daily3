@@ -73,6 +73,7 @@ export interface ArticleResponse {
   status:      "ready" | "pending";
   articles:    import("./types").Article[];
   podcast:     import("./types").Podcast | null;
+  podcasts?:   import("./types").Podcast[];
   generatedAt: string | null;
 }
 

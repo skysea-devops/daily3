@@ -13,7 +13,7 @@ export const handler = async (): Promise<void> => {
 
   // Tüm kullanıcıları tara — interests olan kayıtları çek
   let lastEvaluatedKey: Record<string, unknown> | undefined;
-  const users: { userId: string; interests: string[]; subTopics?: Record<string, string[]>; email?: string }[] = [];
+  const users: { userId: string; interests: string[]; subTopics?: Record<string, string[]>; email?: string; plan?: string }[] = [];
 
   do {
     const result = await dynamo.send(
@@ -21,7 +21,8 @@ export const handler = async (): Promise<void> => {
         TableName:                 USERS_TABLE,
         FilterExpression:          "SK = :profile AND attribute_exists(interests)",
         ExpressionAttributeValues: { ":profile": "PROFILE" },
-        ProjectionExpression:      "PK, interests, subTopics, email",
+        ExpressionAttributeNames:  { "#plan": "plan" }, // plan rezerve kelime
+        ProjectionExpression:      "PK, interests, subTopics, email, #plan",
         ExclusiveStartKey:         lastEvaluatedKey,
       })
     );
@@ -36,6 +37,7 @@ export const handler = async (): Promise<void> => {
           interests,
           subTopics: (item.subTopics as Record<string, string[]> | undefined) ?? {},
           email: (item.email as string | undefined),
+          plan:  (item.plan as string | undefined) ?? "free",
         });
       }
     }
@@ -52,13 +54,13 @@ export const handler = async (): Promise<void> => {
     const batch = users.slice(i, i + BATCH_SIZE);
 
     await Promise.allSettled(
-      batch.map(({ userId, interests, subTopics, email }) =>
+      batch.map(({ userId, interests, subTopics, email, plan }) =>
         lambda.send(
           new InvokeCommand({
             FunctionName:   GENERATE_ARTICLES_FUNCTION,
             InvocationType: "Event", // fire-and-forget
             Payload:        Buffer.from(
-              JSON.stringify({ userId, interests, subTopics, email })
+              JSON.stringify({ userId, interests, subTopics, email, plan })
             ),
           })
         ).then(() => {

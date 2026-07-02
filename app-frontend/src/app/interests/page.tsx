@@ -287,7 +287,7 @@ function InterestsForm() {
           Your interests
         </h1>
         <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: 32 }}>
-          Pick 3 topics. Your content refreshes every morning at 07:00.
+          Pick 3 topics. Your content refreshes every morning.
         </p>
 
         {showTomorrow && (
@@ -297,7 +297,7 @@ function InterestsForm() {
           }}>
             <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#166534" }}>✓ Interests saved!</p>
             <p style={{ fontSize: "0.875rem", color: "#15803d", marginTop: 4 }}>
-              Your new articles will arrive tomorrow at 07:00. Today's articles are still available.
+              Your new articles will arrive tomorrow morning. Today's articles are still available.
             </p>
             <button onClick={() => router.push("/dashboard")}
               style={{ marginTop: 10, fontSize: "0.875rem", fontWeight: 600, color: "#166534", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>

@@ -82,7 +82,7 @@ export const handler = async (
     const alreadyGenerated = !isDeveloper && await articlesExistToday(userId);
 
     // Interests'i her halükarda kaydet
-    await dynamo.send(
+    const updateResult = await dynamo.send(
       new UpdateCommand({
         TableName: USERS_TABLE_NAME,
         Key: { PK: `USER#${userId}`, SK: "PROFILE" },
@@ -94,8 +94,12 @@ export const handler = async (
           ":email":      emailFromBody ?? (claims["email"] as string | undefined) ?? null,
           ":subTopics":  subTopics,
         },
+        ReturnValues: "ALL_NEW",
       })
     );
+
+    const plan  = (updateResult.Attributes?.plan as string | undefined) ?? "free";
+    const email = emailFromBody ?? (claims["email"] as string | undefined) ?? undefined;
 
     if (alreadyGenerated) {
       // Bugün zaten makale var — generate tetikleme
@@ -116,7 +120,7 @@ export const handler = async (
       new InvokeCommand({
         FunctionName:   GENERATE_ARTICLES_FN,
         InvocationType: "Event", // fire-and-forget
-        Payload:        Buffer.from(JSON.stringify({ userId, interests })),
+        Payload:        Buffer.from(JSON.stringify({ userId, interests, subTopics, email, plan })),
       })
     );
 

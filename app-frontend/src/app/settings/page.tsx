@@ -354,7 +354,7 @@ function SettingsContent() {
 
         {/* Notifications */}
         <Section title="Notifications">
-          <Row label="Daily digest email" description="Receive your curated content every morning at 07:00." />
+          <Row label="Daily digest email" description="Receive your curated content every morning." />
           {plan === "pro" && (
             <Row topBorder label="Weekly trend report" description="A summary of the week's most important stories, every Sunday." />
           )}
