@@ -159,7 +159,7 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "WWD Fashion",            url: "https://wwd.com/fashion-news/feed" },
     { name: "Vogue Business",         url: "https://www.voguebusiness.com/rss" },
     { name: "Eurozine",               url: "https://www.eurozine.com/feed/" },
-    { name: "Longreads",              url: "https://longreads.com/feed/" },
+    
   ],
 
   "Life & Relationships": [
@@ -470,34 +470,62 @@ const CATEGORY_EMOJI: Record<string, string> = {
   "Life & Relationships": "💛",
 };
 
-function buildEmailHtml(article: Article, podcast: Podcast | null): string {
+function articleEmailBlock(article: Article, withDivider: boolean): string {
+  const emoji = CATEGORY_EMOJI[article.category] ?? "📄";
+  const divider = withDivider
+    ? "border-top:1px solid #f3f4f6;padding-top:28px;margin-top:4px;"
+    : "";
+  return `
+              <tr>
+                <td style="padding:28px 0;${divider}">
+                  <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">${emoji} ${article.category}</span>
+                  <h2 style="margin:10px 0 4px 0;font-size:21px;font-weight:700;line-height:1.3;color:#111827;">
+                    <a href="${article.url}" style="color:#111827;text-decoration:none;">${article.title}</a>
+                  </h2>
+                  <p style="margin:0 0 14px 0;font-size:13px;color:#6b7280;font-weight:500;">${article.source} &nbsp;·&nbsp; ${article.readingTime}</p>
+                  <p style="margin:0;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+                    ${article.summary} <a href="${article.url}" style="color:#111827;font-weight:600;text-decoration:none;white-space:nowrap;">Read full article &rarr;</a>
+                  </p>
+                </td>
+              </tr>`;
+}
+
+function podcastEmailBlock(podcast: Podcast): string {
+  return `
+              <tr>
+                <td style="padding:28px 0;border-top:1px solid #f3f4f6;">
+                  <span style="font-size:11px;font-weight:700;color:#d1d5db;margin-right:8px;">🎙</span>
+                  <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">Podcast · ${podcast.category}</span>
+                  <h2 style="margin:10px 0 4px 0;font-size:18px;font-weight:700;line-height:1.3;color:#111827;">
+                    <a href="${podcast.url}" style="color:#111827;text-decoration:none;">${podcast.title}</a>
+                  </h2>
+                  <p style="margin:0 0 14px 0;font-size:13px;color:#6b7280;font-weight:500;">${podcast.source} &nbsp;·&nbsp; ${podcast.duration}</p>
+                  <p style="margin:0;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+                    ${podcast.summary} <a href="${podcast.url}" style="color:#111827;font-weight:600;text-decoration:none;white-space:nowrap;">Listen &rarr;</a>
+                  </p>
+                </td>
+              </tr>`;
+}
+
+function buildEmailHtml(articles: Article[], podcasts: Podcast[]): string {
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
-  const emoji = CATEGORY_EMOJI[article.category] ?? "📄";
 
-  const podcastBlock = podcast ? `
-        <tr>
-          <td style="padding:32px 0 0 0;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #f3f4f6;padding-top:24px;">
-              <tr>
-                <td>
-                  <span style="font-size:11px;font-weight:700;color:#d1d5db;margin-right:8px;">🎙</span>
-                  <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">Podcast · ${podcast.category}</span>
-                </td>
-              </tr>
-            </table>
-            <h2 style="margin:10px 0 4px 0;font-size:18px;font-weight:700;line-height:1.3;color:#111827;">
-              <a href="${podcast.url}" style="color:#111827;text-decoration:none;">${podcast.title}</a>
-            </h2>
-            <p style="margin:0 0 14px 0;font-size:13px;color:#6b7280;font-weight:500;">
-              ${podcast.source} &nbsp;·&nbsp; ${podcast.duration}
-            </p>
-            <p style="margin:0;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-              ${podcast.summary} <a href="${podcast.url}" style="color:#111827;font-weight:600;text-decoration:none;white-space:nowrap;">Listen &rarr;</a>
-            </p>
-          </td>
-        </tr>` : "";
+  const multi   = articles.length > 1;
+  const heading = multi
+    ? `Your ${articles.length} articles for today are ready.`
+    : "Your article for today is ready.";
+
+  // Başlıktaki kategori rozetleri (tekrarsız)
+  const cats = Array.from(new Set(articles.map(a => a.category)));
+  const chips = cats.map(c => {
+    const e = CATEGORY_EMOJI[c] ?? "📄";
+    return `<span style="display:inline-block;margin:0 6px 6px 0;padding:4px 10px;background:#f3f4f6;border-radius:20px;font-size:11px;color:#6b7280;font-weight:500;">${e} ${c}</span>`;
+  }).join("");
+
+  const articleBlocks = articles.map((a, i) => articleEmailBlock(a, i > 0)).join("");
+  const podcastBlocks = podcasts.map(podcastEmailBlock).join("");
 
   return `<!DOCTYPE html>
 <html>
@@ -515,33 +543,20 @@ function buildEmailHtml(article: Article, podcast: Podcast | null): string {
                 <td align="right" valign="top"><span style="font-size:12px;color:#9ca3af;">Your daily read</span></td>
               </tr>
             </table>
-            <p style="margin:16px 0 12px 0;font-size:22px;font-weight:700;color:#111827;line-height:1.3;">Your article for today is ready.</p>
-            <span style="display:inline-block;margin:0 6px 6px 0;padding:4px 10px;background:#f3f4f6;border-radius:20px;font-size:11px;color:#6b7280;font-weight:500;">${emoji} ${article.category}</span>
+            <p style="margin:16px 0 12px 0;font-size:22px;font-weight:700;color:#111827;line-height:1.3;">${heading}</p>
+            ${chips}
           </td>
         </tr>
         <tr>
           <td style="padding:0 36px;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td style="padding:32px 0;">
-                  <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">${emoji} ${article.category}</span>
-                  <h2 style="margin:10px 0 4px 0;font-size:21px;font-weight:700;line-height:1.3;color:#111827;">
-                    <a href="${article.url}" style="color:#111827;text-decoration:none;">${article.title}</a>
-                  </h2>
-                  <p style="margin:0 0 14px 0;font-size:13px;color:#6b7280;font-weight:500;">${article.source} &nbsp;·&nbsp; ${article.readingTime}</p>
-                  <p style="margin:0;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                    ${article.summary} <a href="${article.url}" style="color:#111827;font-weight:600;text-decoration:none;white-space:nowrap;">Read full article &rarr;</a>
-                  </p>
-                  ${podcastBlock}
-                </td>
-              </tr>
+            <table width="100%" cellpadding="0" cellspacing="0">${articleBlocks}${podcastBlocks}
             </table>
           </td>
         </tr>
         <tr>
           <td style="padding:24px 36px;background:#f9fafb;border-top:1px solid #f3f4f6;">
             <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
-              Cogletta &nbsp;·&nbsp; Curated by AI, delivered every morning at 07:00.<br>
+              Cogletta &nbsp;·&nbsp; Curated by AI, delivered every morning.<br>
               <a href="#" style="color:#9ca3af;">Unsubscribe</a> &nbsp;·&nbsp; <a href="#" style="color:#9ca3af;">View in browser</a>
             </p>
           </td>
@@ -553,16 +568,24 @@ function buildEmailHtml(article: Article, podcast: Podcast | null): string {
 </html>`;
 }
 
-function buildEmailText(article: Article, podcast: Podcast | null): string {
+function buildEmailText(articles: Article[], podcasts: Podcast[]): string {
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
-  const podcastLine = podcast
-    ? `\n\n---\n\n🎙 Podcast · ${podcast.category} — ${podcast.source}\n${podcast.title}\n${podcast.reason}\n${podcast.url}`
+  const articleLines = articles
+    .map(a => `${a.category} — ${a.source}\n${a.title}\n${a.reason}\n${a.url}`)
+    .join("\n\n");
+  const podcastLines = podcasts.length
+    ? "\n\n---\n\n" + podcasts
+        .map(p => `🎙 Podcast · ${p.category} — ${p.source}\n${p.title}\n${p.reason}\n${p.url}`)
+        .join("\n\n")
     : "";
-  return `Cogletta — ${today}\n\nYour article for today:\n\n${article.category} — ${article.source}\n${article.title}\n${article.reason}\n${article.url}${podcastLine}\n\nNew content arrives every morning at 07:00.`;
+  const intro = articles.length > 1 ? "Your articles for today:" : "Your article for today:";
+  return `Cogletta — ${today}\n\n${intro}\n\n${articleLines}${podcastLines}\n\nNew content arrives every morning at 07:00.`;
 }
 
-async function sendDailyEmail(toEmail: string, article: Article, podcast: Podcast | null): Promise<void> {
-  if (!article.url || article.url === "https://news.ycombinator.com") {
+async function sendDailyEmail(toEmail: string, articles: Article[], podcasts: Podcast[]): Promise<void> {
+  // Fallback dışında gerçek makalesi olanları tut
+  const real = articles.filter(a => a.url && a.url !== "https://news.ycombinator.com");
+  if (real.length === 0) {
     console.warn(`No real article to email for ${toEmail}, skipping`);
     return;
   }
@@ -573,12 +596,12 @@ async function sendDailyEmail(toEmail: string, article: Article, podcast: Podcas
     Message: {
       Subject: { Data: `Your Cogletta for ${today} is ready`, Charset: "UTF-8" },
       Body: {
-        Html: { Data: buildEmailHtml(article, podcast), Charset: "UTF-8" },
-        Text: { Data: buildEmailText(article, podcast), Charset: "UTF-8" },
+        Html: { Data: buildEmailHtml(real, podcasts), Charset: "UTF-8" },
+        Text: { Data: buildEmailText(real, podcasts), Charset: "UTF-8" },
       },
     },
   }));
-  console.log(`Email sent to ${toEmail}`);
+  console.log(`Email sent to ${toEmail} (${real.length} article(s), ${podcasts.length} podcast(s))`);
 }
 
 // ─── Filter & rank ────────────────────────────────────────────────────────────
@@ -627,43 +650,51 @@ function scoreAndFilter(items: RSSItem[], history: RecentHistory, isPodcast = fa
 
 interface BedrockSelection {
   selectedIndex: number;
+  category:      string;
   summary:       string;
   reason:        string;
   readingTime:   string;
 }
 
-async function selectBestArticle(candidates: ScoredCandidate[], interest: string, history: RecentHistory, subTopicContext = ""): Promise<BedrockSelection> {
+async function selectBestArticle(candidates: ScoredCandidate[], interests: string[], history: RecentHistory, subTopicContext = ""): Promise<BedrockSelection> {
+  const interest = interests.join(", ");
   const recentSourcesList = [...history.seenSources.entries()]
     .filter(([, count]) => count >= 2).map(([src]) => src).join(", ");
 
   const candidateList = candidates
-    .map((c, i) => `[${i}] "${c.title}" — ${c.sourceName} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    ${c.description.slice(0, 400)}`)
+    .map((c, i) => `[${i}] "${c.title}" — ${c.sourceName} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    URL: ${c.url}\n    ${c.description.slice(0, 400)}`)
     .join("\n\n");
 
   const diversityNote = recentSourcesList
     ? `\nIMPORTANT: The user has recently seen articles from: ${recentSourcesList}. Prefer a different source today if possible.`
     : "";
 
+  const categoryList = interests.map(i => `"${i}"`).join(", ");
+
   const prompt = `You are an editorial assistant for Cogletta, a daily long-form article curation app for professionals who want to learn deeply.
 
-User interest: "${interest}"${subTopicContext}
+The user follows these interests — these are the ONLY valid categories:
+${categoryList}${subTopicContext}
 ${diversityNote}
 
-Select the single best LONG-FORM ARTICLE from the candidates below. Strictly prioritise:
-1. DEPTH — prefer essays, research summaries, analysis pieces, think-tank reports. Reject short news items.
-2. NO breaking news, liveblogs, or news dispatches — only analytical pieces.
-3. SUBSTANCE — original analysis, research findings, or expert insight.
-4. FORMAT — reject podcast transcripts, episode summaries, video reports. Only written long-form articles.
-5. Freshness — prefer articles published TODAY or recently.
-6. Source variety — avoid sources marked "[source shown recently]" unless clearly superior.
-7. Strong relevance to "${interest}".
+Select the single best LONG-FORM ARTICLE that is genuinely ABOUT one of the user's interests above.
+
+HARD REQUIREMENTS — a candidate that fails ANY of these is NOT eligible, no matter how well written:
+- RELEVANCE: the article must clearly belong to one of the user's interests. Judge from the title, the description, AND the URL slug (e.g. a URL containing "fifa-world-cup" is a sports piece and does NOT belong under Fashion & Style, Business, etc.). General-aggregator sources (e.g. Longreads, Aeon, The Conversation) publish on every topic, so never assume relevance from the source name — judge by content.
+- FORMAT: a written long-form article. Reject podcast transcripts, episode summaries, video reports.
+- NO breaking news, liveblogs, or news dispatches.
+
+Among the ELIGIBLE candidates, prefer: (1) depth — essays, research summaries, analysis, think-tank reports; (2) freshness — published today or recently; (3) source variety — avoid sources marked "[source shown recently]" unless clearly superior.
+
+If NONE of the candidates is clearly about one of the user's interests, respond with selectedIndex -1.
 
 Candidates:
 ${candidateList}
 
 Respond ONLY with valid JSON (no markdown):
 {
-  "selectedIndex": <0-${candidates.length - 1}>,
+  "selectedIndex": <0-${candidates.length - 1}, or -1 if no candidate is on-topic>,
+  "category": "<the ONE user interest this article belongs to, copied EXACTLY from the list above; empty string if selectedIndex is -1>",
   "summary": "<3-4 sentences (~75 words). Recommend as if to a smart friend. Direct, curious, specific. No jargon. Don't start with 'This article'. Don't use 'delve', 'explore', 'unpack', 'shed light on'.>",
   "reason": "<One short sentence, max 20 words. Say specifically why THIS article is worth reading today.>",
   "readingTime": "<estimated reading time e.g. '8 min read'>"
@@ -691,7 +722,7 @@ Respond ONLY with valid JSON (no markdown):
     parsed = JSON.parse(text) as BedrockSelection;
   } catch {
     console.warn("Bedrock JSON parse failed, using index 0. Raw:", text.slice(0, 200));
-    parsed = { selectedIndex: 0, summary: "", reason: "", readingTime: "~5 min read" };
+    parsed = { selectedIndex: 0, category: "", summary: "", reason: "", readingTime: "~5 min read" };
   }
 
   if (typeof parsed.selectedIndex !== "number" || isNaN(parsed.selectedIndex)) parsed.selectedIndex = 0;
@@ -702,45 +733,55 @@ Respond ONLY with valid JSON (no markdown):
     .replace(/&#8230;/g, "…").replace(/&#\d+;/g, "")
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"');
 
-  return { ...parsed, summary: cleanStr(parsed.summary ?? ""), reason: cleanStr(parsed.reason ?? "") };
+  return { ...parsed, category: (parsed.category ?? "").trim(), summary: cleanStr(parsed.summary ?? ""), reason: cleanStr(parsed.reason ?? "") };
 }
 
 interface BedrockPodcastSelection {
   selectedIndex: number;
+  category:      string;
   summary:       string;
   reason:        string;
   duration:      string;
 }
 
-async function selectBestPodcast(candidates: ScoredCandidate[], interest: string, history: RecentHistory, subTopicContext = ""): Promise<BedrockPodcastSelection> {
+async function selectBestPodcast(candidates: ScoredCandidate[], interests: string[], history: RecentHistory, subTopicContext = ""): Promise<BedrockPodcastSelection> {
+  const interest = interests.join(", ");
   const recentSourcesList = [...history.seenSources.entries()]
     .filter(([, count]) => count >= 2).map(([src]) => src).join(", ");
 
   const candidateList = candidates
-    .map((c, i) => `[${i}] "${c.title}" — ${c.sourceName}${c.duration ? ` (${c.duration})` : ""} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    ${c.description.slice(0, 300)}`)
+    .map((c, i) => `[${i}] "${c.title}" — ${c.sourceName}${c.duration ? ` (${c.duration})` : ""} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    URL: ${c.url}\n    ${c.description.slice(0, 300)}`)
     .join("\n\n");
 
   const diversityNote = recentSourcesList
     ? `\nIMPORTANT: The user has recently seen content from: ${recentSourcesList}. Prefer a different podcast show today if possible.`
     : "";
 
+  const categoryList = interests.map(i => `"${i}"`).join(", ");
+
   const prompt = `You are an editorial assistant for Cogletta, a daily content curation app.
 
-User interest: "${interest}"${subTopicContext}
+The user follows these interests — these are the ONLY valid categories:
+${categoryList}${subTopicContext}
 ${diversityNote}
 
-Select the single best PODCAST EPISODE from the candidates below. Prioritise:
-1. RELEVANCE — must directly address the user's interest area.
-2. DEPTH — prefer substantive interviews, investigations, long-form analysis. STRICTLY AVOID daily news bulletins and breaking news recaps.
-3. Freshness — prefer recent episodes but older landmark episodes are fine if clearly superior.
-4. Source variety — avoid shows marked "[source shown recently]" unless clearly superior.
+Select the single best PODCAST EPISODE that is genuinely ABOUT one of the user's interests above.
+
+HARD REQUIREMENTS — a candidate that fails ANY of these is NOT eligible:
+- RELEVANCE: the episode must clearly address one of the user's interests. Judge from the title, description AND URL slug. General shows publish on many topics, so never assume relevance from the show name — judge by the episode content.
+- DEPTH: prefer substantive interviews, investigations, long-form analysis. STRICTLY AVOID daily news bulletins and breaking-news recaps.
+
+Among ELIGIBLE candidates, prefer freshness (recent episodes) and source variety (avoid shows marked "[source shown recently]" unless clearly superior).
+
+If NONE of the candidates is clearly about one of the user's interests, respond with selectedIndex -1.
 
 Candidates:
 ${candidateList}
 
 Respond ONLY with valid JSON (no markdown):
 {
-  "selectedIndex": <0-${candidates.length - 1}>,
+  "selectedIndex": <0-${candidates.length - 1}, or -1 if no candidate is on-topic>,
+  "category": "<the ONE user interest this episode belongs to, copied EXACTLY from the list above; empty string if selectedIndex is -1>",
   "summary": "<2-3 sentences (~50 words). Say what the episode is actually about and why it's worth listening to.>",
   "reason": "<One short sentence, max 20 words. Say specifically why THIS episode is worth listening to today.>",
   "duration": "<episode duration e.g. '45 min', or estimate>"
@@ -768,7 +809,7 @@ Respond ONLY with valid JSON (no markdown):
     parsed = JSON.parse(text) as BedrockPodcastSelection;
   } catch {
     console.warn("Podcast Bedrock JSON parse failed, using index 0. Raw:", text.slice(0, 200));
-    parsed = { selectedIndex: 0, summary: "", reason: "", duration: "" };
+    parsed = { selectedIndex: 0, category: "", summary: "", reason: "", duration: "" };
   }
 
   if (typeof parsed.selectedIndex !== "number" || isNaN(parsed.selectedIndex)) parsed.selectedIndex = 0;
@@ -779,7 +820,7 @@ Respond ONLY with valid JSON (no markdown):
     .replace(/&#8230;/g, "…").replace(/&#\d+;/g, "")
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"');
 
-  return { ...parsed, summary: cleanStr(parsed.summary ?? ""), reason: cleanStr(parsed.reason ?? "") };
+  return { ...parsed, category: (parsed.category ?? "").trim(), summary: cleanStr(parsed.summary ?? ""), reason: cleanStr(parsed.reason ?? "") };
 }
 
 // ─── Fallback ─────────────────────────────────────────────────────────────────
@@ -797,12 +838,145 @@ function fallbackArticle(interest: string): Article {
   };
 }
 
+// ─── Per-scope pickers ────────────────────────────────────────────────────────
+// `scope` is the set of interests Bedrock may choose from and use as valid
+// categories. Free plan → all interests pooled (one call). Pro plan → one call
+// per interest ([interest]) so each category yields its own pick.
+// `exclude` holds URLs already used in this run so the 3 Pro picks don't repeat.
+
+async function pickArticle(
+  scope: string[],
+  history: RecentHistory,
+  subTopicContext: string,
+  exclude: Set<string>
+): Promise<Article> {
+  const label = scope.join(", ");
+  try {
+    const sources = scope.flatMap(i => RSS_SOURCES[i] ?? []);
+    if (sources.length === 0) throw new Error(`No RSS sources for: ${label}`);
+
+    const feedResults = await Promise.allSettled(sources.map(fetchRSSFeed));
+    const allItems: RSSItem[] = [];
+    feedResults.forEach((r, i) => {
+      if (r.status === "fulfilled") allItems.push(...r.value);
+      else console.warn(`Article feed failed: ${sources[i].url}`, r.reason);
+    });
+    if (allItems.length === 0) throw new Error(`All article feeds failed for: ${label}`);
+
+    const candidates = scoreAndFilter(allItems, history, false)
+      .filter(c => !exclude.has(c.url));
+    if (candidates.length === 0) throw new Error(`No fresh articles for: ${label}`);
+
+    console.log(`${label}: ${allItems.length} raw → ${candidates.length} article candidates`);
+
+    const top10     = candidates.slice(0, 10);
+    const selection = await selectBestArticle(top10, scope, history, subTopicContext);
+
+    if (selection.selectedIndex === -1) {
+      console.log(`No on-topic article for ${label}; using fallback`);
+      return fallbackArticle(scope[0]);
+    }
+
+    const idx    = Math.max(0, Math.min(selection.selectedIndex, top10.length - 1));
+    const chosen = top10[idx] ?? top10[0];
+    if (!chosen) return fallbackArticle(scope[0]);
+
+    // Kategori MODELDEN gelir (scope içinde doğrulanır), kaynak-üyeliğinden DEĞİL.
+    const modelCat  = scope.find(i => i.toLowerCase() === selection.category.toLowerCase());
+    const sourceCat = scope.find(i => (RSS_SOURCES[i] ?? []).some(s => s.name === chosen.sourceName));
+    const category  = modelCat ?? sourceCat ?? scope[0];
+
+    return {
+      category,
+      title:       chosen.title,
+      summary:     selection.summary || chosen.description || "Click to read the full article.",
+      reason:      selection.reason,
+      url:         chosen.url,
+      source:      chosen.sourceName,
+      readingTime: selection.readingTime || "~5 min read",
+      publishedAt: chosen.pubDate || new Date().toISOString(),
+    };
+  } catch (err) {
+    console.error(`Article generation failed for "${label}":`, err);
+    return fallbackArticle(scope[0]);
+  }
+}
+
+async function pickPodcast(
+  scope: string[],
+  history: RecentHistory,
+  subTopicContext: string,
+  exclude: Set<string>
+): Promise<Podcast | null> {
+  const label = scope.join(", ");
+  try {
+    const sources = scope.flatMap(i => PODCAST_SOURCES[i] ?? []);
+    if (sources.length === 0) throw new Error(`No podcast sources for: ${label}`);
+
+    const feedResults = await Promise.allSettled(sources.map(fetchRSSFeed));
+    const items: RSSItem[] = [];
+    feedResults.forEach((r, i) => {
+      if (r.status === "fulfilled") items.push(...r.value);
+      else console.warn(`Podcast feed failed: ${sources[i].url}`, r.reason);
+    });
+    if (items.length === 0) throw new Error(`All podcast feeds failed for: ${label}`);
+
+    const candidates = scoreAndFilter(items, history, true)
+      .filter(c => !exclude.has(c.url));
+    if (candidates.length === 0) throw new Error(`No fresh podcast episodes for: ${label}`);
+
+    console.log(`${label}: ${items.length} raw → ${candidates.length} podcast candidates`);
+
+    const top10     = candidates.slice(0, 10);
+    const selection = await selectBestPodcast(top10, scope, history, subTopicContext);
+
+    if (selection.selectedIndex === -1) {
+      console.log(`No on-topic podcast for ${label}; skipping`);
+      return null;
+    }
+
+    const idx    = Math.max(0, Math.min(selection.selectedIndex, top10.length - 1));
+    const chosen = top10[idx] ?? top10[0];
+    if (!chosen) return null;
+
+    const modelCat  = scope.find(i => i.toLowerCase() === selection.category.toLowerCase());
+    const sourceCat = scope.find(i => (PODCAST_SOURCES[i] ?? []).some(s => s.name === chosen.sourceName));
+    const category  = modelCat ?? sourceCat ?? scope[0];
+
+    return {
+      category,
+      title:       chosen.title,
+      summary:     selection.summary || chosen.description || "Click to listen.",
+      reason:      selection.reason,
+      url:         chosen.url,
+      source:      chosen.sourceName,
+      duration:    selection.duration || chosen.duration || "—",
+      publishedAt: chosen.pubDate || new Date().toISOString(),
+    };
+  } catch (err) {
+    console.warn(`Podcast generation failed for "${label}":`, err);
+    return null;
+  }
+}
+
+/** Sub-topic prompt context limited to a given interest scope. */
+function buildSubTopicContext(scope: string[], subTopics: Record<string, string[]>): string {
+  const lines = scope
+    .filter(i => subTopics[i] && subTopics[i].length > 0)
+    .map(i => `  - ${i}: ${subTopics[i].join(", ")}`)
+    .join("\n");
+  return lines
+    ? `\n\nUser's selected sub-topics:\n${lines}\nStrongly prefer articles that fall within these sub-topics.`
+    : "";
+}
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 interface GenerateEvent {
   userId:     string;
   interests:  string[];
   subTopics?: Record<string, string[]>;
+  plan?:      string;
   userEmail?: string;
   email?:     string;
 }
@@ -815,112 +989,48 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
   }
 
   const interestsLabel = interests.join(", ");
+  const isPro = (event.plan ?? "free").toLowerCase() === "pro";
 
-  // Sub-topic bilgisini prompt için hazırla
-  const subTopicLines = interests
-    .filter(i => subTopics[i] && subTopics[i].length > 0)
-    .map(i => `  - ${i}: ${subTopics[i].join(", ")}`)
-    .join("\n");
-  const subTopicContext = subTopicLines
-    ? `\n\nUser's selected sub-topics:\n${subTopicLines}\nStrongly prefer articles that fall within these sub-topics.`
-    : "";
-
-  console.log(`Generating for user=${userId} interests=${interestsLabel}${subTopicLines ? " with sub-topics" : ""}`);
+  console.log(`Generating for user=${userId} plan=${isPro ? "pro" : "free"} interests=${interestsLabel}`);
 
   const history = await fetchRecentHistory(userId);
   console.log(`History: ${history.seenUrls.size} seen URLs, ${history.seenSources.size} sources`);
 
-  // ── Article ───────────────────────────────────────────────────────────────
-  let article: Article;
-  try {
-    const allSources = interests.flatMap(i => RSS_SOURCES[i] ?? []);
-    if (allSources.length === 0) throw new Error(`No RSS sources for interests: ${interestsLabel}`);
+  // ── Seçim ──────────────────────────────────────────────────────────────────
+  // Free: 3 ilgi alanı havuzlanır → 1 makale + 1 podcast.
+  // Pro:  her ilgi alanı için ayrı seçim → 3 makale + 3 podcast (o günkü kategoride
+  //       uygun içerik yoksa makale fallback olur, podcast atlanır).
+  // usedArticleUrls / usedPodcastUrls: Pro'da aynı linkin iki kategoride
+  // tekrarlanmasını önler.
+  const articles:        Article[]   = [];
+  const podcasts:        Podcast[]   = [];
+  const usedArticleUrls: Set<string> = new Set();
+  const usedPodcastUrls: Set<string> = new Set();
 
-    const feedResults = await Promise.allSettled(allSources.map(fetchRSSFeed));
-    const allItems: RSSItem[] = [];
-    feedResults.forEach((r, i) => {
-      if (r.status === "fulfilled") allItems.push(...r.value);
-      else console.warn(`Article feed failed: ${allSources[i].url}`, r.reason);
-    });
+  if (isPro) {
+    for (const interest of interests) {
+      const scope   = [interest];
+      const subCtx  = buildSubTopicContext(scope, subTopics);
 
-    if (allItems.length === 0) throw new Error(`All article feeds failed for: ${interestsLabel}`);
+      const article = await pickArticle(scope, history, subCtx, usedArticleUrls);
+      articles.push(article);
+      if (article.url) usedArticleUrls.add(article.url);
 
-    const candidates = scoreAndFilter(allItems, history, false);
-    if (candidates.length === 0) throw new Error(`No fresh articles for: ${interestsLabel}`);
+      const podcast = await pickPodcast(scope, history, subCtx, usedPodcastUrls);
+      if (podcast) {
+        podcasts.push(podcast);
+        usedPodcastUrls.add(podcast.url);
+      }
+    }
+  } else {
+    const subCtx  = buildSubTopicContext(interests, subTopics);
 
-    console.log(`${interestsLabel}: ${allItems.length} raw → ${candidates.length} article candidates`);
+    const article = await pickArticle(interests, history, subCtx, usedArticleUrls);
+    articles.push(article);
+    if (article.url) usedArticleUrls.add(article.url);
 
-    const top10     = candidates.slice(0, 10);
-    const selection = await selectBestArticle(top10, interestsLabel, history, subTopicContext);
-    const idx       = typeof selection.selectedIndex === "number" && !isNaN(selection.selectedIndex)
-                      ? Math.max(0, Math.min(selection.selectedIndex, top10.length - 1))
-                      : 0;
-    const chosen    = top10[idx] ?? top10[0];
-    if (!chosen) throw new Error(`No candidate available after selection for: ${interestsLabel}`);
-
-    const articleCategory = interests.find(i =>
-      (RSS_SOURCES[i] ?? []).some(s => s.name === chosen.sourceName)
-    ) ?? interests[0];
-
-    article = {
-      category:    articleCategory,
-      title:       chosen.title,
-      summary:     selection.summary || chosen.description || "Click to read the full article.",
-      reason:      selection.reason,
-      url:         chosen.url,
-      source:      chosen.sourceName,
-      readingTime: selection.readingTime || "~5 min read",
-      publishedAt: chosen.pubDate || new Date().toISOString(),
-    };
-  } catch (err) {
-    console.error(`Article generation failed for "${interestsLabel}":`, err);
-    article = fallbackArticle(interests[0]);
-  }
-
-  // ── Podcast ───────────────────────────────────────────────────────────────
-  let podcast: Podcast | null = null;
-  try {
-    const allPodSources = interests.flatMap(i => PODCAST_SOURCES[i] ?? []);
-    if (allPodSources.length === 0) throw new Error(`No podcast sources for: ${interestsLabel}`);
-
-    const podFeedResults = await Promise.allSettled(allPodSources.map(fetchRSSFeed));
-    const podItems: RSSItem[] = [];
-    podFeedResults.forEach((r, i) => {
-      if (r.status === "fulfilled") podItems.push(...r.value);
-      else console.warn(`Podcast feed failed: ${allPodSources[i].url}`, r.reason);
-    });
-
-    if (podItems.length === 0) throw new Error(`All podcast feeds failed for: ${interestsLabel}`);
-
-    const podCandidates = scoreAndFilter(podItems, history, true);
-    if (podCandidates.length === 0) throw new Error(`No fresh podcast episodes for: ${interestsLabel}`);
-
-    console.log(`${interestsLabel}: ${podItems.length} raw → ${podCandidates.length} podcast candidates`);
-
-    const top10pod     = podCandidates.slice(0, 10);
-    const podSelection = await selectBestPodcast(top10pod, interestsLabel, history, subTopicContext);
-    const podIdx       = typeof podSelection.selectedIndex === "number" && !isNaN(podSelection.selectedIndex)
-                         ? Math.max(0, Math.min(podSelection.selectedIndex, top10pod.length - 1))
-                         : 0;
-    const chosenPod    = top10pod[podIdx] ?? top10pod[0];
-    if (!chosenPod) throw new Error(`No podcast candidate after selection for: ${interestsLabel}`);
-
-    const podCategory = interests.find(i =>
-      (PODCAST_SOURCES[i] ?? []).some(s => s.name === chosenPod.sourceName)
-    ) ?? interests[0];
-
-    podcast = {
-      category:    podCategory,
-      title:       chosenPod.title,
-      summary:     podSelection.summary || chosenPod.description || "Click to listen.",
-      reason:      podSelection.reason,
-      url:         chosenPod.url,
-      source:      chosenPod.sourceName,
-      duration:    podSelection.duration || chosenPod.duration || "—",
-      publishedAt: chosenPod.pubDate || new Date().toISOString(),
-    };
-  } catch (err) {
-    console.warn(`Podcast generation failed for "${interestsLabel}":`, err);
+    const podcast = await pickPodcast(interests, history, subCtx, usedPodcastUrls);
+    if (podcast) podcasts.push(podcast);
   }
 
   // ── DynamoDB'e yaz ────────────────────────────────────────────────────────
@@ -928,21 +1038,22 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
   const item: DailyArticles = {
     PK:          Keys.userPK(userId),
     SK:          Keys.dateSK(now),
-    articles:    [article],
-    podcast:     podcast,
+    articles:    articles,
+    podcast:     podcasts[0] ?? null,   // geriye uyumluluk (eski dashboard tekil okur)
+    podcasts:    podcasts,
     generatedAt: now.toISOString(),
     ttl:         Keys.ttl30Days(),
   };
 
   await dynamo.send(new PutCommand({ TableName: ARTICLES_TABLE, Item: item }));
-  console.log(`Wrote article + podcast for user=${userId} date=${Keys.dateSK(now)}`);
+  console.log(`Wrote ${articles.length} article(s) + ${podcasts.length} podcast(s) for user=${userId} date=${Keys.dateSK(now)}`);
 
   // ── Email ─────────────────────────────────────────────────────────────────
   if (SES_FROM_EMAIL) {
     const userEmail = event.userEmail ?? event.email ?? await fetchUserEmail(userId);
     if (userEmail) {
       try {
-        await sendDailyEmail(userEmail, article, podcast);
+        await sendDailyEmail(userEmail, articles, podcasts);
       } catch (err) {
         console.error("Failed to send email notification:", err);
       }

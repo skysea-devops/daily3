@@ -242,9 +242,9 @@ function ProNudge() {
 }
 
 function DashboardContent() {
-  const { user } = useAuth();
-  const [article, setArticle]         = useState<Article | null>(null);
-  const [podcast, setPodcast]         = useState<Podcast | null>(null);
+  const { user, plan } = useAuth();
+  const [articles, setArticles]       = useState<Article[]>([]);
+  const [podcasts, setPodcasts]       = useState<Podcast[]>([]);
   const [status, setStatus]           = useState<"loading" | "ready" | "pending" | "error">("loading");
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
 
@@ -256,8 +256,9 @@ function DashboardContent() {
         const data = await getDailyArticles(user!.accessToken);
         if (cancelled) return;
         if (data.status === "ready" && data.articles.length > 0) {
-          setArticle(data.articles[0]);
-          setPodcast(data.podcast ?? null);
+          setArticles(data.articles);
+          // Geriye uyumluluk: yeni item'lar `podcasts` dizisi, eskiler tekil `podcast`
+          setPodcasts(data.podcasts ?? (data.podcast ? [data.podcast] : []));
           setGeneratedAt(data.generatedAt);
           setStatus("ready");
         } else {
@@ -324,12 +325,12 @@ function DashboardContent() {
         {/* Ready */}
         {status === "ready" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {article && <ArticleCard article={article} />}
-            <ProNudge />
-            {podcast && <PodcastCard podcast={podcast} />}
+            {articles.map((a, i) => <ArticleCard key={`a-${i}`} article={a} />)}
+            {plan !== "pro" && <ProNudge />}
+            {podcasts.map((p, i) => <PodcastCard key={`p-${i}`} podcast={p} />)}
             {generatedAt && (
               <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--ink-muted)", paddingTop: 4 }}>
-                Curated at {new Date(generatedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · Refreshes tomorrow at 07:00
+                Curated at {new Date(generatedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · Refreshes tomorrow morning
               </p>
             )}
           </div>

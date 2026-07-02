@@ -433,24 +433,39 @@ resource "aws_lambda_function" "daily_trigger" {
   depends_on = [aws_cloudwatch_log_group.daily_trigger]
 }
 
-resource "aws_cloudwatch_event_rule" "daily_07_00" {
-  name                = "${var.project_name}-${var.environment}-daily-07-00"
-  description         = "Triggers daily article generation at 07:00 Turkey time (04:00 UTC)"
-  schedule_expression = "cron(0 4 * * ? *)"
+locals {
+  # Her bölge için ayrı cron — hepsi aynı daily-trigger'ı çağırır, region input geçer.
+  # Saatler sabit UTC; DST'de yerel saat ±1 kayar (kullanıcıya "her sabah" deniyor).
+  daily_schedules = {
+    eu      = { cron = "cron(0 4 * * ? *)",  region = "EU" }      # TR 07:00, CET 05-06
+    us_east = { cron = "cron(0 11 * * ? *)", region = "US_EAST" } # ET ~07:00
+    us_west = { cron = "cron(0 14 * * ? *)", region = "US_WEST" } # PT ~07:00
+    asia    = { cron = "cron(0 23 * * ? *)", region = "ASIA" }    # CN/SEA/JP ~07-08:00
+  }
+}
+
+resource "aws_cloudwatch_event_rule" "daily" {
+  for_each            = local.daily_schedules
+  name                = "${var.project_name}-${var.environment}-daily-${each.key}"
+  description         = "Daily article generation for region ${each.value.region}"
+  schedule_expression = each.value.cron
 }
 
 resource "aws_cloudwatch_event_target" "daily_trigger_target" {
-  rule      = aws_cloudwatch_event_rule.daily_07_00.name
-  target_id = "daily-trigger-lambda"
+  for_each  = local.daily_schedules
+  rule      = aws_cloudwatch_event_rule.daily[each.key].name
+  target_id = "daily-trigger-${each.key}"
   arn       = aws_lambda_function.daily_trigger.arn
+  input     = jsonencode({ region = each.value.region })
 }
 
 resource "aws_lambda_permission" "allow_eventbridge" {
-  statement_id  = "AllowEventBridgeInvoke"
+  for_each      = local.daily_schedules
+  statement_id  = "AllowEventBridgeInvoke-${each.key}"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.daily_trigger.function_name
   principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.daily_07_00.arn
+  source_arn    = aws_cloudwatch_event_rule.daily[each.key].arn
 }
 
 

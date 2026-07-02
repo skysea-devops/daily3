@@ -12,7 +12,8 @@ export async function updateUserInterests(
   interests: string[],
   accessToken: string,
   email?: string,
-  subTopics?: Record<string, string[]>
+  subTopics?: Record<string, string[]>,
+  region?: string
 ) {
   if (!API_BASE_URL) {
     throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
@@ -24,7 +25,7 @@ export async function updateUserInterests(
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ interests, email, subTopics }),
+    body: JSON.stringify({ interests, email, subTopics, region }),
   });
 
   if (response.status === 401) {
@@ -73,6 +74,7 @@ export interface ArticleResponse {
   status:      "ready" | "pending";
   articles:    import("./types").Article[];
   podcast:     import("./types").Podcast | null;
+  podcasts?:   import("./types").Podcast[];
   generatedAt: string | null;
 }
 
@@ -99,3 +101,58 @@ export async function getDailyArticles(
   return response.json();
 }
 
+
+export async function createCheckoutSession(
+  accessToken: string,
+  email?: string
+): Promise<{ url: string }> {
+  if (!API_BASE_URL) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/me/checkout`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ email }),
+  });
+
+  if (response.status === 401) {
+    handleUnauthorized();
+    throw new Error("Session expired");
+  }
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    throw new Error(errorBody?.message || "Failed to start checkout");
+  }
+
+  return response.json();
+}
+
+export async function createPortalSession(
+  accessToken: string
+): Promise<{ url: string }> {
+  if (!API_BASE_URL) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/me/portal`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (response.status === 401) {
+    handleUnauthorized();
+    throw new Error("Session expired");
+  }
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    throw new Error(errorBody?.message || "Failed to open billing portal");
+  }
+
+  return response.json();
+}

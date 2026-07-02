@@ -99,6 +99,7 @@ export const handler = async (
         status:      "ready",
         articles:    item.articles ?? [],
         podcast:     item.podcast ?? null,
+        podcasts:    item.podcasts ?? (item.podcast ? [item.podcast] : []),
         generatedAt: item.generatedAt ?? null,
       }),
     };
