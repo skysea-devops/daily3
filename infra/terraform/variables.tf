@@ -87,3 +87,20 @@ variable "domain_aliases" {
   type        = list(string)
   default     = ["dev.cogletta.com"]
 }
+
+variable "stripe_secret_key" {
+  description = "Stripe secret key (sk_test_... / sk_live_...)"
+  type        = string
+  sensitive   = true
+}
+
+variable "stripe_webhook_secret" {
+  description = "Stripe webhook signing secret (whsec_...)"
+  type        = string
+  sensitive   = true
+}
+
+variable "stripe_price_id" {
+  description = "Stripe Price ID for the Pro plan"
+  type        = string
+}
