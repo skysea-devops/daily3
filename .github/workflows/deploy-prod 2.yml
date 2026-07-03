@@ -1,0 +1,185 @@
+name: Deploy (prod)
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - closed
+    branches:
+      - prod
+    paths:
+      - "infra/terraform/**"
+      - "app-backend/**"
+      - "app-frontend/**"
+      - ".github/workflows/deploy-prod.yml"
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: read
+
+# PR to prod   → prod environment (plan only)
+# merge to prod → prod environment (apply + deploy)
+
+jobs:
+  build-lambdas:
+    name: Build Lambda functions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: app-backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: app-backend
+        run: npm ci
+
+      - name: Type check
+        working-directory: app-backend
+        run: npm run typecheck
+
+      - name: Build
+        working-directory: app-backend
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Upload Lambda artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-dist
+          path: app-backend/lambdas/**/dist/
+          retention-days: 1
+
+  build-frontend:
+    name: Build frontend
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: app-frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: app-frontend
+        run: npm ci
+
+      - name: Build
+        working-directory: app-frontend
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+          NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ vars.NEXT_PUBLIC_COGNITO_USER_POOL_ID }}
+          NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ vars.NEXT_PUBLIC_COGNITO_CLIENT_ID }}
+
+      - name: Upload frontend artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-out
+          path: app-frontend/out/
+          retention-days: 1
+
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+    needs: [build-lambdas, build-frontend]
+    environment: prod
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Lambda artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-dist
+          path: app-backend/lambdas
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=cogletta-prod-tfstate" \
+            -backend-config="key=cogletta/prod/terraform.tfstate" \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -reconfigure
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        env:
+          TF_VAR_google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
+          TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: terraform plan -var-file=prod.tfvars -out=tfplan
+
+      - name: Terraform Apply
+        if: github.event.pull_request.merged == true
+        env:
+          TF_VAR_google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
+          TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: terraform apply -auto-approve tfplan
+
+  deploy-frontend:
+    name: Deploy frontend
+    runs-on: ubuntu-latest
+    needs: [build-frontend, terraform]
+    environment: prod
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Download frontend artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-out
+          path: out/
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Sync to S3
+        run: |
+          find out/ -name "*.txt" -delete
+
+          find out/ -name "*.html" | while read f; do
+            key="${f#out/}"
+            aws s3 cp "$f" "s3://${{ vars.FRONTEND_BUCKET_NAME }}/$key" \
+              --content-type "text/html; charset=utf-8" \
+              --cache-control "no-cache, no-store, must-revalidate"
+          done
+
+          aws s3 sync out/_next/ "s3://${{ vars.FRONTEND_BUCKET_NAME }}/_next/" \
+            --cache-control "public, max-age=31536000, immutable"
+
+          aws s3 sync out/ "s3://${{ vars.FRONTEND_BUCKET_NAME }}/" \
+            --exclude "_next/*" \
+            --exclude "*.html" \
+            --exclude "*.txt" \
+            --cache-control "public, max-age=3600"
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
