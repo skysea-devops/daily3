@@ -323,7 +323,7 @@ export default function HomePage() {
         <section className="lp-section">
           <p className="lp-label">The name</p>
           <p className="lp-p">
-            Cogletta is a name we created to capture a simple idea: <strong>knowledge should be chosen, not chased.</strong>
+            Cogletta is a name we created to capture a simple idea: <strong>Ability to read articles based on one's interests</strong>
           </p>
           <p className="lp-p">
             The name blends two Latin roots. <em>Cognito</em> means "to know" or "to understand" — the origin of the modern word cognition. <em>Collecta</em> means "gathered together" or "carefully collected."
@@ -336,7 +336,7 @@ export default function HomePage() {
           </p>
           <p className="lp-p" style={{lineHeight: 2.2}}>
             Not more information.<br />
-            <strong>Better information.</strong><br />
+            <strong>Better knowledge.</strong><br />
             Carefully selected. Thoughtfully curated. Delivered daily.
           </p>
         </section>
@@ -365,26 +365,6 @@ export default function HomePage() {
           <p className="lp-sig">— The Cogletta team</p>
         </section>
 
-        {/* HOW IT WORKS */}
-        <div className="lp-band">
-          <div className="lp-band-inner">
-            <p className="lp-label lp-accent-label">How it works</p>
-            <h2 className="lp-h2">Simple by design. Powerful under the hood.</h2>
-            <div className="lp-steps">
-              {[
-                { n: "01", title: "Choose your topics", body: "Pick three interest areas from 15 categories — history, economics, science, world politics, and more." },
-                { n: "02", title: "We scan the web for you", body: "Every day, hundreds of sources are scanned. Only the best long-form article per category makes the cut." },
-                { n: "03", title: "Ready every morning", body: "Your article and podcast episode arrive every morning — on your dashboard and in your inbox, ready to read." },
-              ].map(s => (
-                <div key={s.n} className="lp-step">
-                  <div className="lp-step-num">{s.n}</div>
-                  <h3>{s.title}</h3>
-                  <p>{s.body}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
 
         {/* WHAT YOU GET */}
         <section className="lp-section" style={{maxWidth: 800}}>
@@ -413,26 +393,48 @@ export default function HomePage() {
             <h2 className="lp-h2">This is what arrives in your inbox.</h2>
 
             <div className="lp-article">
-              <p className="lp-art-meta">🏛️ History</p>
-              <h3 className="lp-art-title">The Evolution of Britain's Invasion Fiction</h3>
-              <p className="lp-art-source">JSTOR Daily · 8 min read</p>
+              <p className="lp-art-meta">🎨 Arts</p>
+              <h3 className="lp-art-title">Why We Can't Stop Looking at Vermeer</h3>
+              <p className="lp-art-source">The New Yorker · 9 min read</p>
               <p className="lp-art-text">
-                Britain's invasion fiction tracks a fascinating arc — the 19th-century fear of foreign attack gradually morphed into
-                something more psychologically complex, a fear of internal collapse dressed in external threat.
-                If you've ever wondered why certain anxieties resurface in politics every generation,
-                this is the literary genealogy that explains it. <a href="#" onClick={e => { e.preventDefault(); setShowModal(true); }}>Read full article →</a>
+                Four centuries later, Johannes Vermeer's quiet interiors continue to captivate millions. But what exactly makes
+                his paintings feel so modern? This essay explores the subtle psychology of light, attention, and why slowing
+                down in front of a single painting can change the way we see the world.
+                <a href="#" onClick={e => { e.preventDefault(); setShowModal(true); }}>Read full article →</a>
               </p>
             </div>
 
             <div className="lp-article">
-              <p className="lp-art-meta">🌍 World Politics</p>
-              <h3 className="lp-art-title">What the Lebanon Strikes Mean for the US-Iran Nuclear Deal</h3>
-              <p className="lp-art-source">Chatham House · 6 min read</p>
+              <p className="lp-art-meta">👗 Fashion</p>
+              <h3 className="lp-art-title">Why Quiet Luxury Took Over Fashion</h3>
+              <p className="lp-art-source">The Business of Fashion · 7 min read</p>
               <p className="lp-art-text">
-                Three powers, one calculation: as Israel intensifies strikes on Hezbollah, the calculus for a nuclear agreement
-                shifts in real time. This piece cuts through the noise to show how tactical military decisions
-                ripple into diplomatic channels in ways that aren't obvious from headlines alone. <a href="#" onClick={e => { e.preventDefault(); setShowModal(true); }}>Read full article →</a>
+                Logos are fading, craftsmanship is back, and understated elegance has become the industry's biggest statement.
+                Beyond the trend, this piece explains the cultural and economic forces that made "quiet luxury" the defining
+                aesthetic of the decade.
+                <a href="#" onClick={e => { e.preventDefault(); setShowModal(true); }}>Read full article →</a>
               </p>
+            </div>
+          </div>
+        </div>
+
+        {/* HOW IT WORKS */}
+        <div className="lp-band">
+          <div className="lp-band-inner">
+            <p className="lp-label lp-accent-label">How it works</p>
+            <h2 className="lp-h2">Simple by design. Powerful under the hood.</h2>
+            <div className="lp-steps">
+              {[
+                { n: "01", title: "Choose your topics", body: "Pick three interest areas from 15 categories — history, economics, science, world politics, and more." },
+                { n: "02", title: "We scan the web for you", body: "Every day, hundreds of sources are scanned. Only the best long-form article per category makes the cut." },
+                { n: "03", title: "Ready every morning", body: "Your article and podcast episode arrive every morning — on your dashboard and in your inbox, ready to read." },
+              ].map(s => (
+                <div key={s.n} className="lp-step">
+                  <div className="lp-step-num">{s.n}</div>
+                  <h3>{s.title}</h3>
+                  <p>{s.body}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
