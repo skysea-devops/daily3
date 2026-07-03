@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import { updateDisplayName, changePassword } from "@/lib/cognito";
-import { createCheckoutSession, createPortalSession } from "@/lib/api";
+import { buildLemonCheckoutUrl, getUserProfile } from "@/lib/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
@@ -213,10 +213,21 @@ function SettingsContent() {
   const [billingBusy, setBillingBusy]   = useState(false);
   const [billingError, setBillingError] = useState("");
   const [banner, setBanner]             = useState<"success" | "cancel" | null>(null);
+  const [portalUrl, setPortalUrl]       = useState<string | null>(null);
 
   const displayName = user?.email?.split("@")[0] ?? "";
 
-  // Stripe Checkout dönüşü: ?checkout=success | ?checkout=cancel
+  // Pro kullanıcı için Lemon Squeezy müşteri portalı linkini profilden çek
+  useEffect(() => {
+    if (!user?.accessToken || plan !== "pro") return;
+    let cancelled = false;
+    getUserProfile(user.accessToken)
+      .then((p) => { if (!cancelled) setPortalUrl(p.lsPortalUrl ?? null); })
+      .catch(() => { /* sessiz geç */ });
+    return () => { cancelled = true; };
+  }, [user, plan]);
+
+  // Lemon Squeezy Checkout dönüşü: ?checkout=success | ?checkout=cancel
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get("checkout");
@@ -234,28 +245,30 @@ function SettingsContent() {
     }
   }, [refreshSession]);
 
-  async function handleUpgrade() {
-    if (!user?.accessToken || billingBusy) return;
+  function handleUpgrade(billing: "monthly" | "yearly") {
+    if (!user || billingBusy) return;
     setBillingBusy(true); setBillingError("");
     try {
-      const { url } = await createCheckoutSession(user.accessToken, user.email);
+      const url = buildLemonCheckoutUrl(billing, {
+        userId: user.sub,
+        email: user.email,
+        redirectUrl: `${window.location.origin}/settings?checkout=success`,
+      });
       window.location.href = url;
     } catch (e: any) {
-      setBillingError(e?.message || "Something went wrong. Please try again.");
+      setBillingError(e?.message || "Checkout is not configured. Please try again.");
       setBillingBusy(false);
     }
   }
 
-  async function handleManageBilling() {
-    if (!user?.accessToken || billingBusy) return;
-    setBillingBusy(true); setBillingError("");
-    try {
-      const { url } = await createPortalSession(user.accessToken);
-      window.location.href = url;
-    } catch (e: any) {
-      setBillingError(e?.message || "Something went wrong. Please try again.");
-      setBillingBusy(false);
-      setModal(null);
+  // Lemon Squeezy müşteri portalı: iptal, kart güncelleme, faturalar
+  function handleManageBilling() {
+    if (billingBusy) return;
+    setModal(null);
+    if (portalUrl) {
+      window.location.href = portalUrl;
+    } else {
+      setBillingError("Billing portal link isn't ready yet. Please refresh in a moment.");
     }
   }
 
@@ -331,13 +344,16 @@ function SettingsContent() {
         <Section title="Plan & Billing">
           <Row label="Current plan" value={plan === "pro" ? "Cogletta Pro — $4.80/month" : "Free"} />
           {plan === "free" && (
-            <Row topBorder label="Upgrade to Pro" description="3 articles per interest, sub-topics, weekly trend reports.">
-              <ActionBtn label={billingBusy ? "Redirecting…" : "Upgrade →"} onClick={handleUpgrade} disabled={billingBusy} style="accent" />
+            <Row topBorder label="Upgrade to Pro" description="3 articles per interest, sub-topics, weekly trend reports. Yearly saves two months.">
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                <ActionBtn label={billingBusy ? "Redirecting…" : "Yearly · $48"} onClick={() => handleUpgrade("yearly")} disabled={billingBusy} style="accent" />
+                <ActionBtn label="Monthly · $4.80" onClick={() => handleUpgrade("monthly")} disabled={billingBusy} />
+              </div>
             </Row>
           )}
           {plan === "pro" && (
             <>
-              <Row topBorder label="Payment method" description="Update your card, view invoices, and manage billing in the secure Stripe portal.">
+              <Row topBorder label="Payment method" description="Update your card, view invoices, and manage billing in the secure Lemon Squeezy portal.">
                 <ActionBtn label={billingBusy ? "Opening…" : "Manage"} onClick={handleManageBilling} disabled={billingBusy} />
               </Row>
               <Row topBorder label="Cancel subscription" description="You'll keep Pro until the end of your billing period.">

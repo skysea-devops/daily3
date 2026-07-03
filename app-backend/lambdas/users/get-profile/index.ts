@@ -45,10 +45,12 @@ export const handler = async (
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        interests:  result.Item.interests ?? [],
-        email:      result.Item.email ?? null,
-        plan:       result.Item.plan ?? "free",
-        subTopics:  result.Item.subTopics ?? {},
+        interests:   result.Item.interests ?? [],
+        email:       result.Item.email ?? null,
+        plan:        result.Item.plan ?? "free",
+        subTopics:   result.Item.subTopics ?? {},
+        lsPortalUrl: result.Item.lsPortalUrl ?? null,
+        lsVariantId: result.Item.lsVariantId ?? null,
       }),
     };
   } catch (error) {
