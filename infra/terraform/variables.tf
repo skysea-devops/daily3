@@ -88,22 +88,9 @@ variable "domain_aliases" {
   default     = ["dev.cogletta.com"]
 }
 
-variable "stripe_secret_key" {
-  description = "Stripe secret key (sk_test_... / sk_live_...)"
+variable "lemonsqueezy_webhook_secret" {
+  description = "Lemon Squeezy webhook signing secret (LS panelinde belirlenen string)"
   type        = string
   sensitive   = true
   default     = "" # ilk deploy icin bos birak; sonra GitHub secret'tan TF_VAR ile gelir
-}
-
-variable "stripe_webhook_secret" {
-  description = "Stripe webhook signing secret (whsec_...)"
-  type        = string
-  sensitive   = true
-  default     = "" # webhook endpoint ilk deploy sonrasi kurulur; o zamana kadar bos
-}
-
-variable "stripe_price_id" {
-  description = "Stripe Price ID for the Pro plan"
-  type        = string
-  default     = "" # Stripe'da price olusturunca tfvars'a yaz
 }
