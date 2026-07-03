@@ -28,6 +28,7 @@ export interface DailyArticles {
   SK:          string;
   articles:    Article[];
   podcast:     Podcast | null;
+  podcasts?:   Podcast[];
   generatedAt: string;
   ttl:         number;
 }

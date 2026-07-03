@@ -192,6 +192,16 @@ export default function HomePage() {
         .lp-band-inner { max-width: 800px; margin: 0 auto; }
         .lp-h2 { font-family: 'Lora', serif; font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 600; color: var(--ink); margin-bottom: 40px; max-width: 480px; }
 
+        .lp-quotes { display: grid; gap: 20px; }
+        @media (min-width: 700px) { .lp-quotes { grid-template-columns: repeat(3, 1fr); } }
+        .lp-quote { background: var(--white); border: 1px solid var(--rule); border-radius: 12px; padding: 28px; display: flex; flex-direction: column; text-align: left; }
+        .lp-quote-stars { color: var(--accent); font-size: 0.8125rem; letter-spacing: 3px; margin-bottom: 14px; }
+        .lp-quote-text { font-family: 'Lora', serif; font-size: 1rem; line-height: 1.75; color: var(--ink); margin: 0 0 20px; }
+        .lp-quote-who { margin-top: auto; display: flex; align-items: center; gap: 12px; }
+        .lp-quote-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--paper-warm); color: var(--accent); font-weight: 600; font-size: 0.9375rem; display: flex; align-items: center; justify-content: center; font-family: 'Lora', serif; flex-shrink: 0; }
+        .lp-quote-name { font-size: 0.875rem; font-weight: 600; color: var(--ink); display: block; }
+        .lp-quote-role { font-size: 0.75rem; color: var(--ink-muted); }
+
         .lp-steps { display: grid; gap: 32px; }
         @media (min-width: 640px) { .lp-steps { grid-template-columns: repeat(3, 1fr); } }
         .lp-step-num { font-family: 'Lora', serif; font-size: 2rem; font-weight: 600; color: var(--rule); line-height: 1; margin-bottom: 12px; }
@@ -250,12 +260,61 @@ export default function HomePage() {
           <span className="lp-eyebrow">Curated for you. Every morning.</span>
           <h1 className="lp-h1">Read what<br /><em>matters to you.</em></h1>
           <p className="lp-sub">
-            Every morning, a carefully selected long-form article and a podcast episode on the topic you actually care about — curated and delivered to your inbox. No algorithm, no noise.
+            Every morning, carefully selected long-form articles and podcasts episodes on the topic you actually care about — curated and delivered to your inbox.
           </p>
           <button onClick={() => setShowModal(true)} className="lp-cta">
             Start reading for free →
           </button>
           <span className="lp-note">Subscribe to get a curated article and podcast every morning.</span>
+        </section>
+         <div className="lp-divider" />
+        {/* TESTIMONIALS */}
+        <section className="lp-band" style={{ background: "transparent", borderTop: "none", borderBottom: "none", padding: "20px 5vw 72px" }}>
+          <div className="lp-band-inner">
+            <h2 className="lp-h2" style={{ margin: "0 auto 12px", textAlign: "center" }}>
+              The Coglettans
+            </h2>
+            <p className="lp-sub" style={{ margin: "0 auto 40px", textAlign: "center" }}>
+              The people who start their mornings with us.
+            </p>
+            <div className="lp-quotes">
+              {[
+                {
+                  stars: "★★★★★",
+                  text: "I can't wait to see which articles arrive each morning.",
+                  name: "Selin",
+                  role: "Reads over morning coffee",
+                  initial: "S",
+                },
+                {
+                  stars: "★★★★★",
+                  text: "I could never finish long articles before. Getting dailly, picked for me, quietly rebuilt my reading habit.",
+                  name: "Andy",
+                  role: "Daily reader",
+                  initial: "D",
+                },
+                {
+                  stars: "★★★★★",
+                  text: "No endless feed, no doomscrolling — just the topics I actually chose, curated for me each morning.",
+                  name: "Melissa",
+                  role: "Pro subscriber",
+                  initial: "M",
+                },
+              ].map((q, i) => (
+                <figure key={i} className="lp-quote">
+                  <div className="lp-quote-stars">{q.stars}</div>
+                  <blockquote className="lp-quote-text">“{q.text}”</blockquote>
+                  <figcaption className="lp-quote-who">
+                    <span className="lp-quote-avatar">{q.initial}</span>
+                    <span>
+                      <span className="lp-quote-name">{q.name}</span>
+                      <span className="lp-quote-role">{q.role}</span>
+                    </span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
         </section>
 
         <div className="lp-divider" />
@@ -314,8 +373,8 @@ export default function HomePage() {
             <div className="lp-steps">
               {[
                 { n: "01", title: "Choose your topics", body: "Pick three interest areas from 15 categories — history, economics, science, world politics, and more." },
-                { n: "02", title: "AI reads the web", body: "Every day, hundreds of sources are scanned. Only the best long-form article per category makes the cut." },
-                { n: "03", title: "Ready at 07:00", body: "Your article and podcast episode arrive every morning — on your dashboard and in your inbox, ready to read." },
+                { n: "02", title: "We scan the web for you", body: "Every day, hundreds of sources are scanned. Only the best long-form article per category makes the cut." },
+                { n: "03", title: "Ready every morning", body: "Your article and podcast episode arrive every morning — on your dashboard and in your inbox, ready to read." },
               ].map(s => (
                 <div key={s.n} className="lp-step">
                   <div className="lp-step-num">{s.n}</div>
@@ -334,7 +393,7 @@ export default function HomePage() {
           <div className="lp-features">
             {[
               { icon: "📰", title: "3 curated article daily (1 in free plan)" , body: "Picked from across your 3 interests — long-form, substantive pieces from think-tanks, academic journals, and quality publications." },
-              { icon: "✉️", title: "Daily email digest", body: "Your article and podcast delivered to your inbox every morning at 07:00. Clean, readable." },
+              { icon: "✉️", title: "Daily email digest", body: "Your article and podcast delivered to your inbox every morning. Clean, readable." },
               { icon: "💡", title: "Why we picked this for you", body: "Each article comes with a short editorial note — why this piece, why today, why it's worth your time." },
               { icon: "🎙", title: "3 podcast episode daily (1 in free plan)", body: "A carefully selected episode from top podcasts in your interest area — paired with your article every morning." },
             ].map(f => (

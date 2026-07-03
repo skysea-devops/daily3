@@ -37,7 +37,7 @@ export const handler = async (
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ interests: [] }),
+        body: JSON.stringify({ interests: [], plan: "free" }),
       };
     }
 
@@ -45,8 +45,10 @@ export const handler = async (
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        interests: result.Item.interests ?? [],
-        email: result.Item.email ?? null,
+        interests:  result.Item.interests ?? [],
+        email:      result.Item.email ?? null,
+        plan:       result.Item.plan ?? "free",
+        subTopics:  result.Item.subTopics ?? {},
       }),
     };
   } catch (error) {

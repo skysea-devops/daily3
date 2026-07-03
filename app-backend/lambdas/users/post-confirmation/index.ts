@@ -114,7 +114,7 @@ function buildWelcomeHtml(email: string): string {
                     <span style="font-size:14px;color:#9ca3af;">→</span>
                   </td>
                   <td style="padding:0 0 12px 16px;">
-                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">Your articles are ready every morning at <strong>07:00</strong>.</p>
+                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">Your articles are ready every morning.</p>
                   </td>
                 </tr>
                 <tr>
@@ -186,7 +186,7 @@ Here's what we share with you every day:
 
 Go to your dashboard: ${APP_URL}/dashboard
 
-Your articles are ready every morning at 07:00. You can change your topics anytime from the Interests page — changes take effect the next morning.
+Your articles are ready every morning. You can change your topics anytime from the Interests page — changes take effect the next morning.
 
 If you enjoy ${APP_NAME}, recommend it to a friend. We grow because readers share us with people they trust.
 

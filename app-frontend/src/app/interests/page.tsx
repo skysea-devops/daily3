@@ -8,6 +8,33 @@ import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import { CATEGORIES, SUB_TOPICS } from "@/lib/constants";
 
+// ─── Saat dilimi → gönderim bölgesi ───────────────────────────────────────────
+// Kullanıcının tarayıcı saat dilimini 4 kovadan birine eşler. Backend her bölge
+// için ayrı bir cron'da (EU≈07:00 TR, ABD-Doğu, ABD-Batı, Asya) mail gönderir.
+function detectRegion(): "EU" | "US_EAST" | "US_WEST" | "ASIA" {
+  let tz = "";
+  try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch { /* ignore */ }
+
+  if (tz.startsWith("America/")) {
+    const west = [
+      "Los_Angeles", "Tijuana", "Vancouver", "Denver", "Phoenix", "Edmonton",
+      "Boise", "Chihuahua", "Mazatlan", "Hermosillo", "Anchorage", "Juneau",
+      "Dawson", "Whitehorse",
+    ];
+    return west.some(c => tz.includes(c)) ? "US_WEST" : "US_EAST";
+  }
+  if (
+    tz.startsWith("Asia/") || tz.startsWith("Australia/") ||
+    tz.startsWith("Pacific/") || tz.startsWith("Indian/")
+  ) {
+    return "ASIA";
+  }
+  // Europe/, Africa/, Atlantic/ veya bilinmeyen → EU (varsayılan)
+  return "EU";
+}
+
+// ─── Free kullanıcı overlay ───────────────────────────────────────────────────
+
 function ProSubtopicOverlay({ category, onClose }: { category: string; onClose: () => void }) {
   const subTopics = SUB_TOPICS[category] ?? [];
   return (
@@ -35,7 +62,6 @@ function ProSubtopicOverlay({ category, onClose }: { category: string; onClose: 
             With Pro, choose the areas within {category} you want to focus on. Every article will be even more relevant.
           </p>
         </div>
-
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
           {subTopics.map(topic => (
             <span key={topic} style={{
@@ -50,7 +76,6 @@ function ProSubtopicOverlay({ category, onClose }: { category: string; onClose: 
             </span>
           ))}
         </div>
-
         <a href="/register#pro" style={{
           display: "block", textAlign: "center",
           background: "var(--accent)", color: "var(--white)",
@@ -72,25 +97,166 @@ function ProSubtopicOverlay({ category, onClose }: { category: string; onClose: 
   );
 }
 
+// ─── Pro sub-topic seçim modal ────────────────────────────────────────────────
+
+function SubtopicModal({
+  category,
+  selectedSubTopics,
+  onSave,
+  onClose,
+}: {
+  category: string;
+  selectedSubTopics: string[];
+  onSave: (category: string, topics: string[]) => void;
+  onClose: () => void;
+}) {
+  const allTopics = SUB_TOPICS[category] ?? [];
+  const [picked, setPicked] = useState<string[]>(selectedSubTopics);
+
+  function toggle(topic: string) {
+    if (picked.includes(topic)) {
+      setPicked(picked.filter(t => t !== topic));
+    } else {
+      if (picked.length >= 3) return;
+      setPicked([...picked, topic]);
+    }
+  }
+
+  return (
+    <div
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 300,
+        background: "rgba(26,23,20,0.5)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "0 20px",
+      }}
+    >
+      <div style={{
+        width: "100%", maxWidth: 440,
+        background: "var(--white)",
+        border: "1px solid var(--rule)",
+        borderRadius: 16, padding: "36px 32px",
+      }}>
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 6 }}>Pro · Sub-topics</p>
+          <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1.25rem", fontWeight: 600, color: "var(--ink)", marginBottom: 6 }}>
+            {category}
+          </h3>
+          <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.6 }}>
+            Select up to 3 sub-topics. Leave all unselected to get content from across the whole category.
+          </p>
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 28 }}>
+          {allTopics.map(topic => {
+            const isActive = picked.includes(topic);
+            return (
+              <button
+                key={topic}
+                onClick={() => toggle(topic)}
+                style={{
+                  padding: "7px 16px",
+                  border: isActive ? "2px solid var(--accent)" : "1px solid var(--rule)",
+                  borderRadius: 20,
+                  fontSize: "0.8125rem",
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? "var(--accent)" : "var(--ink-soft)",
+                  background: isActive ? "rgba(124,92,62,0.08)" : "var(--paper-warm)",
+                  cursor: "pointer",
+                  transition: "all 0.1s",
+                }}
+              >
+                {isActive ? "✓ " : ""}{topic}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onClose} style={{
+            flex: 1, background: "none",
+            border: "1px solid var(--rule)", borderRadius: 10,
+            padding: "11px 0", fontSize: "0.9375rem",
+            fontWeight: 500, color: "var(--ink-muted)", cursor: "pointer",
+          }}>
+            Cancel
+          </button>
+          <button onClick={() => { onSave(category, picked); onClose(); }} style={{
+            flex: 2, background: "var(--accent)", color: "var(--white)",
+            border: "none", borderRadius: 10,
+            padding: "11px 0", fontSize: "0.9375rem",
+            fontWeight: 600, cursor: "pointer",
+          }}>
+            Save sub-topics
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Ana form ─────────────────────────────────────────────────────────────────
+
 function InterestsForm() {
   const router = useRouter();
-  const { user, markInterestsSaved } = useAuth();
+  const { user, plan, markInterestsSaved } = useAuth();
 
-  const [selected, setSelected]         = useState<string[]>([]);
-  const [loading, setLoading]           = useState(false);
-  const [saved, setSaved]               = useState(false);
-  const [showTomorrow, setShowTomorrow] = useState(false);
-  const [proOverlay, setProOverlay]     = useState<string | null>(null);
+  const isPro = plan === "pro";
+
+  const [selected, setSelected]           = useState<string[]>([]);
+  const [subTopics, setSubTopics]         = useState<Record<string, string[]>>({});
+  const [loading, setLoading]             = useState(false);
+  const [saved, setSaved]                 = useState(false);
+  const [showTomorrow, setShowTomorrow]   = useState(false);
+  const [activeModal, setActiveModal]     = useState<string | null>(null);   // category id
+  const [freeOverlay, setFreeOverlay]     = useState<string | null>(null);   // category label
 
   useEffect(() => {
-    const stored = localStorage.getItem("cogletta-categories");
-    if (stored) setSelected(JSON.parse(stored));
-  }, []);
+    if (!user) return;
+    async function loadProfile() {
+      try {
+        const { getUserProfile } = await import("@/lib/api");
+        const profile = await getUserProfile(user!.accessToken);
+        if (profile.interests?.length === 3) {
+          setSelected(profile.interests);
+          localStorage.setItem("cogletta-categories", JSON.stringify(profile.interests));
+        } else {
+          const stored = localStorage.getItem("cogletta-categories");
+          if (stored) setSelected(JSON.parse(stored));
+        }
+        if (profile.subTopics && Object.keys(profile.subTopics).length > 0) {
+          setSubTopics(profile.subTopics);
+          localStorage.setItem("cogletta-subtopics", JSON.stringify(profile.subTopics));
+        } else {
+          const storedSubs = localStorage.getItem("cogletta-subtopics");
+          if (storedSubs) setSubTopics(JSON.parse(storedSubs));
+        }
+      } catch {
+        const stored = localStorage.getItem("cogletta-categories");
+        if (stored) setSelected(JSON.parse(stored));
+        const storedSubs = localStorage.getItem("cogletta-subtopics");
+        if (storedSubs) setSubTopics(JSON.parse(storedSubs));
+      }
+    }
+    loadProfile();
+  }, [user]);
 
   function toggleCategory(id: string) {
-    if (selected.includes(id)) { setSelected(selected.filter(c => c !== id)); setSaved(false); return; }
+    if (selected.includes(id)) {
+      setSelected(selected.filter(c => c !== id));
+      setSaved(false);
+      return;
+    }
     if (selected.length >= 3) return;
     setSelected([...selected, id]);
+    setSaved(false);
+  }
+
+  function handleSubtopicSave(category: string, topics: string[]) {
+    const updated = { ...subTopics, [category]: topics };
+    setSubTopics(updated);
+    localStorage.setItem("cogletta-subtopics", JSON.stringify(updated));
     setSaved(false);
   }
 
@@ -100,7 +266,7 @@ function InterestsForm() {
     setSaved(false);
     setShowTomorrow(false);
     try {
-      const result = await updateUserInterests(selected, user.accessToken, user.email);
+      const result = await updateUserInterests(selected, user.accessToken, user.email, subTopics, detectRegion());
       localStorage.setItem("cogletta-categories", JSON.stringify(selected));
       markInterestsSaved();
       setSaved(true);
@@ -122,10 +288,21 @@ function InterestsForm() {
     <div style={{ minHeight: "100vh", background: "var(--paper)" }}>
       <Navbar />
 
-      {proOverlay && (
+      {/* Free kullanıcı overlay */}
+      {freeOverlay && (
         <ProSubtopicOverlay
-          category={proOverlay}
-          onClose={() => setProOverlay(null)}
+          category={freeOverlay}
+          onClose={() => setFreeOverlay(null)}
+        />
+      )}
+
+      {/* Pro sub-topic modal */}
+      {activeModal && (
+        <SubtopicModal
+          category={activeModal}
+          selectedSubTopics={subTopics[activeModal] ?? []}
+          onSave={handleSubtopicSave}
+          onClose={() => setActiveModal(null)}
         />
       )}
 
@@ -161,9 +338,12 @@ function InterestsForm() {
           marginBottom: 40,
         }}>
           {CATEGORIES.map(cat => {
-            const isSelected = selected.includes(cat.id);
+            const isSelected   = selected.includes(cat.id);
+            const catSubTopics = subTopics[cat.id] ?? [];
+            const hasSubTopics = catSubTopics.length > 0;
+
             return (
-              <div key={cat.id} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              <div key={cat.id} style={{ display: "flex", flexDirection: "column" }}>
                 {/* Kategori butonu */}
                 <button
                   onClick={() => toggleCategory(cat.id)}
@@ -187,10 +367,10 @@ function InterestsForm() {
                   </p>
                 </button>
 
-                {/* Sub-topics butonu — sadece seçili kategorilerde */}
+                {/* Sub-topics butonu */}
                 {isSelected && (
                   <button
-                    onClick={() => setProOverlay(cat.label)}
+                    onClick={() => isPro ? setActiveModal(cat.id) : setFreeOverlay(cat.label)}
                     style={{
                       borderRadius: "0 0 12px 12px",
                       padding: "10px 20px",
@@ -198,18 +378,25 @@ function InterestsForm() {
                       cursor: "pointer",
                       border: "2px solid var(--accent)",
                       borderTop: "1px solid rgba(255,255,255,0.15)",
-                      background: "rgba(124,92,62,0.12)",
+                      background: hasSubTopics ? "rgba(124,92,62,0.15)" : "rgba(124,92,62,0.08)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
+                      gap: 8,
                     }}
                   >
-                    <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--accent)" }}>
-                      Add sub-topics
+                    <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--accent)", flex: 1, textAlign: "left" }}>
+                      {hasSubTopics
+                        ? catSubTopics.slice(0, 2).join(", ") + (catSubTopics.length > 2 ? ` +${catSubTopics.length - 2}` : "")
+                        : "Add sub-topics"}
                     </span>
-                    <span style={{ fontSize: "0.7rem", background: "var(--accent)", color: "var(--white)", padding: "2px 7px", borderRadius: 10, fontWeight: 700, letterSpacing: "0.05em" }}>
-                      PRO
-                    </span>
+                    {isPro ? (
+                      <span style={{ fontSize: "0.75rem", color: "var(--accent)" }}>✎</span>
+                    ) : (
+                      <span style={{ fontSize: "0.7rem", background: "var(--accent)", color: "var(--white)", padding: "2px 7px", borderRadius: 10, fontWeight: 700, letterSpacing: "0.05em", flexShrink: 0 }}>
+                        PRO
+                      </span>
+                    )}
                   </button>
                 )}
               </div>
