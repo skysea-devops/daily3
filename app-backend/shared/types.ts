@@ -32,7 +32,10 @@ export interface DailyArticles {
   /** DynamoDB SK — DATE#YYYY-MM-DD  e.g. DATE#2026-06-06 */
   SK:          string;
   articles:    Article[];
+  /** Backward-compat: first podcast (or null). Prefer `podcasts`. */
   podcast:     Podcast | null;
+  /** Pro users get one podcast per interest; free users get one. */
+  podcasts?:   Podcast[];
   generatedAt: string;
   /** Unix timestamp — item auto-deletes after 30 days */
   ttl:         number;
