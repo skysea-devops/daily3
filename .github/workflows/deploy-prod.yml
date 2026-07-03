@@ -78,6 +78,8 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+          NEXT_PUBLIC_LS_CHECKOUT_MONTHLY: ${{ vars.NEXT_PUBLIC_LS_CHECKOUT_MONTHLY }}
+          NEXT_PUBLIC_LS_CHECKOUT_YEARLY: ${{ vars.NEXT_PUBLIC_LS_CHECKOUT_YEARLY }}
           NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ vars.NEXT_PUBLIC_COGNITO_USER_POOL_ID }}
           NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ vars.NEXT_PUBLIC_COGNITO_CLIENT_ID }}
 
@@ -130,6 +132,7 @@ jobs:
         env:
           TF_VAR_google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          TF_VAR_lemonsqueezy_webhook_secret: ${{ secrets.LEMONSQUEEZY_WEBHOOK_SECRET }}
         run: terraform plan -var-file=prod.tfvars -out=tfplan
 
       - name: Terraform Apply
@@ -137,6 +140,7 @@ jobs:
         env:
           TF_VAR_google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          TF_VAR_lemonsqueezy_webhook_secret: ${{ secrets.LEMONSQUEEZY_WEBHOOK_SECRET }}
         run: terraform apply -auto-approve tfplan
 
   deploy-frontend:
