@@ -323,7 +323,7 @@ export default function HomePage() {
         <section className="lp-section">
           <p className="lp-label">The name</p>
           <p className="lp-p">
-            Cogletta is a name we created to capture a simple idea: <strong>Ability to read articles based on one's interests</strong>
+            Cogletta is a name I made up around a simple belief:  <strong>Ability to read articles based on one's interests.</strong>
           </p>
           <p className="lp-p">
             The name blends two Latin roots. <em>Cognito</em> means "to know" or "to understand" — the origin of the modern word cognition. <em>Collecta</em> means "gathered together" or "carefully collected."
@@ -332,13 +332,11 @@ export default function HomePage() {
             Together, they express what Cogletta is built to do.
           </p>
           <p className="lp-p">
-            We live in a world with more information than we could ever consume. The challenge is no longer finding content — it's finding the right content. Cogletta helps by collecting, filtering, and presenting the few things that are truly worth your attention.
+            Not endless scrolling.
+            Not constant notifications.
+            Just a few carefully chosen articles on the subjects you genuinely care about.
           </p>
-          <p className="lp-p" style={{lineHeight: 2.2}}>
-            Not more information.<br />
-            <strong>Better knowledge.</strong><br />
-            Carefully selected. Thoughtfully curated. Delivered daily.
-          </p>
+          
         </section>
 
         <div className="lp-divider" />
@@ -347,22 +345,19 @@ export default function HomePage() {
         <section className="lp-section">
           <p className="lp-label">Why Cogletta exists</p>
           <p className="lp-p">
-            I once realized that after spending time on my phone, when I put it down,
-            <strong> I couldn't remember anything tangible.</strong> Social media, news sites, video platforms
-            show me things — but are these things really what matters to me?
+            Somewhere along the way, many of us stopped
+            <strong> reading regularly.</strong> We still spend hours consuming content every day, but it often feels fragmented. We jump from one short video to another, skim headlines, scroll through endless feeds, and by the end of the day it's hard to remember anything we actually learned.
           </p>
           <p className="lp-p">
-            And there's so much out there that choosing what to read has become stressful in itself.
+            Reading itself didn't disappear.The habit did.
           </p>
           <p className="lp-p">
-            I thought about how I used to read. I would pick up a magazine, follow topics that made sense
-            to me. <strong>That feeling was gone.</strong>
+            I started thinking about how I used to read. I'd pick up a magazine or newspaper, discover thoughtful articles, and gradually build knowledge around  <strong>the topics that interested me.</strong> I wanted that feeling back.
           </p>
           <p className="lp-p">
-            That's why I built Cogletta. An article and a podcast every morning on the topic you choose.
-            No noise. Focus. If you think like me — you're in the right place.
+            That's why I built Cogletta. Every morning, Cogletta delivers a small collection of thoughtfully selected long-form articles based on your interests. No algorithms competing for your attention. No endless feed to scroll through.If you think like me — you're in the right place.
           </p>
-          <p className="lp-sig">— The Cogletta team</p>
+          <p className="lp-sig">— Ismail Gokdeniz - Founder, Cogletta</p>
         </section>
 
 
@@ -375,7 +370,7 @@ export default function HomePage() {
               { icon: "📰", title: "3 curated article daily (1 in free plan)" , body: "Picked from across your 3 interests — long-form, substantive pieces from think-tanks, academic journals, and quality publications." },
               { icon: "✉️", title: "Daily email digest", body: "Your article and podcast delivered to your inbox every morning. Clean, readable." },
               { icon: "💡", title: "Why we picked this for you", body: "Each article comes with a short editorial note — why this piece, why today, why it's worth your time." },
-              { icon: "🎙", title: "3 podcast episode daily (1 in free plan)", body: "A carefully selected episode from top podcasts in your interest area — paired with your article every morning." },
+              { icon: "🎙", title: "2 podcast episode daily (1 in free plan)", body: "A carefully selected episode from top podcasts in your interest area — paired with your article every morning." },
             ].map(f => (
               <div key={f.title} className="lp-feature">
                 <div className="lp-feature-icon">{f.icon}</div>
@@ -453,7 +448,7 @@ export default function HomePage() {
 
         {/* FOOTER */}
         <footer className="lp-footer">
-          <p>© 2026 Cogletta · 3 articles + 3 podcasts, every morning</p>
+          <p>© 2026 Cogletta · 3 articles + 2 podcasts, every morning</p>
           <p>
             <Link href="/login">Sign in</Link>
             {" · "}
