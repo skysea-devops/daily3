@@ -973,10 +973,12 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
 
   // ── Seçim ──────────────────────────────────────────────────────────────────
   // Free: 3 ilgi alanı havuzlanır → 1 makale + 1 podcast.
-  // Pro:  her ilgi alanı için ayrı seçim → 3 makale + 3 podcast (o günkü kategoride
-  //       uygun içerik yoksa makale fallback olur, podcast atlanır).
+  // Pro:  her ilgi alanı için 1 makale (toplam 3) + EN FAZLA 2 podcast.
+  //       Podcast 2'ye ulaşınca kalan kategori denenmez; bir kategoride podcast
+  //       bulunamazsa diğerinden tamamlanır (yine en fazla 2).
   // usedArticleUrls / usedPodcastUrls: Pro'da aynı linkin iki kategoride
   // tekrarlanmasını önler.
+  const MAX_PRO_PODCASTS = 2;
   const articles:        Article[]   = [];
   const podcasts:        Podcast[]   = [];
   const usedArticleUrls: Set<string> = new Set();
@@ -987,14 +989,18 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
       const scope   = [interest];
       const subCtx  = buildSubTopicContext(scope, subTopics);
 
+      // Makale: her interest için (toplam 3)
       const article = await pickArticle(scope, history, subCtx, usedArticleUrls);
       articles.push(article);
       if (article.url) usedArticleUrls.add(article.url);
 
-      const podcast = await pickPodcast(scope, history, subCtx, usedPodcastUrls);
-      if (podcast) {
-        podcasts.push(podcast);
-        usedPodcastUrls.add(podcast.url);
+      // Podcast: sadece henüz 2'ye ulaşmadıysak dene
+      if (podcasts.length < MAX_PRO_PODCASTS) {
+        const podcast = await pickPodcast(scope, history, subCtx, usedPodcastUrls);
+        if (podcast) {
+          podcasts.push(podcast);
+          usedPodcastUrls.add(podcast.url);
+        }
       }
     }
   } else {

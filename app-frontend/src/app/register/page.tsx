@@ -19,7 +19,7 @@ const PRO_FEATURES = [
   "Everything in Free",
   "3 interests, 3 articles daily",
   "6 sub-topics per interest category",
-  "3 podcast recommendations daily",
+  "2 podcast recommendations daily",
   "Weekly trend report every Sunday",
 ];
 
