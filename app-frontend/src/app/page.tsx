@@ -349,7 +349,7 @@ export default function HomePage() {
             <strong> reading regularly.</strong> We still spend hours consuming content every day, but it often feels fragmented. We jump from one short video to another, skim headlines, scroll through endless feeds, and by the end of the day it's hard to remember anything we actually learned.
           </p>
           <p className="lp-p">
-            Reading itself didn't disappear.The habit did.
+            Reading itself didn't disappear. The habit did.
           </p>
           <p className="lp-p">
             I started thinking about how I used to read. I'd pick up a magazine or newspaper, discover thoughtful articles, and gradually build knowledge around  <strong>the topics that interested me.</strong> I wanted that feeling back.

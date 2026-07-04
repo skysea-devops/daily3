@@ -15,7 +15,7 @@ const SES_FROM_EMAIL   = process.env.SES_FROM_EMAIL!;
 
 // ─── Article RSS source map ───────────────────────────────────────────────────
 
-const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
+export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
 
   "Software & DevOps": [
     { name: "Stack Overflow Blog",    url: "https://stackoverflow.blog/feed/" },
@@ -258,7 +258,7 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
 
 // ─── RSS fetch & parse ────────────────────────────────────────────────────────
 
-interface RSSItem {
+export interface RSSItem {
   title:        string;
   url:          string;
   description:  string;
@@ -344,7 +344,7 @@ function formatDuration(raw: string): string {
   return minutes > 0 ? `${minutes} min` : "";
 }
 
-async function fetchRSSFeed(source: { name: string; url: string }): Promise<RSSItem[]> {
+export async function fetchRSSFeed(source: { name: string; url: string }): Promise<RSSItem[]> {
   const res = await fetch(source.url, {
     headers: {
       // Gerçek tarayıcı UA'sı: Aeon/NYT/The Conversation/IAI gibi yayıncılar

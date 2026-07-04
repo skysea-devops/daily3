@@ -138,3 +138,21 @@ export function buildLemonCheckoutUrl(
   const sep = base.includes("?") ? "&" : "?";
   return `${base}${sep}${params.toString()}`;
 }
+
+// ─── Weekly trend report (Pro) ────────────────────────────────────────────────
+export async function getTrendReport(
+  accessToken: string
+): Promise<{ report: import("./types").WeeklyTrendReport | null }> {
+  if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+
+  const response = await fetch(`${API_BASE_URL}/me/trend-report`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (response.status === 401) {
+    handleUnauthorized();
+    throw new Error("Session expired");
+  }
+  if (!response.ok) throw new Error("Failed to fetch trend report");
+  return response.json();
+}

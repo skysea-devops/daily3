@@ -46,4 +46,31 @@ export const Keys = {
   userPK:    (sub: string)             => `USER#${sub}`,
   dateSK:    (date: Date = new Date()) => `DATE#${date.toISOString().slice(0, 10)}`,
   ttl30Days: ()                        => Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+  // Haftalık trend raporu anahtarı: ISO yıl-hafta (ör. TREND#2026-W27)
+  weekSK:    (date: Date = new Date()) => {
+    const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    const day = d.getUTCDay() || 7;            // Pazar=7
+    d.setUTCDate(d.getUTCDate() + 4 - day);    // ISO: haftanın Perşembesi
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const week = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    return `TREND#${d.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+  },
 };
+
+// Haftalık trend raporu (Pro, her Pazar)
+export interface TrendInterest {
+  category:  string;      // kullanıcının ilgi alanı
+  themes:    string[];    // haftanın 2-3 teması (birer cümle)
+  topTitle:  string;      // haftanın öne çıkan tek makalesi
+  topUrl:    string;
+  topSource: string;
+}
+
+export interface WeeklyTrendReport {
+  PK:          string;    // USER#<sub>
+  SK:          string;    // TREND#<YYYY-Www>
+  weekLabel:   string;    // insan-okur etiket, ör. "Jun 30 – Jul 6"
+  interests:   TrendInterest[];
+  generatedAt: string;
+  ttl:         number;
+}
