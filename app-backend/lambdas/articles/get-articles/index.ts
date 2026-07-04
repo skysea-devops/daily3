@@ -44,11 +44,16 @@ export const handler = async (
           PK: Keys.userPK(userId),
           SK: "PROFILE",
         },
-        ProjectionExpression: "interests, updatedAt",
+        // plan/region rezerve kelime → alias; on-demand generate için plan+subTopics+email de lazım
+        ExpressionAttributeNames: { "#plan": "plan" },
+        ProjectionExpression: "interests, updatedAt, subTopics, email, #plan",
       })
     );
 
     const userInterests = userResult.Item?.interests as string[] | undefined;
+    const userPlan      = (userResult.Item?.plan as string | undefined) ?? "free";
+    const userSubTopics = (userResult.Item?.subTopics as Record<string, string[]> | undefined) ?? {};
+    const userEmail     = userResult.Item?.email as string | undefined;
 
     // Bugünkü makale kaydını çek
     const articleResult = await dynamo.send(
@@ -72,7 +77,7 @@ export const handler = async (
             FunctionName:   GENERATE_ARTICLES_FUNCTION,
             InvocationType: "Event",
             Payload:        Buffer.from(
-              JSON.stringify({ userId, interests: userInterests })
+              JSON.stringify({ userId, interests: userInterests, subTopics: userSubTopics, email: userEmail, plan: userPlan })
             ),
           })
         );

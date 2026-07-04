@@ -69,6 +69,10 @@ var handler = async (event) => {
     }
     const body = JSON.parse(event.body ?? "{}");
     const { interests } = body;
+    const emailFromBody = typeof body.email === "string" ? body.email : null;
+    const subTopics = body.subTopics && typeof body.subTopics === "object" ? body.subTopics : {};
+    const ALLOWED_REGIONS = ["EU", "US_EAST", "US_WEST", "ASIA"];
+    const region = typeof body.region === "string" && ALLOWED_REGIONS.includes(body.region) ? body.region : "EU";
     if (!Array.isArray(interests) || interests.length !== 3 || !interests.every((i) => typeof i === "string" && i.trim().length > 0)) {
       return {
         statusCode: 400,
@@ -79,18 +83,25 @@ var handler = async (event) => {
     const now = (/* @__PURE__ */ new Date()).toISOString();
     const isDeveloper = DEVELOPER_USER_IDS.has(userId);
     const alreadyGenerated = !isDeveloper && await articlesExistToday(userId);
-    await dynamo.send(
+    const updateResult = await dynamo.send(
       new import_lib_dynamodb.UpdateCommand({
         TableName: USERS_TABLE_NAME,
         Key: { PK: `USER#${userId}`, SK: "PROFILE" },
-        UpdateExpression: "SET interests = :interests, updatedAt = :now, email = :email",
+        UpdateExpression: "SET interests = :interests, updatedAt = :now, email = :email, subTopics = :subTopics, #region = :region",
+        ExpressionAttributeNames: { "#region": "region" },
+        // region rezerve kelime olabilir
         ExpressionAttributeValues: {
           ":interests": interests,
           ":now": now,
-          ":email": claims["email"] ?? null
-        }
+          ":email": emailFromBody ?? claims["email"] ?? null,
+          ":subTopics": subTopics,
+          ":region": region
+        },
+        ReturnValues: "ALL_NEW"
       })
     );
+    const plan = updateResult.Attributes?.plan ?? "free";
+    const email = emailFromBody ?? claims["email"] ?? void 0;
     if (alreadyGenerated) {
       console.log(`Articles already exist today for user=${userId}, skipping generate`);
       ;
@@ -109,7 +120,7 @@ var handler = async (event) => {
         FunctionName: GENERATE_ARTICLES_FN,
         InvocationType: "Event",
         // fire-and-forget
-        Payload: Buffer.from(JSON.stringify({ userId, interests }))
+        Payload: Buffer.from(JSON.stringify({ userId, interests, subTopics, email, plan }))
       })
     );
     console.log(`Triggered generate-articles for user=${userId}${isDeveloper ? " [developer]" : ""}`);

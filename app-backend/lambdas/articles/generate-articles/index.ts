@@ -23,7 +23,6 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "InfoQ",                  url: "https://www.infoq.com/feed/" },
     { name: "The New Stack",          url: "https://thenewstack.io/feed/" },
     { name: "AWS Architecture",       url: "https://aws.amazon.com/blogs/architecture/feed/" },
-    { name: "The Conversation (Tech)",url: "https://theconversation.com/technology/articles.atom" },
     { name: "ACM Queue",              url: "https://queue.acm.org/rss/feeds/queuecontent.xml" },
   ],
 
@@ -31,21 +30,14 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "MIT Technology Review",  url: "https://www.technologyreview.com/feed/" },
     { name: "IEEE Spectrum",          url: "https://spectrum.ieee.org/feeds/feed.rss" },
     { name: "Ars Technica",           url: "https://feeds.arstechnica.com/arstechnica/index" },
-    { name: "Stanford HAI",           url: "https://hai.stanford.edu/news/feed" },
-    { name: "The Conversation (Tech)",url: "https://theconversation.com/technology/articles.atom" },
     { name: "Eurozine",               url: "https://www.eurozine.com/feed/" },
     { name: "Rest of World",           url: "https://restofworld.org/feed/" },
   ],
 
   "World Politics": [
-    { name: "Chatham House",          url: "https://www.chathamhouse.org/rss.xml" },
     { name: "Foreign Affairs",        url: "https://www.foreignaffairs.com/rss.xml" },
     { name: "War on the Rocks",       url: "https://warontherocks.com/feed/" },
-    { name: "Carnegie Endowment",     url: "https://carnegieendowment.org/rss/solr/articles" },
-    { name: "Brookings",              url: "https://www.brookings.edu/feed/" },
     { name: "Atlantic Council",       url: "https://www.atlanticcouncil.org/feed/" },
-    { name: "Wilson Center",          url: "https://www.wilsoncenter.org/rss.xml" },
-    { name: "The Conversation (Pol)", url: "https://theconversation.com/politics/articles.atom" },
     { name: "Le Monde Diplomatique",  url: "https://mondediplo.com/spip.php?page=backend" },
     { name: "The Diplomat",           url: "https://thediplomat.com/feed/" },
   ],
@@ -53,22 +45,16 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   "Business": [
     { name: "MIT Sloan Review",       url: "https://sloanreview.mit.edu/feed/" },
     { name: "Noema Magazine",         url: "https://www.noemamag.com/feed/" },
-    { name: "Strategy+Business",      url: "https://www.strategy-business.com/rss" },
-    { name: "First Round Review",     url: "https://review.firstround.com/feed.xml" },
-    { name: "The Conversation (Bus)", url: "https://theconversation.com/business/articles.atom" },
     { name: "Longreads",              url: "https://longreads.com/feed/" },
     { name: "Ness Labs",              url: "https://nesslabs.com/feed" },
   ],
 
   "Economics": [
-    { name: "VoxEU (CEPR)",           url: "https://cepr.org/feed" },
     { name: "Econlib",                url: "https://www.econlib.org/feed/" },
     { name: "Noahpinion",             url: "https://www.noahpinion.blog/feed" },
     { name: "Marginal Revolution",    url: "https://marginalrevolution.com/feed" },
-    { name: "IMF Blog",               url: "https://www.imf.org/en/Blogs/rss" },
-    { name: "NY Fed Liberty Street",  url: "https://libertystreeteconomics.newyorkfed.org/feed.xml" },
-    { name: "The Conversation (Eco)", url: "https://theconversation.com/economy/articles.atom" },
-    { name: "RAND Economics",         url: "https://www.rand.org/feeds/research.xml" },
+    { name: "Conversable Economist",  url: "https://conversableeconomist.com/feed/" },
+    { name: "Project Syndicate",      url: "https://www.project-syndicate.org/rss" },
   ],
 
   "Science": [
@@ -76,9 +62,7 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Nautilus",               url: "https://nautil.us/feed/" },
     { name: "Undark",                 url: "https://undark.org/feed/" },
     { name: "Aeon",                   url: "https://aeon.co/feed.rss" },
-    { name: "The Conversation (Sci)", url: "https://theconversation.com/science/articles.atom" },
     { name: "Knowable Magazine",      url: "https://knowablemagazine.org/rss" },
-    { name: "PLOS Blogs",             url: "https://plos.org/feed/" },
   ],
 
   "Productivity": [
@@ -96,15 +80,11 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "JSTOR Daily",            url: "https://daily.jstor.org/feed/" },
     { name: "Lapham's Quarterly",     url: "https://www.laphamsquarterly.org/rss.xml" },
     { name: "The Public Domain Review", url: "https://publicdomainreview.org/rss.xml" },
-    { name: "The Conversation (His)", url: "https://theconversation.com/history/articles.atom" },
     { name: "Eurozine",               url: "https://www.eurozine.com/feed/" },
-    { name: "Wilson Center",          url: "https://www.wilsoncenter.org/rss.xml" },
   ],
 
   "Arts & Culture": [
     { name: "Literary Hub (Arts)",    url: "https://lithub.com/category/newsandculture/art-and-photography/feed/" },
-    { name: "Literary Hub (Books)",   url: "https://lithub.com/category/bookmarks/excerpts-and-writings/feed/" },
-    { name: "LA Review of Books",     url: "https://lareviewofbooks.org/feed/" },
     { name: "Aeon",                   url: "https://aeon.co/feed.rss" },
     { name: "Smithsonian Magazine",   url: "https://www.smithsonianmag.com/rss/latest_articles/" },
     { name: "Public Books",           url: "https://www.publicbooks.org/feed/" },
@@ -115,60 +95,49 @@ const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
 
   "Military": [
     { name: "War on the Rocks",       url: "https://warontherocks.com/feed/" },
-    { name: "RUSI",                   url: "https://www.rusi.org/feeds/latest" },
-    { name: "Lawfare",                url: "https://www.lawfaremedia.org/feeds/all" },
     { name: "Modern War Institute",   url: "https://mwi.westpoint.edu/feed/" },
     { name: "Inkstick Media",         url: "https://inkstickmedia.com/feed/" },
-    { name: "RAND Security",          url: "https://www.rand.org/feeds/research.xml" },
-    { name: "CSIS",                   url: "https://www.csis.org/analysis/feed" },
     { name: "Atlantic Council",       url: "https://www.atlanticcouncil.org/feed/" },
   ],
 
   "Health": [
     { name: "Stat News",              url: "https://www.statnews.com/feed/" },
-    { name: "Undark (Health)",        url: "https://undark.org/category/health/feed/" },
     { name: "Psyche (Aeon)",          url: "https://psyche.co/feed" },
-    { name: "The BMJ",                url: "https://www.bmj.com/rss/current.xml" },
     { name: "Knowable Magazine",      url: "https://knowablemagazine.org/rss" },
-    { name: "The Conversation (Hlt)", url: "https://theconversation.com/health/articles.atom" },
-    { name: "STAT News",              url: "https://www.statnews.com/feed/" },
+    { name: "KFF Health News",        url: "https://kffhealthnews.org/feed/" },
+    { name: "NPR Health (Shots)",     url: "https://feeds.npr.org/1128/rss.xml" },
   ],
 
   "Environment": [
     { name: "Yale Environment 360",   url: "https://e360.yale.edu/feed.xml" },
     { name: "Carbon Brief",           url: "https://www.carbonbrief.org/feed/" },
     { name: "Ensia",                  url: "https://ensia.com/feed/" },
-    { name: "Mongabay",               url: "https://news.mongabay.com/feed/" },
-    { name: "Inside Climate News",    url: "https://insideclimatenews.org/feed/" },
-    { name: "The Conversation (Env)", url: "https://theconversation.com/environment/articles.atom" },
-    { name: "RAND Environment",       url: "https://www.rand.org/feeds/research.xml" },
+    { name: "Grist",                  url: "https://grist.org/feed/" },
+    { name: "Anthropocene Magazine",  url: "https://www.anthropocenemagazine.org/feed/" },
   ],
 
   "Philosophy & Ethics": [
     { name: "Aeon",                   url: "https://aeon.co/feed.rss" },
     { name: "Psyche (Aeon)",          url: "https://psyche.co/feed" },
-    { name: "The Stone (NY Times)",   url: "https://rss.nytimes.com/services/xml/rss/nyt/Philosophy.xml" },
     { name: "Philosophy Now",         url: "https://philosophynow.org/rss" },
-    { name: "IAI News",               url: "https://iai.tv/articles/rss" },
     { name: "The Conversation (Phil)",url: "https://theconversation.com/us/articles.atom" },
+    { name: "Daily Nous",             url: "https://dailynous.com/feed/" },
+    { name: "Practical Ethics (Oxford)", url: "http://blog.practicalethics.ox.ac.uk/feed/" },
   ],
 
   "Fashion & Style": [
-    { name: "The Fashion Law",        url: "https://www.thefashionlaw.com/feed" },
-    { name: "The Conversation (Arts)",url: "https://theconversation.com/arts/articles.atom" },
     { name: "WWD Fashion",            url: "https://wwd.com/fashion-news/feed" },
-    { name: "Vogue Business",         url: "https://www.voguebusiness.com/rss" },
-    { name: "Eurozine",               url: "https://www.eurozine.com/feed/" },
-    
+    { name: "Fashionista",            url: "https://fashionista.com/.rss/full/" },
+    { name: "Highsnobiety",           url: "https://www.highsnobiety.com/feed/" },
+    { name: "Business of Fashion",    url: "https://www.businessoffashion.com/feed/" },
   ],
 
   "Life & Relationships": [
-    { name: "Greater Good Science Center", url: "https://greatergood.berkeley.edu/feeds/1" },
     { name: "Psyche (Aeon)",          url: "https://psyche.co/feed" },
-    { name: "The Atlantic (Family)",  url: "https://www.theatlantic.com/family/feed/" },
-    { name: "The Conversation (Rel)", url: "https://theconversation.com/relationships/articles.atom" },
     { name: "Aeon",                   url: "https://aeon.co/feed.rss" },
     { name: "Ness Labs",              url: "https://nesslabs.com/feed" },
+    { name: "The Marginalian",        url: "https://www.themarginalian.org/feed/" },
+    { name: "The Gottman Institute",  url: "https://www.gottman.com/blog/feed/" },
   ],
 };
 
@@ -188,15 +157,12 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Lex Fridman Podcast",         url: "https://lexfridman.com/feed/podcast/" },
     { name: "Hard Fork",                   url: "https://feeds.simplecast.com/l2i9YnTd" },
     { name: "StarTalk Radio",              url: "https://feeds.simplecast.com/4T39_jAj" },
-    { name: "Wired Podcast",               url: "https://www.wired.com/feed/podcast/wired-podcast/rss" },
-    { name: "MIT Technology Review",       url: "https://www.technologyreview.com/feed/podcast/" },
   ],
 
   "World Politics": [
     { name: "War on the Rocks",            url: "https://warontherocks.com/feed/podcast/" },
     { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
     { name: "BBC Global News Podcast",     url: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss" },
-    { name: "The Take (Al Jazeera)",       url: "https://feeds.megaphone.fm/aljazeera-the-take" },
     { name: "From Our Own Correspondent",  url: "https://podcasts.files.bbci.co.uk/b006qjlq.rss" },
   ],
 
@@ -243,7 +209,6 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
   "Arts & Culture": [
     { name: "Switched on Pop",             url: "https://feeds.megaphone.fm/switchedonpop" },
     { name: "99% Invisible",               url: "https://feeds.simplecast.com/BqbsxVfO" },
-    { name: "TED Talks Daily",             url: "https://feeds.megaphone.fm/TED9718394730" },
     { name: "Fresh Air (Arts)",            url: "https://feeds.npr.org/381444908/podcast.xml" },
     { name: "Friday Night Comedy (BBC)",   url: "https://podcasts.files.bbci.co.uk/p02pc9pj.rss" },
   ],
@@ -273,7 +238,6 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
 
   "Philosophy & Ethics": [
-    { name: "Philosophy Bites",            url: "https://philosophybites.com/atom.xml" },
     { name: "In Our Time (Philosophy)",    url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
     { name: "Philosophize This!",          url: "https://feeds.feedburner.com/philosophizethis" },
     { name: "The Partially Examined Life", url: "https://partiallyexaminedlife.com/feed/podcast/" },
@@ -281,18 +245,13 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
 
   "Fashion & Style": [
-    { name: "Dressed: History of Fashion", url: "https://feeds.simplecast.com/dressedpodcast" },
-    { name: "TED Talks Daily",             url: "https://feeds.megaphone.fm/TED9718394730" },
     { name: "Fresh Air (Arts)",            url: "https://feeds.npr.org/381444908/podcast.xml" },
     { name: "99% Invisible",               url: "https://feeds.simplecast.com/BqbsxVfO" },
     { name: "Switched on Pop",             url: "https://feeds.megaphone.fm/switchedonpop" },
   ],
 
   "Life & Relationships": [
-    { name: "Where Should We Begin?",      url: "https://feeds.simplecast.com/nxb_YAnl" },
     { name: "Hidden Brain",                url: "https://feeds.npr.org/510308/podcast.xml" },
-    { name: "Unlocking Us (Brené Brown)",  url: "https://feeds.simplecast.com/pKJL3yC9" },
-    { name: "On Being with Krista Tippett",url: "https://feeds.feedburner.com/onbeing/rss" },
     { name: "Fresh Air",                   url: "https://feeds.npr.org/381444908/podcast.xml" },
   ],
 };
@@ -388,8 +347,14 @@ function formatDuration(raw: string): string {
 async function fetchRSSFeed(source: { name: string; url: string }): Promise<RSSItem[]> {
   const res = await fetch(source.url, {
     headers: {
-      "User-Agent": "CoglettaBot/1.0 (RSS Reader; +https://cogletta.com)",
-      Accept:       "application/rss+xml, application/atom+xml, application/xml, text/xml",
+      // Gerçek tarayıcı UA'sı: Aeon/NYT/The Conversation/IAI gibi yayıncılar
+      // bot UA'larını 403 ile engelliyor. Tarayıcı gibi görünmek feed başarısını
+      // ciddi artırır.
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+      Accept:
+        "application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.9, text/html;q=0.8, */*;q=0.7",
+      "Accept-Language": "en-US,en;q=0.9",
     },
     signal: AbortSignal.timeout(8000),
   });
@@ -671,6 +636,11 @@ async function selectBestArticle(candidates: ScoredCandidate[], interests: strin
 
   const categoryList = interests.map(i => `"${i}"`).join(", ");
 
+  const LIGHT_CATEGORIES = ["Life & Relationships", "Fashion & Style"];
+  const toneNote = interests.some(i => LIGHT_CATEGORIES.includes(i))
+    ? `\nTONE (applies to Life & Relationships and Fashion & Style): readers of these sections want pieces that are uplifting, warm, practical, or delightful — personal growth, style, joy, connection, creativity, everyday life. Strongly prefer positive, hopeful, or genuinely useful angles. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness, tragedy) unless there is truly nothing else on-topic. When two candidates fit, always choose the lighter, more enjoyable one.`
+    : "";
+
   const prompt = `You are an editorial assistant for Cogletta, a daily long-form article curation app for professionals who want to learn deeply.
 
 The user follows these interests — these are the ONLY valid categories:
@@ -685,7 +655,7 @@ HARD REQUIREMENTS — a candidate that fails ANY of these is NOT eligible, no ma
 - NO breaking news, liveblogs, or news dispatches.
 
 Among the ELIGIBLE candidates, prefer: (1) depth — essays, research summaries, analysis, think-tank reports; (2) freshness — published today or recently; (3) source variety — avoid sources marked "[source shown recently]" unless clearly superior.
-
+${toneNote}
 If NONE of the candidates is clearly about one of the user's interests, respond with selectedIndex -1.
 
 Candidates:
@@ -696,7 +666,7 @@ Respond ONLY with valid JSON (no markdown):
   "selectedIndex": <0-${candidates.length - 1}, or -1 if no candidate is on-topic>,
   "category": "<the ONE user interest this article belongs to, copied EXACTLY from the list above; empty string if selectedIndex is -1>",
   "summary": "<3-4 sentences (~75 words). Recommend as if to a smart friend. Direct, curious, specific. No jargon. Don't start with 'This article'. Don't use 'delve', 'explore', 'unpack', 'shed light on'.>",
-  "reason": "<One short sentence, max 20 words. Say specifically why THIS article is worth reading today.>",
+  "reason": "<One short, natural sentence (max 18 words) that names a CONCRETE hook from THIS piece — a specific idea, question, tension, or takeaway a reader would be curious about. Sound like a friend recommending it. NEVER use filler like 'directly relevant to your interests', 'relevant to you', 'for your interest in', 'aligns with your interests', 'a must-read', 'perfect for you', and do NOT just name the category.>",
   "readingTime": "<estimated reading time e.g. '8 min read'>"
 }`;
 
@@ -759,6 +729,11 @@ async function selectBestPodcast(candidates: ScoredCandidate[], interests: strin
 
   const categoryList = interests.map(i => `"${i}"`).join(", ");
 
+  const LIGHT_CATEGORIES = ["Life & Relationships", "Fashion & Style"];
+  const toneNote = interests.some(i => LIGHT_CATEGORIES.includes(i))
+    ? `\nTONE (applies to Life & Relationships and Fashion & Style): prefer episodes that are uplifting, warm, practical, or fun — personal growth, style, joy, connection, creativity, everyday life. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness) unless there is truly nothing else on-topic. When two fit, choose the lighter, more enjoyable one.`
+    : "";
+
   const prompt = `You are an editorial assistant for Cogletta, a daily content curation app.
 
 The user follows these interests — these are the ONLY valid categories:
@@ -772,7 +747,7 @@ HARD REQUIREMENTS — a candidate that fails ANY of these is NOT eligible:
 - DEPTH: prefer substantive interviews, investigations, long-form analysis. STRICTLY AVOID daily news bulletins and breaking-news recaps.
 
 Among ELIGIBLE candidates, prefer freshness (recent episodes) and source variety (avoid shows marked "[source shown recently]" unless clearly superior).
-
+${toneNote}
 If NONE of the candidates is clearly about one of the user's interests, respond with selectedIndex -1.
 
 Candidates:
@@ -783,7 +758,7 @@ Respond ONLY with valid JSON (no markdown):
   "selectedIndex": <0-${candidates.length - 1}, or -1 if no candidate is on-topic>,
   "category": "<the ONE user interest this episode belongs to, copied EXACTLY from the list above; empty string if selectedIndex is -1>",
   "summary": "<2-3 sentences (~50 words). Say what the episode is actually about and why it's worth listening to.>",
-  "reason": "<One short sentence, max 20 words. Say specifically why THIS episode is worth listening to today.>",
+  "reason": "<One short, natural sentence (max 18 words) naming a CONCRETE hook from THIS episode — a specific idea, guest, or question a listener would be curious about. Sound like a friend recommending it. NEVER use filler like 'directly relevant to your interests', 'relevant to you', 'for your interest in', 'a must-listen', 'perfect for you', and do NOT just name the category.>",
   "duration": "<episode duration e.g. '45 min', or estimate>"
 }`;
 
@@ -830,7 +805,7 @@ function fallbackArticle(interest: string): Article {
     category:    interest,
     title:       `Today's ${interest} digest`,
     summary:     "We couldn't find a fresh matching article today. Check back tomorrow!",
-    reason:      `Selected for your interest in ${interest}.`,
+    reason:      `A fresh ${interest} pick will be waiting for you tomorrow.`,
     url:         "https://news.ycombinator.com",
     source:      "Hacker News",
     readingTime: "—",
@@ -998,10 +973,12 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
 
   // ── Seçim ──────────────────────────────────────────────────────────────────
   // Free: 3 ilgi alanı havuzlanır → 1 makale + 1 podcast.
-  // Pro:  her ilgi alanı için ayrı seçim → 3 makale + 3 podcast (o günkü kategoride
-  //       uygun içerik yoksa makale fallback olur, podcast atlanır).
+  // Pro:  her ilgi alanı için 1 makale (toplam 3) + EN FAZLA 2 podcast.
+  //       Podcast 2'ye ulaşınca kalan kategori denenmez; bir kategoride podcast
+  //       bulunamazsa diğerinden tamamlanır (yine en fazla 2).
   // usedArticleUrls / usedPodcastUrls: Pro'da aynı linkin iki kategoride
   // tekrarlanmasını önler.
+  const MAX_PRO_PODCASTS = 2;
   const articles:        Article[]   = [];
   const podcasts:        Podcast[]   = [];
   const usedArticleUrls: Set<string> = new Set();
@@ -1012,14 +989,18 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
       const scope   = [interest];
       const subCtx  = buildSubTopicContext(scope, subTopics);
 
+      // Makale: her interest için (toplam 3)
       const article = await pickArticle(scope, history, subCtx, usedArticleUrls);
       articles.push(article);
       if (article.url) usedArticleUrls.add(article.url);
 
-      const podcast = await pickPodcast(scope, history, subCtx, usedPodcastUrls);
-      if (podcast) {
-        podcasts.push(podcast);
-        usedPodcastUrls.add(podcast.url);
+      // Podcast: sadece henüz 2'ye ulaşmadıysak dene
+      if (podcasts.length < MAX_PRO_PODCASTS) {
+        const podcast = await pickPodcast(scope, history, subCtx, usedPodcastUrls);
+        if (podcast) {
+          podcasts.push(podcast);
+          usedPodcastUrls.add(podcast.url);
+        }
       }
     }
   } else {
