@@ -49,9 +49,9 @@ resource "aws_iam_role_policy" "update_interests_lambda_policy" {
         Resource = aws_dynamodb_table.users.arn
       },
       {
-        Sid      = "DynamoReadArticles"
+        Sid      = "DynamoReadWriteArticles"
         Effect   = "Allow"
-        Action   = ["dynamodb:GetItem"]
+        Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem"]
         Resource = aws_dynamodb_table.articles.arn
       },
       {
