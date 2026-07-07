@@ -96,6 +96,29 @@ export function confirmSignUp(
   });
 }
 
+/**
+ * Kayıt doğrulama kodunu yeniden gönderir (kod ulaşmadıysa / süresi dolduysa).
+ * Cognito bu çağrıyı hesap enumeration'a karşı korur; var olmayan email'de de
+ * hata fırlatabilir — UI tarafında genel bir başarı mesajı göstermek yeterli.
+ */
+export function resendConfirmationCode(email: string): Promise<void> {
+  const user = new CognitoUser({
+    Username: email,
+    Pool: userPool,
+  });
+
+  return new Promise((resolve, reject) => {
+    user.resendConfirmationCode((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}
+
 export function forgotPassword(email: string): Promise<void> {
   const user = new CognitoUser({
     Username: email,
