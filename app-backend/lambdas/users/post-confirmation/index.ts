@@ -33,60 +33,9 @@ function buildWelcomeHtml(email: string): string {
           <tr>
             <td style="padding:32px 36px;">
 
-              <p style="margin:0 0 28px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+              <p style="margin:0 0 20px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
                 Thanks for joining ${APP_NAME}. It means a lot to have you here.
               </p>
-
-              <p style="margin:0 0 8px 0;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9ca3af;">The Name</p>
-              <p style="margin:0 0 28px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                The name blends two Latin roots. <em>Cognito</em> means "to know" or "to understand" — the origin of the modern word cognition. <em>Collecta</em> means "gathered together" or "carefully collected." Together, they express what ${APP_NAME} is built to do.
-              </p>
-
-              <p style="margin:0 0 8px 0;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9ca3af;">The Idea</p>
-              <p style="margin:0 0 20px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                The idea for ${APP_NAME} came from a feeling that I once realized that after spending time on my phone, when I put it down, I couldn't remember anything tangible. Social media, news sites, video platforms show me things — but are these things really what matters to me? And there's so much out there that choosing what to read has become stressful in itself.
-              </p>
-
-              <p style="margin:0 0 20px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                I thought about how I used to read. I would pick up a magazine, follow topics that made sense to me. That feeling was gone.
-              </p>
-
-              <p style="margin:0 0 20px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                That's why I created ${APP_NAME}. Three articles every morning on topics you choose. No noise. Focus.
-              </p>
-
-              <p style="margin:0 0 28px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                If you think like me — welcome. You're in the right place.
-              </p>
-
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px 0;">
-                <tr><td style="border-top:1px solid #f3f4f6;"></td></tr>
-              </table>
-
-              <p style="margin:0 0 12px 0;font-size:14px;font-weight:700;color:#111827;">Here's what we share with you every day:</p>
-
-              <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:28px;">
-                <tr>
-                  <td style="padding:0 0 10px 0;vertical-align:top;width:20px;">
-                    <span style="font-size:14px;color:#9ca3af;">→</span>
-                  </td>
-                  <td style="padding:0 0 10px 16px;">
-                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">Three carefully selected article recommendations based on your interests</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:0;vertical-align:top;width:20px;">
-                    <span style="font-size:14px;color:#9ca3af;">→</span>
-                  </td>
-                  <td style="padding:0 0 0 16px;">
-                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">A short editorial note on each article — why this piece, why today, why it matters</p>
-                  </td>
-                </tr>
-              </table>
-
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px 0;">
-                <tr><td style="border-top:1px solid #f3f4f6;"></td></tr>
-              </table>
 
               <p style="margin:0 0 16px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
                 You're now subscribed — head to your dashboard to read your first curated articles:
@@ -102,10 +51,6 @@ function buildWelcomeHtml(email: string): string {
                 </tr>
               </table>
 
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px 0;">
-                <tr><td style="border-top:1px solid #f3f4f6;"></td></tr>
-              </table>
-
               <p style="margin:0 0 12px 0;font-size:14px;font-weight:700;color:#111827;">A few things to know:</p>
 
               <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:28px;">
@@ -114,7 +59,7 @@ function buildWelcomeHtml(email: string): string {
                     <span style="font-size:14px;color:#9ca3af;">→</span>
                   </td>
                   <td style="padding:0 0 12px 16px;">
-                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">Your articles are ready every morning.</p>
+                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">Your articles are ready every morning — on your dashboard and in your inbox.</p>
                   </td>
                 </tr>
                 <tr>
@@ -126,6 +71,56 @@ function buildWelcomeHtml(email: string): string {
                   </td>
                 </tr>
               </table>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px 0;">
+                <tr><td style="border-top:1px solid #f3f4f6;"></td></tr>
+              </table>
+
+              <p style="margin:0 0 12px 0;font-size:14px;font-weight:700;color:#111827;">Here's what we share with you every day:</p>
+
+              <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:28px;">
+                <tr>
+                  <td style="padding:0 0 10px 0;vertical-align:top;width:20px;">
+                    <span style="font-size:14px;color:#9ca3af;">→</span>
+                  </td>
+                  <td style="padding:0 0 10px 16px;">
+                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">A carefully selected long-form article based on your interests — substantive pieces from think-tanks, academic journals, and quality publications <span style="color:#9ca3af;">(3 per day, one for each interest, with Pro)</span></p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 0 10px 0;vertical-align:top;width:20px;">
+                    <span style="font-size:14px;color:#9ca3af;">→</span>
+                  </td>
+                  <td style="padding:0 0 10px 16px;">
+                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">A podcast episode from top shows in your interest area — paired with your article every morning <span style="color:#9ca3af;">(2 per day with Pro)</span></p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0;vertical-align:top;width:20px;">
+                    <span style="font-size:14px;color:#9ca3af;">→</span>
+                  </td>
+                  <td style="padding:0 0 0 16px;">
+                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">A short editorial note on each pick — why this piece, why today, why it matters</p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 28px 0;font-size:13px;line-height:1.6;color:#9ca3af;font-style:italic;">
+                You're on the free plan. ${APP_NAME} Pro adds 3 articles per interest, 2 podcasts, sub-topics, and weekly trend reports — you can upgrade anytime from Settings.
+              </p>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px 0;">
+                <tr><td style="border-top:1px solid #f3f4f6;"></td></tr>
+              </table>
+
+              <p style="margin:0 0 8px 0;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9ca3af;">Why ${APP_NAME}</p>
+              <p style="margin:0 0 20px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+                We still spend hours consuming content every day, but it often feels fragmented. We jump from one short video to another, skim headlines, scroll through endless feeds — and by the end of the day it's hard to remember anything we actually learned.
+              </p>
+
+              <p style="margin:0 0 28px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+                That's why ${APP_NAME} exists. Every morning, a small collection of thoughtfully selected reads on the topics you actually chose. No algorithms competing for your attention. No endless feed to scroll through. If you think like us — you're in the right place.
+              </p>
 
               <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px 0;">
                 <tr><td style="border-top:1px solid #f3f4f6;"></td></tr>
@@ -168,27 +163,28 @@ function buildWelcomeText(email: string): string {
 
 Thanks for joining ${APP_NAME}. It means a lot to have you here.
 
-THE NAME
-The name blends two Latin roots. Cognito means "to know" or "to understand" — the origin of the modern word cognition. Collecta means "gathered together" or "carefully collected." Together, they express what ${APP_NAME} is built to do.
+You're now subscribed — head to your dashboard to read your first curated articles:
+${APP_URL}/dashboard
 
-THE IDEA
-The idea for ${APP_NAME} came from a feeling that I once realized that after spending time on my phone, when I put it down, I couldn't remember anything tangible. Social media, news sites, video platforms show me things — but are these things really what matters to me? And there's so much out there that choosing what to read has become stressful in itself.
+A FEW THINGS TO KNOW
+→ Your articles are ready every morning — on your dashboard and in your inbox.
+→ You can change your topics anytime from the Interests page. Changes take effect the next morning.
 
-I thought about how I used to read. I would pick up a magazine, follow topics that made sense to me. That feeling was gone.
+HERE'S WHAT WE SHARE WITH YOU EVERY DAY
+→ A carefully selected long-form article based on your interests — substantive pieces from think-tanks, academic journals, and quality publications (3 per day, one for each interest, with Pro)
+→ A podcast episode from top shows in your interest area — paired with your article every morning (2 per day with Pro)
+→ A short editorial note on each pick — why this piece, why today, why it matters
 
-That's why I created ${APP_NAME}. Three articles every morning on topics you choose. No noise. Focus.
+You're on the free plan. ${APP_NAME} Pro adds 3 articles per interest, 2 podcasts, sub-topics, and weekly trend reports — you can upgrade anytime from Settings.
 
-If you think like me — welcome. You're in the right place.
+WHY ${APP_NAME.toUpperCase()}
+We still spend hours consuming content every day, but it often feels fragmented. We jump from one short video to another, skim headlines, scroll through endless feeds — and by the end of the day it's hard to remember anything we actually learned.
 
-Here's what we share with you every day:
-→ Three carefully selected articles based on your interests
-→ A short editorial note on each article — why this piece, why today, why it matters
-
-Go to your dashboard: ${APP_URL}/dashboard
-
-Your articles are ready every morning. You can change your topics anytime from the Interests page — changes take effect the next morning.
+That's why ${APP_NAME} exists. Every morning, a small collection of thoughtfully selected reads on the topics you actually chose. No algorithms competing for your attention. No endless feed to scroll through. If you think like us — you're in the right place.
 
 If you enjoy ${APP_NAME}, recommend it to a friend. We grow because readers share us with people they trust.
+
+Your first articles are already waiting. See you tomorrow morning.
 
 — The ${APP_NAME} Team
 ${CONTACT_EMAIL}`;
