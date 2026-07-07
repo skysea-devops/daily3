@@ -38,3 +38,17 @@ export const Keys = {
   dateSK:    (date: Date = new Date()) => `DATE#${date.toISOString().slice(0, 10)}`,
   ttl30Days: ()                        => Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
 };
+
+export interface TrendInterest {
+  category:  string;
+  themes:    string[];
+  topTitle:  string;
+  topUrl:    string;
+  topSource: string;
+}
+
+export interface WeeklyTrendReport {
+  weekLabel:   string;
+  interests:   TrendInterest[];
+  generatedAt: string | null;
+}

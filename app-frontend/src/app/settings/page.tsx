@@ -10,6 +10,14 @@ import { buildLemonCheckoutUrl, getUserProfile } from "@/lib/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
+// Lemon Squeezy checkout linkleri build sırasında inline edilir. Prod'da bu
+// değişkenler henüz tanımlı olmadığından upgrade butonları yerine "Coming soon"
+// gösterilir; dev'de tanımlı oldukları için checkout akışı aynen çalışır.
+const CHECKOUT_CONFIGURED = Boolean(
+  process.env.NEXT_PUBLIC_LS_CHECKOUT_MONTHLY &&
+  process.env.NEXT_PUBLIC_LS_CHECKOUT_YEARLY
+);
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function Section({ title, danger, children }: { title: string; danger?: boolean; children: React.ReactNode }) {
@@ -343,12 +351,23 @@ function SettingsContent() {
         {/* Plan & Billing */}
         <Section title="Plan & Billing">
           <Row label="Current plan" value={plan === "pro" ? "Cogletta Pro — $4.80/month" : "Free"} />
-          {plan === "free" && (
+          {plan === "free" && CHECKOUT_CONFIGURED && (
             <Row topBorder label="Upgrade to Pro" description="3 articles per interest, sub-topics, weekly trend reports. Yearly saves two months.">
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                 <ActionBtn label={billingBusy ? "Redirecting…" : "Yearly · $48"} onClick={() => handleUpgrade("yearly")} disabled={billingBusy} style="accent" />
                 <ActionBtn label="Monthly · $4.80" onClick={() => handleUpgrade("monthly")} disabled={billingBusy} />
               </div>
+            </Row>
+          )}
+          {plan === "free" && !CHECKOUT_CONFIGURED && (
+            <Row topBorder label="Cogletta Pro" description="3 articles per interest, sub-topics, and weekly trend reports. Launching very soon — stay tuned.">
+              <span style={{
+                flexShrink: 0, padding: "7px 14px", borderRadius: 999,
+                border: "1px solid var(--rule)", background: "var(--paper)",
+                fontSize: "0.8125rem", fontWeight: 600, color: "var(--ink-muted)",
+              }}>
+                Coming soon
+              </span>
             </Row>
           )}
           {plan === "pro" && (
