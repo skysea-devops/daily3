@@ -18,7 +18,28 @@ const lambda = new LambdaClient({});
 const ARTICLES_TABLE             = process.env.ARTICLES_TABLE_NAME!;
 const USERS_TABLE                = process.env.USERS_TABLE_NAME!;
 const GENERATE_ARTICLES_FUNCTION = process.env.GENERATE_ARTICLES_FUNCTION_NAME!;
-const CORS_ORIGIN                = process.env.CORS_ORIGIN ?? "*";
+
+// CORS_ORIGIN virgülle ayrılmış birden çok origin içerebilir
+// (ör. "https://cogletta.com,https://www.cogletta.com").
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN ?? "*")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+function resolveCorsOrigin(event: APIGatewayProxyEventV2WithJWTAuthorizer): string {
+  if (ALLOWED_ORIGINS.includes("*")) return "*";
+  const reqOrigin = event.headers?.origin ?? event.headers?.Origin ?? "";
+  if (reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin)) return reqOrigin;
+  return ALLOWED_ORIGINS[0] ?? "*";
+}
+
+function buildHeaders(event: APIGatewayProxyEventV2WithJWTAuthorizer) {
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": resolveCorsOrigin(event),
+    "Vary": "Origin",
+  };
+}
 
 // Generate ~10 sn sürüyor; frontend 5 sn'de bir poll ettiği için kilit olmadan
 // aynı kullanıcı için 2-3 paralel invocation oluşuyordu (3x Bedrock maliyeti).
@@ -27,11 +48,6 @@ const CORS_ORIGIN                = process.env.CORS_ORIGIN ?? "*";
 // generate-articles gerçek içeriği koşulsuz PutCommand ile üstüne yazar.
 const GENERATING_STALE_MS = 3 * 60 * 1000; // generate crash ederse 3 dk sonra yeniden tetiklenebilir
 const PLACEHOLDER_TTL_SEC = 6 * 60 * 60;   // her ihtimale karşı placeholder 6 saatte TTL ile silinir
-
-const headers = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": CORS_ORIGIN,
-};
 
 interface GeneratePayload {
   userId: string;
@@ -109,6 +125,7 @@ async function invokeGenerate(payload: GeneratePayload): Promise<void> {
 export const handler = async (
   event: APIGatewayProxyEventV2WithJWTAuthorizer
 ): Promise<APIGatewayProxyResultV2> => {
+  const headers = buildHeaders(event);
   try {
     const claims = event.requestContext.authorizer.jwt.claims;
     const userId = claims["sub"] as string | undefined;
@@ -130,7 +147,7 @@ export const handler = async (
           PK: Keys.userPK(userId),
           SK: "PROFILE",
         },
-        // plan/region rezerve kelime → alias; on-demand generate için plan+subTopics+email de lazım
+        // plan rezerve kelime → alias; on-demand generate için plan+subTopics+email de lazım
         ExpressionAttributeNames: { "#plan": "plan" },
         ProjectionExpression: "interests, updatedAt, subTopics, email, #plan",
       })
@@ -165,7 +182,6 @@ export const handler = async (
     const item = articleResult.Item;
 
     // Hiç kayıt yok — kilidi alan tek invocation generate tetikler
-    // (interests değişikliği artık stale sayılmıyor — ertesi gün yansır)
     if (!item) {
       if (isToday && userInterests && userInterests.length >= 1) {
         const locked = await acquireGenerationLock(pk, todaySK);
@@ -214,7 +230,6 @@ export const handler = async (
     }
 
     // Makale var — mevcut makaleleri dön
-    // interests değişmiş olsa bile bugün yeni generate yok
     return {
       statusCode: 200,
       headers,
