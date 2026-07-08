@@ -24,7 +24,7 @@ variable "github_repo" {
 }
 
 variable "cors_origin" {
-  description = "Single origin allowed for CORS on Lambda responses (e.g. https://cogletta.com)"
+  description = "Comma-separated origins allowed for CORS on Lambda responses. Lambda reflects the matching request Origin (e.g. \"https://cogletta.com,https://www.cogletta.com\")."
   type        = string
   default     = "*"
 }
