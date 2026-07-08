@@ -49,9 +49,9 @@ resource "aws_iam_role_policy" "update_interests_lambda_policy" {
         Resource = aws_dynamodb_table.users.arn
       },
       {
-        Sid      = "DynamoReadWriteArticles"
+        Sid      = "DynamoReadArticles"
         Effect   = "Allow"
-        Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem"]
+        Action   = ["dynamodb:GetItem"]
         Resource = aws_dynamodb_table.articles.arn
       },
       {
@@ -305,9 +305,10 @@ resource "aws_iam_role_policy" "get_articles_lambda_policy" {
         Resource = "${aws_cloudwatch_log_group.get_articles.arn}:*"
       },
       {
-        Sid      = "DynamoReadArticles"
+        # get-articles hem okur hem generation lock placeholder'ı yazar/tazeler
+        Sid      = "DynamoReadWriteArticles"
         Effect   = "Allow"
-        Action   = ["dynamodb:GetItem"]
+        Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem"]
         Resource = aws_dynamodb_table.articles.arn
       },
       {
