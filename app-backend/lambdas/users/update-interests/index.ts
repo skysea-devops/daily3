@@ -12,15 +12,31 @@ const lambda = new LambdaClient({});
 const USERS_TABLE_NAME     = process.env.USERS_TABLE_NAME!;
 const ARTICLES_TABLE_NAME  = process.env.ARTICLES_TABLE_NAME!;
 const GENERATE_ARTICLES_FN = process.env.GENERATE_ARTICLES_FUNCTION_NAME!;
-const CORS_ORIGIN          = process.env.CORS_ORIGIN ?? "*";
 const DEVELOPER_USER_IDS   = new Set(
   (process.env.DEVELOPER_USER_IDS ?? "").split(",").map(s => s.trim()).filter(Boolean)
 );
 
-const headers = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": CORS_ORIGIN,
-};
+// CORS_ORIGIN virgülle ayrılmış birden çok origin içerebilir
+// (ör. "https://cogletta.com,https://www.cogletta.com").
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN ?? "*")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+function resolveCorsOrigin(event: APIGatewayProxyEventV2WithJWTAuthorizer): string {
+  if (ALLOWED_ORIGINS.includes("*")) return "*";
+  const reqOrigin = event.headers?.origin ?? event.headers?.Origin ?? "";
+  if (reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin)) return reqOrigin;
+  return ALLOWED_ORIGINS[0] ?? "*";
+}
+
+function buildHeaders(event: APIGatewayProxyEventV2WithJWTAuthorizer) {
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": resolveCorsOrigin(event),
+    "Vary": "Origin",
+  };
+}
 
 function todaySK(): string {
   return `DATE#${new Date().toISOString().slice(0, 10)}`;
@@ -48,6 +64,7 @@ async function articlesExistToday(userId: string): Promise<boolean> {
 export const handler = async (
   event: APIGatewayProxyEventV2WithJWTAuthorizer
 ): Promise<APIGatewayProxyResultV2> => {
+  const headers = buildHeaders(event);
   try {
     const claims = event.requestContext.authorizer.jwt.claims;
     const userId = claims["sub"] as string | undefined;
@@ -107,7 +124,7 @@ export const handler = async (
 
     if (alreadyGenerated) {
       // Bugün zaten makale var — generate tetikleme
-      console.log(`Articles already exist today for user=${userId}, skipping generate`);;
+      console.log(`Articles already exist today for user=${userId}, skipping generate`);
       return {
         statusCode: 200,
         headers,

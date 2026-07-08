@@ -9,16 +9,33 @@ const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const USERS_TABLE_NAME = process.env.USERS_TABLE_NAME!;
 const ARTICLES_TABLE_NAME = process.env.ARTICLES_TABLE_NAME!;
 const USER_POOL_ID = process.env.USER_POOL_ID!;
-const CORS_ORIGIN = process.env.CORS_ORIGIN ?? "*";
 
-const headers = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": CORS_ORIGIN,
-};
+// CORS_ORIGIN virgülle ayrılmış birden çok origin içerebilir
+// (ör. "https://cogletta.com,https://www.cogletta.com").
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN ?? "*")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+function resolveCorsOrigin(event: APIGatewayProxyEventV2WithJWTAuthorizer): string {
+  if (ALLOWED_ORIGINS.includes("*")) return "*";
+  const reqOrigin = event.headers?.origin ?? event.headers?.Origin ?? "";
+  if (reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin)) return reqOrigin;
+  return ALLOWED_ORIGINS[0] ?? "*";
+}
+
+function buildHeaders(event: APIGatewayProxyEventV2WithJWTAuthorizer) {
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": resolveCorsOrigin(event),
+    "Vary": "Origin",
+  };
+}
 
 export const handler = async (
   event: APIGatewayProxyEventV2WithJWTAuthorizer
 ): Promise<APIGatewayProxyResultV2> => {
+  const headers = buildHeaders(event);
   try {
     const claims = event.requestContext.authorizer.jwt.claims;
     const userId = claims["sub"] as string | undefined;
