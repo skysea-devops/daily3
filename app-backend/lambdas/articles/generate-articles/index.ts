@@ -31,7 +31,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "IEEE Spectrum",          url: "https://spectrum.ieee.org/feeds/feed.rss" },
     { name: "Ars Technica",           url: "https://feeds.arstechnica.com/arstechnica/index" },
     { name: "Eurozine",               url: "https://www.eurozine.com/feed/" },
-    { name: "Rest of World",           url: "https://restofworld.org/feed/" },
+    { name: "Works in Progress",      url: "https://worksinprogress.co/rss.xml" },
+    { name: "Rest of World",          url: "https://restofworld.org/feed/" },
   ],
 
   "World Politics": [
@@ -52,7 +53,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   "Economics": [
     { name: "Econlib",                url: "https://www.econlib.org/feed/" },
     { name: "Noahpinion",             url: "https://www.noahpinion.blog/feed" },
-    { name: "Marginal Revolution",    url: "https://marginalrevolution.com/feed" },
+    { name: "Works in Progress",      url: "https://worksinprogress.co/rss.xml" },
     { name: "Conversable Economist",  url: "https://conversableeconomist.com/feed/" },
     
   ],
