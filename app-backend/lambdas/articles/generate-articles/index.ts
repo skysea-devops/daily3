@@ -54,7 +54,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Noahpinion",             url: "https://www.noahpinion.blog/feed" },
     { name: "Marginal Revolution",    url: "https://marginalrevolution.com/feed" },
     { name: "Conversable Economist",  url: "https://conversableeconomist.com/feed/" },
-    { name: "Project Syndicate",      url: "https://www.project-syndicate.org/rss" },
+    
   ],
 
   "Science": [
