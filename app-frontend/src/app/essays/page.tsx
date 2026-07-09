@@ -1,468 +1,134 @@
-"use client";
+// src/app/essays/page.tsx
+// Server component — metadata is embedded in static HTML for SEO.
 
+import type { Metadata } from "next";
 import Link from "next/link";
-import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
-import { signUp } from "@/lib/cognito";
-import { useAuth } from "@/lib/auth-context";
+import Navbar from "@/components/Navbar";
+import { ESSAYS } from "@/data/essays";
 
-function RegisterModal({ onClose }: { onClose: () => void }) {
-  const router = useRouter();
-  const [name, setName]               = useState("");
-  const [email, setEmail]             = useState("");
-  const [password, setPassword]       = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState("");
+export const metadata: Metadata = {
+  title: "Essays — Cogletta",
+  description:
+    "Essays from Cogletta on reading, attention, personal habits, philosophy and ethics. Long-form thinking, no feed.",
+  alternates: { canonical: "/essays/" },
+  openGraph: {
+    title: "Essays — Cogletta",
+    description:
+      "Essays on reading, attention, personal habits, philosophy and ethics.",
+    url: "/essays/",
+    type: "website",
+  },
+};
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      await signUp(name, email, password);
-      localStorage.setItem("pending_verification_email", email);
-      localStorage.setItem("selected_plan", "free");
-      router.push("/verify-email");
-    } catch (err: any) {
-      setError(err?.message || "Failed to create account.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const input: React.CSSProperties = {
-    marginTop: 8,
-    width: "100%",
-    border: "1px solid var(--rule)",
-    borderRadius: 10,
-    padding: "12px 16px",
-    fontSize: "0.9375rem",
-    background: "var(--white)",
-    color: "var(--ink)",
-    outline: "none",
-    boxSizing: "border-box",
-  };
-
-  const label: React.CSSProperties = {
-    fontSize: "0.8125rem",
-    fontWeight: 600,
-    color: "var(--ink-soft)",
-  };
-
-  return (
-    <div
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
-      style={{
-        position: "fixed", inset: 0, zIndex: 200,
-        background: "rgba(26,23,20,0.5)",
-        display: "flex", alignItems: "center", justifyContent: "center", padding: "0 20px",
-      }}
-    >
-      <div style={{
-        width: "100%", maxWidth: 440,
-        background: "var(--white)",
-        border: "1px solid var(--rule)",
-        borderRadius: 16, padding: "40px 36px",
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
-          <div>
-            <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)" }}>
-              Create your account
-            </h2>
-            <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)", marginTop: 4 }}>
-              Starting with <strong style={{ color: "var(--ink)" }}>Free plan</strong>
-            </p>
-          </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-muted)", fontSize: "1.25rem", lineHeight: 1 }}>✕</button>
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div>
-            <label style={label}>Name</label>
-            <input style={input} type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} required />
-          </div>
-          <div>
-            <label style={label}>Email</label>
-            <input style={input} type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
-          </div>
-          <div>
-            <label style={label}>Password</label>
-            <div style={{ position: "relative" }}>
-              <input
-                style={{ ...input, paddingRight: 44 }}
-                type={showPassword ? "text" : "password"}
-                placeholder="At least 8 characters"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                minLength={8}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(s => !s)}
-                tabIndex={-1}
-                style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--ink-muted)", display: "flex", alignItems: "center" }}
-              >
-                {showPassword ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {error && <p style={{ background: "#fef2f2", color: "#991b1b", padding: "12px 16px", borderRadius: 10, fontSize: "0.875rem" }}>{error}</p>}
-
-          <button type="submit" disabled={loading} style={{
-            background: "var(--ink)", color: "var(--white)",
-            border: "none", borderRadius: 10,
-            padding: "13px 24px", fontSize: "0.9375rem", fontWeight: 600,
-            cursor: "pointer", opacity: loading ? 0.5 : 1,
-          }}>
-            {loading ? "Creating account..." : "Create account →"}
-          </button>
-        </form>
-
-        <p style={{ marginTop: 20, textAlign: "center", fontSize: "0.875rem", color: "var(--ink-soft)" }}>
-          Already have an account?{" "}
-          <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>Sign in</Link>
-        </p>
-      </div>
-    </div>
-  );
+function formatDate(iso: string): string {
+  return new Date(iso + "T00:00:00Z").toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
 }
 
-export default function HomePage() {
-  const [showModal, setShowModal] = useState(false);
-  const { user, loading } = useAuth();
-
+export default function EssaysPage() {
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
+      <Navbar />
+      <main
+        style={{
+          maxWidth: 680,
+          margin: "0 auto",
+          padding: "56px 5vw 96px",
+        }}
+      >
+        <header style={{ marginBottom: 48 }}>
+          <h1
+            style={{
+              fontFamily: "'Lora', serif",
+              fontWeight: 600,
+              fontSize: "2rem",
+              color: "var(--ink)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Essays
+          </h1>
+          <p
+            style={{
+              marginTop: 10,
+              fontSize: "0.9375rem",
+              lineHeight: 1.7,
+              color: "var(--ink-muted)",
+            }}
+          >
+            Occasional writing on reading, attention, habits, philosophy and
+            ethics — the ideas behind Cogletta.
+          </p>
+        </header>
 
-        :root {
-          --ink:       #1a1714;
-          --ink-soft:  #4a4540;
-          --ink-muted: #8c8278;
-          --paper:     #f7f4ee;
-          --paper-warm:#ede9e0;
-          --rule:      #ddd8ce;
-          --accent:    #7c5c3e;
-          --white:     #ffffff;
-        }
-
-        .lp-body { background: var(--paper); color: var(--ink); }
-
-        .lp-nav {
-          border-bottom: 1px solid var(--rule);
-          padding: 0 5vw;
-          height: 56px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          background: var(--paper);
-        }
-        .lp-logo { font-family: 'Lora', serif; font-weight: 600; font-size: 1.1rem; color: var(--ink); text-decoration: none; }
-        .lp-nav-links { display: flex; gap: 20px; align-items: center; }
-        .lp-nav-links a { font-size: 0.875rem; color: var(--ink-soft); text-decoration: none; }
-        .lp-btn-nav { background: var(--ink); color: var(--white) !important; padding: 8px 18px; border-radius: 6px; font-weight: 500; }
-
-        .lp-hero { max-width: 780px; margin: 0 auto; padding: 96px 5vw 80px; text-align: center; }
-        .lp-eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 28px; }
-        .lp-h1 { font-family: 'Lora', serif; font-size: clamp(2.4rem, 5vw, 3.8rem); font-weight: 600; line-height: 1.18; color: var(--ink); margin-bottom: 24px; }
-        .lp-h1 em { font-style: italic; color: var(--accent); }
-        .lp-sub { font-size: 1.125rem; color: var(--ink-soft); max-width: 540px; margin: 0 auto 40px; line-height: 1.75; }
-        .lp-cta { display: inline-block; background: var(--ink); color: var(--white); padding: 14px 32px; border-radius: 8px; font-size: 0.9375rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; }
-        .lp-note { display: block; margin-top: 14px; font-size: 0.8125rem; color: var(--ink-muted); }
-
-        .lp-divider { width: 48px; height: 2px; background: var(--accent); margin: 0 auto; }
-
-        .lp-section { max-width: 640px; margin: 80px auto; padding: 0 5vw; }
-        .lp-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 24px; }
-        .lp-accent-label { color: var(--accent); }
-        .lp-p { font-family: 'Lora', serif; font-size: 1.1rem; line-height: 1.85; color: var(--ink-soft); margin-bottom: 20px; }
-        .lp-p strong { color: var(--ink); }
-        .lp-p em { font-style: italic; }
-        .lp-sig { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--rule); font-size: 0.875rem; color: var(--ink-muted); font-style: italic; }
-
-        .lp-band { background: var(--paper-warm); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 80px 5vw; }
-        .lp-band-inner { max-width: 800px; margin: 0 auto; }
-        .lp-h2 { font-family: 'Lora', serif; font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 600; color: var(--ink); margin-bottom: 40px; max-width: 480px; }
-
-        .lp-quotes { display: grid; gap: 20px; }
-        @media (min-width: 700px) { .lp-quotes { grid-template-columns: repeat(3, 1fr); } }
-        .lp-quote { background: var(--white); border: 1px solid var(--rule); border-radius: 12px; padding: 28px; display: flex; flex-direction: column; text-align: left; }
-        .lp-quote-stars { color: var(--accent); font-size: 0.8125rem; letter-spacing: 3px; margin-bottom: 14px; }
-        .lp-quote-text { font-family: 'Lora', serif; font-size: 1rem; line-height: 1.75; color: var(--ink); margin: 0 0 20px; }
-        .lp-quote-who { margin-top: auto; display: flex; align-items: center; gap: 12px; }
-        .lp-quote-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--paper-warm); color: var(--accent); font-weight: 600; font-size: 0.9375rem; display: flex; align-items: center; justify-content: center; font-family: 'Lora', serif; flex-shrink: 0; }
-        .lp-quote-name { font-size: 0.875rem; font-weight: 600; color: var(--ink); display: block; }
-        .lp-quote-role { font-size: 0.75rem; color: var(--ink-muted); }
-
-        .lp-steps { display: grid; gap: 32px; }
-        @media (min-width: 640px) { .lp-steps { grid-template-columns: repeat(3, 1fr); } }
-        .lp-step-num { font-family: 'Lora', serif; font-size: 2rem; font-weight: 600; color: var(--rule); line-height: 1; margin-bottom: 12px; }
-        .lp-step h3 { font-size: 0.9375rem; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
-        .lp-step p { font-size: 0.875rem; color: var(--ink-soft); line-height: 1.7; }
-
-        .lp-features { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; }
-        @media (min-width: 640px) { .lp-features { grid-template-columns: repeat(2, 1fr); } }
-        .lp-feature { background: var(--white); padding: 28px; }
-        .lp-feature-icon { font-size: 1.5rem; margin-bottom: 12px; }
-        .lp-feature h3 { font-size: 0.9375rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
-        .lp-feature p { font-size: 0.875rem; color: var(--ink-soft); line-height: 1.65; }
-
-        .lp-article { background: var(--white); border: 1px solid var(--rule); border-radius: 12px; padding: 28px; margin-bottom: 16px; }
-        .lp-art-meta { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
-        .lp-art-title { font-family: 'Lora', serif; font-size: 1.1rem; font-weight: 600; color: var(--ink); margin-bottom: 4px; line-height: 1.4; }
-        .lp-art-source { font-size: 0.8125rem; color: var(--ink-muted); margin-bottom: 14px; }
-        .lp-art-text { font-family: 'Lora', serif; font-size: 0.9375rem; color: var(--ink-soft); line-height: 1.75; }
-        .lp-art-text a { color: var(--accent); font-weight: 600; text-decoration: none; }
-
-        .lp-cta-bottom { text-align: center; padding: 96px 5vw; max-width: 560px; margin: 0 auto; }
-        .lp-cta-bottom h2 { font-family: 'Lora', serif; font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 600; color: var(--ink); margin-bottom: 16px; line-height: 1.25; }
-        .lp-cta-bottom p { color: var(--ink-soft); margin-bottom: 36px; font-size: 1rem; line-height: 1.7; }
-
-        .lp-footer { border-top: 1px solid var(--rule); padding: 32px 5vw; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-        .lp-footer p { font-size: 0.8125rem; color: var(--ink-muted); }
-        .lp-footer a { color: var(--ink-muted); text-decoration: none; }
-      `}</style>
-
-      {showModal && <RegisterModal onClose={() => setShowModal(false)} />}
-
-      <div className="lp-body">
-
-        {/* NAV */}
-        <nav className="lp-nav">
-          <a href="/" className="lp-logo">Cogletta</a>
-          <div className="lp-nav-links">
-            {!loading && user ? (
-              <>
-                <Link href="/dashboard" style={{ fontSize: "0.875rem", color: "var(--ink-soft)", textDecoration: "none" }}>Dashboard</Link>
-                <Link href="/interests" style={{ fontSize: "0.875rem", color: "var(--ink-soft)", textDecoration: "none" }}>Interests</Link>
-              </>
-            ) : (
-              <>
-                <Link href="/login">Sign in</Link>
-                <Link href="/register" className="lp-btn-nav" style={{ background: "var(--ink)", color: "var(--white)", padding: "8px 18px", borderRadius: 6, fontWeight: 500, fontSize: "0.875rem", textDecoration: "none" }}>
-                  Start reading
+        <div>
+          {ESSAYS.map((essay) => (
+            <article
+              key={essay.slug}
+              style={{
+                borderTop: "1px solid var(--rule)",
+                padding: "28px 0",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: "0.75rem",
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  color: "var(--ink-muted)",
+                  marginBottom: 8,
+                }}
+              >
+                <time dateTime={essay.date}>{formatDate(essay.date)}</time>
+                {" · "}
+                {essay.readingMinutes} min read
+              </p>
+              <h2
+                style={{
+                  fontFamily: "'Lora', serif",
+                  fontWeight: 600,
+                  fontSize: "1.375rem",
+                  lineHeight: 1.35,
+                }}
+              >
+                <Link
+                  href={`/essays/${essay.slug}/`}
+                  style={{ color: "var(--ink)", textDecoration: "none" }}
+                >
+                  {essay.title}
                 </Link>
-              </>
-            )}
-          </div>
-        </nav>
-
-        {/* HERO */}
-        <section className="lp-hero">
-          <span className="lp-eyebrow">Curated for you. Every morning.</span>
-          <h1 className="lp-h1">Read what<br /><em>matters to you.</em></h1>
-          <p className="lp-sub">
-            Every morning, carefully selected long-form articles and podcasts episodes on the topic you actually care about — curated and delivered to your inbox.
-          </p>
-          <button onClick={() => setShowModal(true)} className="lp-cta">
-            Start reading for free →
-          </button>
-          <span className="lp-note">Subscribe to get a curated article and podcast every morning.</span>
-        </section>
-         <div className="lp-divider" />
-        {/* TESTIMONIALS */}
-        <section className="lp-band" style={{ background: "transparent", borderTop: "none", borderBottom: "none", padding: "20px 5vw 72px" }}>
-          <div className="lp-band-inner">
-            <h2 className="lp-h2" style={{ margin: "0 auto 12px", textAlign: "center" }}>
-              The Coglettans
-            </h2>
-            <p className="lp-sub" style={{ margin: "0 auto 40px", textAlign: "center" }}>
-              The people who start their mornings with us.
-            </p>
-            <div className="lp-quotes">
-              {[
-                {
-                  stars: "★★★★★",
-                  text: "I can't wait to see which articles arrive each morning.",
-                  name: "Selin",
-                  role: "Reads over morning coffee",
-                  initial: "S",
-                },
-                {
-                  stars: "★★★★★",
-                  text: "I could never finish long articles before. Getting dailly, picked for me, quietly rebuilt my reading habit.",
-                  name: "Andy",
-                  role: "Daily reader",
-                  initial: "D",
-                },
-                {
-                  stars: "★★★★★",
-                  text: "No endless feed, no doomscrolling — just the topics I actually chose, curated for me each morning.",
-                  name: "Melissa",
-                  role: "Pro subscriber",
-                  initial: "M",
-                },
-              ].map((q, i) => (
-                <figure key={i} className="lp-quote">
-                  <div className="lp-quote-stars">{q.stars}</div>
-                  <blockquote className="lp-quote-text">“{q.text}”</blockquote>
-                  <figcaption className="lp-quote-who">
-                    <span className="lp-quote-avatar">{q.initial}</span>
-                    <span>
-                      <span className="lp-quote-name">{q.name}</span>
-                      <span className="lp-quote-role">{q.role}</span>
-                    </span>
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <div className="lp-divider" />
-
-        {/* NAME STORY */}
-        <section className="lp-section">
-          <p className="lp-label">The name</p>
-          <p className="lp-p">
-            Cogletta is a name I made up around a simple belief:  <strong>Ability to read articles based on one's interests.</strong>
-          </p>
-          <p className="lp-p">
-            The name blends two Latin roots. <em>Cognito</em> means "to know" or "to understand" — the origin of the modern word cognition. <em>Collecta</em> means "gathered together" or "carefully collected."
-          </p>
-          <p className="lp-p">
-            Together, they express what Cogletta is built to do.
-          </p>
-          <p className="lp-p">
-            Not endless scrolling.
-            Not constant notifications.
-            Just a few carefully chosen articles on the subjects you genuinely care about.
-          </p>
-          
-        </section>
-
-        <div className="lp-divider" />
-
-        {/* FOUNDER STORY */}
-        <section className="lp-section">
-          <p className="lp-label">Why Cogletta exists</p>
-          <p className="lp-p">
-            Somewhere along the way, many of us stopped
-            <strong> reading regularly.</strong> We still spend hours consuming content every day, but it often feels fragmented. We jump from one short video to another, skim headlines, scroll through endless feeds, and by the end of the day it's hard to remember anything we actually learned.
-          </p>
-          <p className="lp-p">
-            Reading itself didn't disappear. The habit did.
-          </p>
-          <p className="lp-p">
-            I started thinking about how I used to read. I'd pick up a magazine or newspaper, discover thoughtful articles, and gradually build knowledge around  <strong>the topics that interested me.</strong> I wanted that feeling back.
-          </p>
-          <p className="lp-p">
-            That's why I built Cogletta. Every morning, Cogletta delivers a small collection of thoughtfully selected long-form articles based on your interests. No algorithms competing for your attention. No endless feed to scroll through.If you think like me — you're in the right place.
-          </p>
-          <p className="lp-sig">— Ismail Gokdeniz - Founder, Cogletta</p>
-        </section>
-
-
-        {/* WHAT YOU GET */}
-        <section className="lp-section" style={{maxWidth: 800}}>
-          <p className="lp-label lp-accent-label">What's included</p>
-          <h2 className="lp-h2">Everything you need to build a reading habit.</h2>
-          <div className="lp-features">
-            {[
-              { icon: "📰", title: "3 curated article daily (1 in free plan)" , body: "Picked from across your 3 interests — long-form, substantive pieces from think-tanks, academic journals, and quality publications." },
-              { icon: "✉️", title: "Daily email digest", body: "Your article and podcast delivered to your inbox every morning. Clean, readable." },
-              { icon: "💡", title: "Why we picked this for you", body: "Each article comes with a short editorial note — why this piece, why today, why it's worth your time." },
-              { icon: "🎙", title: "2 podcast episode daily (1 in free plan)", body: "A carefully selected episode from top podcasts in your interest area — paired with your article every morning." },
-            ].map(f => (
-              <div key={f.title} className="lp-feature">
-                <div className="lp-feature-icon">{f.icon}</div>
-                <h3>{f.title}</h3>
-                <p>{f.body}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* SAMPLE */}
-        <div className="lp-band">
-          <div className="lp-band-inner" style={{maxWidth: 640}}>
-            <p className="lp-label lp-accent-label">A taste of what you'll read</p>
-            <h2 className="lp-h2">This is what arrives in your inbox.</h2>
-
-            <div className="lp-article">
-              <p className="lp-art-meta">🎨 Arts</p>
-              <h3 className="lp-art-title">Why We Can't Stop Looking at Vermeer</h3>
-              <p className="lp-art-source">The New Yorker · 9 min read</p>
-              <p className="lp-art-text">
-                Four centuries later, Johannes Vermeer's quiet interiors continue to captivate millions. But what exactly makes
-                his paintings feel so modern? This essay explores the subtle psychology of light, attention, and why slowing
-                down in front of a single painting can change the way we see the world.
-                <a href="#" onClick={e => { e.preventDefault(); setShowModal(true); }}>Read full article →</a>
+              </h2>
+              <p
+                style={{
+                  marginTop: 8,
+                  fontSize: "0.9375rem",
+                  lineHeight: 1.7,
+                  color: "var(--ink-soft)",
+                }}
+              >
+                {essay.description}
               </p>
-            </div>
-
-            <div className="lp-article">
-              <p className="lp-art-meta">👗 Fashion</p>
-              <h3 className="lp-art-title">Why Quiet Luxury Took Over Fashion</h3>
-              <p className="lp-art-source">The Business of Fashion · 7 min read</p>
-              <p className="lp-art-text">
-                Logos are fading, craftsmanship is back, and understated elegance has become the industry's biggest statement.
-                Beyond the trend, this piece explains the cultural and economic forces that made "quiet luxury" the defining
-                aesthetic of the decade.
-                <a href="#" onClick={e => { e.preventDefault(); setShowModal(true); }}>Read full article →</a>
+              <p style={{ marginTop: 12 }}>
+                <Link
+                  href={`/essays/${essay.slug}/`}
+                  style={{
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                    color: "var(--accent)",
+                    textDecoration: "none",
+                  }}
+                >
+                  Read essay →
+                </Link>
               </p>
-            </div>
-          </div>
+            </article>
+          ))}
         </div>
-
-        {/* HOW IT WORKS */}
-        <div className="lp-band">
-          <div className="lp-band-inner">
-            <p className="lp-label lp-accent-label">How it works</p>
-            <h2 className="lp-h2">Simple by design. Powerful under the hood.</h2>
-            <div className="lp-steps">
-              {[
-                { n: "01", title: "Choose your topics", body: "Pick three interest areas from 15 categories — history, economics, science, world politics, and more." },
-                { n: "02", title: "We scan the web for you", body: "Every day, hundreds of sources are scanned. Only the best long-form article per category makes the cut." },
-                { n: "03", title: "Ready every morning", body: "Your article and podcast episode arrive every morning — on your dashboard and in your inbox, ready to read." },
-              ].map(s => (
-                <div key={s.n} className="lp-step">
-                  <div className="lp-step-num">{s.n}</div>
-                  <h3>{s.title}</h3>
-                  <p>{s.body}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* BOTTOM CTA */}
-        <div className="lp-cta-bottom">
-          <h2>Start your morning ritual.</h2>
-          <p>
-            We grow because readers share us with people they trust.
-          </p>
-          <button onClick={() => setShowModal(true)} className="lp-cta">
-            Start reading for free →
-          </button>
-          <span className="lp-note">Takes 30 seconds to set up</span>
-        </div>
-
-        {/* FOOTER */}
-        <footer className="lp-footer">
-          <p>© 2026 Cogletta · 3 articles + 2 podcasts, every morning</p>
-          <p>
-            <Link href="/login">Sign in</Link>
-            {" · "}
-            <Link href="/essays">Essays</Link>
-            {" · "}
-            <Link href="/legal">Terms</Link>
-            {" · "}
-            <Link href="/legal">Privacy</Link>
-            {" · "}
-            <a href="mailto:read@cogletta.com">read@cogletta.com</a>
-          </p>
-        </footer>
-
-      </div>
+      </main>
     </>
   );
 }

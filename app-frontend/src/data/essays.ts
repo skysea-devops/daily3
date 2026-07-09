@@ -28,62 +28,81 @@ export interface Essay {
 export const ESSAYS: Essay[] = [
   {
     slug: "we-didnt-stop-reading",
-    title: "We Didn't Stop Reading. We Lost the Habit.",
+    title: "We Didn't Stop Reading. We Stopped Choosing What to Read.",
     description:
-      "We consume more text than any generation before us, yet remember less of it. On fragmented attention, the quiet death of the reading habit — and how to get it back.",
+      "A short essay on fragmented attention, the loss of reading habits, and why finding a few good articles has become harder than reading them.",
     date: "2026-07-09",
-    readingMinutes: 5,
+    readingMinutes: 4,
     blocks: [
       {
         type: "p",
-        text: "Somewhere along the way, many of us stopped reading regularly. Not reading in the literal sense — by that measure we read more than any generation in history. Messages, captions, headlines, threads. Hours of text pass through us every day. But at the end of most days, it is strangely hard to name a single thing we actually learned.",
+        text: "Here's something I've been thinking about. We might actually be reading more than ever before. Every day we move through hundreds of messages, headlines, social media posts, comments, and emails — perhaps no generation has ever been exposed to this much written content. But if we stopped at the end of the day and asked ourselves, “What did I actually learn today?”, it would often be difficult to answer.",
       },
       {
         type: "p",
-        text: "Reading itself didn't disappear. The habit did.",
+        text: "We didn't stop reading. But our relationship with reading has changed.",
       },
-      { type: "h2", text: "Consumption is not the same as reading" },
+      { type: "h2", text: "Consuming isn't the same as reading" },
       {
         type: "p",
-        text: "The difference is easy to miss because both look identical from the outside: eyes on a screen, thumb occasionally moving. But they are opposite activities. Consumption is reactive — something appears, you respond to it, it is replaced. Reading is cumulative — you stay with one line of thought long enough for it to connect with what you already know. One fills time. The other builds something.",
-      },
-      {
-        type: "p",
-        text: "Fragmented attention is not a personal failure. It is the intended outcome of products engineered by thousands of very smart people whose success is measured in minutes of your day. A feed that let you finish would be, by its own metrics, a broken feed. The fragmentation is the feature.",
-      },
-      { type: "h2", text: "What the old habit actually gave us" },
-      {
-        type: "p",
-        text: "I keep returning to how I used to read. I would pick up a magazine or a newspaper, discover articles I never would have searched for, and gradually build knowledge around the topics that interested me. Nobody optimized that experience. And that was precisely its value.",
+        text: "We look at screens. We read words. Our thumb keeps scrolling. But the two experiences are completely different: one keeps placing something new in front of us, the other asks us to stay with a single idea for a little longer. One simply fills time. The other leaves us with something.",
       },
       {
         type: "p",
-        text: "Three things made it work. It was bounded — an issue had a last page, so reading had a natural end. It was chosen — I picked the magazine, and everything in it flowed from that one deliberate decision, not from a thousand micro-decisions made under pressure. And it was slow — long pieces asked for twenty minutes of my attention, and in return they left something behind.",
+        text: "I think that's what many of us have been missing.",
+      },
+      { type: "h2", text: "I first noticed it in myself" },
+      {
+        type: "p",
+        text: "Some time ago, I realized something. I could spend hours on my phone, put it down, and barely remember anything I had just read. I was constantly seeing new things — but I wasn't really reading. What surprised me even more was that, for a long time, I thought the problem was me.",
       },
       {
         type: "quote",
-        text: "A habit is not built on willpower. It is built on a container — a fixed time, a fixed amount, a natural end.",
+        text: "I need to be more disciplined. I should spend less time on my phone. I should read more books.",
       },
       {
         type: "p",
-        text: "That is why 'read more' fails as a resolution. Willpower loses to an infinite feed every single time, because the feed never gets tired and you do. The old reading habit didn't survive on discipline. It survived on structure — and when the structure disappeared, the habit went with it.",
+        text: "Maybe I was the problem. I don't think that anymore.",
       },
-      { type: "h2", text: "Rebuilding the container" },
+      { type: "h2", text: "Maybe the problem wasn't us" },
       {
         type: "p",
-        text: "This is the idea Cogletta is built on. Every morning it delivers a small, fixed collection of thoughtfully selected long-form articles based on your interests — and then it stops. No algorithm competing for your attention. No endless feed to scroll through. Just a bounded, chosen, slow ration of reading, the way a good magazine used to be.",
-      },
-      {
-        type: "ul",
-        items: [
-          "Bounded: a fixed daily ration you can actually finish.",
-          "Chosen: one deliberate decision — your interests — instead of a thousand impulsive ones.",
-          "Slow: long-form pieces that reward attention rather than harvest it.",
-        ],
+        text: "Most of the products we use today are designed to keep our attention for as long as possible. That doesn't make them malicious — it's simply what they were built to do. A feed is never supposed to end, because the moment it does, you leave. So there's always one more post. Then another. Then another.",
       },
       {
         type: "p",
-        text: "None of this is nostalgia. The old media world had plenty of problems, and the internet gives us access to more good writing than any newsstand ever could. The problem was never the supply of things worth reading. It was the loss of a structure that let us read them. Rebuild the container, and the habit follows. If you think like me — you're in the right place.",
+        text: "After a while, reading starts to feel less like thinking and more like consuming.",
+      },
+      { type: "h2", text: "What magazines got right" },
+      {
+        type: "p",
+        text: "I only understood this later. I used to buy magazines, or spend Sunday mornings reading the newspaper supplements. Whenever I came across an article about something I cared about, I'd read it with genuine curiosity, trying to understand it rather than simply get through it. More often than not, I'd finish thinking, “I'm glad I read that.”",
+      },
+      {
+        type: "p",
+        text: "Today, there are millions of thoughtful articles on the internet — probably more than ever before. But finding them has become more exhausting than reading them.",
+      },
+      { type: "h2", text: "I wanted my reading habit back" },
+      {
+        type: "p",
+        text: "What I missed was the habit of regularly reading thoughtful, up-to-date articles about the subjects I genuinely care about. Not feeling like I had to keep up with everything — just starting the day with a few carefully chosen articles.",
+      },
+      {
+        type: "p",
+        text: "Cogletta wasn't built to create more content; the internet already has more than enough of that. Its purpose is simply to bring together a small collection of thoughtfully selected articles every morning. Not out of nostalgia for paper, and not because we should abandon our screens — but because technology can help us build better reading habits instead of constantly competing for our attention.",
+      },
+      { type: "h2", text: "Final thoughts" },
+      {
+        type: "p",
+        text: "Maybe rebuilding a reading habit isn't about having more discipline. Maybe it's about having a simple starting point that helps us find a few things worth reading among the thousands competing for our attention every day. Life is already complicated enough. Learning doesn't have to be.",
+      },
+      {
+        type: "p",
+        text: "I built Cogletta because I wanted to rebuild the reading habit I had gradually lost — not by going backwards, but by making better use of the tools we already have.",
+      },
+      {
+        type: "p",
+        text: "Maybe what we're missing isn't more content. Maybe it's simply a few good articles that make us want to read again.",
       },
     ],
   },
