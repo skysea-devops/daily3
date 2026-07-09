@@ -20,57 +20,89 @@ export interface Essay {
   slug: string;          // URL segment: /essays/<slug>/
   title: string;
   description: string;   // Used for <meta description> and list page — keep under ~160 chars
-  date: string;          // ISO format: "2026-07-08"
+  date: string;          // ISO format: "2026-07-09"
   readingMinutes: number;
   blocks: EssayBlock[];
 }
 
 export const ESSAYS: Essay[] = [
   {
-    slug: "reading-without-a-feed",
-    title: "Reading Without a Feed",
+    slug: "we-didnt-stop-reading",
+    title: "We Didn't Stop Reading. We Stopped Choosing What to Read.",
     description:
-      "Why we built Cogletta around a fixed daily ration of long-form reading — and what infinite scroll quietly took from us.",
-    date: "2026-07-08",
-    readingMinutes: 5,
+      "A short essay on fragmented attention, the loss of reading habits, and why finding a few good articles has become harder than reading them.",
+    date: "2026-07-09",
+    readingMinutes: 4,
     blocks: [
       {
         type: "p",
-        text: "There is a particular kind of tiredness that comes not from reading too much, but from deciding too much. Every feed is a slot machine of decisions: read this? skip that? save for later? The content itself is rarely the exhausting part. The choosing is.",
+        text: "Here's something I've been thinking about. We might actually be reading more than ever before. Every day we move through hundreds of messages, headlines, social media posts, comments, and emails — perhaps no generation has ever been exposed to this much written content. But if we stopped at the end of the day and asked ourselves, “What did I actually learn today?”, it would often be difficult to answer.",
       },
       {
         type: "p",
-        text: "For most of the history of reading, this problem did not exist. A newspaper arrived once a day and was finite. A book sat on the nightstand and did not update itself overnight. You could finish. Finishing mattered — it created a natural boundary between reading and living.",
+        text: "We didn't stop reading. But our relationship with reading has changed.",
       },
-      { type: "h2", text: "The disappearance of 'done'" },
+      { type: "h2", text: "Consuming isn't the same as reading" },
       {
         type: "p",
-        text: "Feeds removed the concept of done. There is no last tweet, no final video, no bottom of the page. Products are honest about this in their metrics — 'time spent' is the number that gets celebrated — but dishonest about it in their framing, which still borrows the language of reading: stories, articles, editions.",
+        text: "We look at screens. We read words. Our thumb keeps scrolling. But the two experiences are completely different: one keeps placing something new in front of us, the other asks us to stay with a single idea for a little longer. One simply fills time. The other leaves us with something.",
+      },
+      {
+        type: "p",
+        text: "I think that's what many of us have been missing.",
+      },
+      { type: "h2", text: "I first noticed it in myself" },
+      {
+        type: "p",
+        text: "Some time ago, I realized something. I could spend hours on my phone, put it down, and barely remember anything I had just read. I was constantly seeing new things — but I wasn't really reading. What surprised me even more was that, for a long time, I thought the problem was me.",
       },
       {
         type: "quote",
-        text: "The scarcest resource is no longer information. It is the attention required to make sense of it.",
+        text: "I need to be more disciplined. I should spend less time on my phone. I should read more books.",
       },
       {
         type: "p",
-        text: "What gets lost is not just time. It is the specific mental state that long-form reading requires: the willingness to stay with one argument for twenty minutes, to let an author build something slowly, to be occasionally bored on the way to being changed. That state does not survive next to an infinite alternative.",
+        text: "Maybe I was the problem. I don't think that anymore.",
       },
-      { type: "h2", text: "A fixed ration" },
+      { type: "h2", text: "Maybe the problem wasn't us" },
       {
         type: "p",
-        text: "This is why Cogletta delivers a fixed number of pieces each morning and then stops. Not because more would be expensive, but because more would be worse. A bounded reading list restores the possibility of finishing — and finishing restores the possibility of actually thinking about what you read.",
-      },
-      {
-        type: "ul",
-        items: [
-          "A finite list can be completed; a feed can only be abandoned.",
-          "Fewer choices per day means more attention per piece.",
-          "What you finish, you remember. What you scroll, you don't.",
-        ],
+        text: "Most of the products we use today are designed to keep our attention for as long as possible. That doesn't make them malicious — it's simply what they were built to do. A feed is never supposed to end, because the moment it does, you leave. So there's always one more post. Then another. Then another.",
       },
       {
         type: "p",
-        text: "None of this is nostalgia for print. It is an argument about design: the container shapes the reading. Build the container for depth, and depth becomes the default again.",
+        text: "After a while, reading starts to feel less like thinking and more like consuming.",
+      },
+      { type: "h2", text: "What magazines got right" },
+      {
+        type: "p",
+        text: "I only understood this later. I used to buy magazines, or spend Sunday mornings reading the newspaper supplements. Whenever I came across an article about something I cared about, I'd read it with genuine curiosity, trying to understand it rather than simply get through it. More often than not, I'd finish thinking, “I'm glad I read that.”",
+      },
+      {
+        type: "p",
+        text: "Today, there are millions of thoughtful articles on the internet — probably more than ever before. But finding them has become more exhausting than reading them.",
+      },
+      { type: "h2", text: "I wanted my reading habit back" },
+      {
+        type: "p",
+        text: "What I missed was the habit of regularly reading thoughtful, up-to-date articles about the subjects I genuinely care about. Not feeling like I had to keep up with everything — just starting the day with a few carefully chosen articles.",
+      },
+      {
+        type: "p",
+        text: "Cogletta wasn't built to create more content; the internet already has more than enough of that. Its purpose is simply to bring together a small collection of thoughtfully selected articles every morning. Not out of nostalgia for paper, and not because we should abandon our screens — but because technology can help us build better reading habits instead of constantly competing for our attention.",
+      },
+      { type: "h2", text: "Final thoughts" },
+      {
+        type: "p",
+        text: "Maybe rebuilding a reading habit isn't about having more discipline. Maybe it's about having a simple starting point that helps us find a few things worth reading among the thousands competing for our attention every day. Life is already complicated enough. Learning doesn't have to be.",
+      },
+      {
+        type: "p",
+        text: "I built Cogletta because I wanted to rebuild the reading habit I had gradually lost — not by going backwards, but by making better use of the tools we already have.",
+      },
+      {
+        type: "p",
+        text: "Maybe what we're missing isn't more content. Maybe it's simply a few good articles that make us want to read again.",
       },
     ],
   },
