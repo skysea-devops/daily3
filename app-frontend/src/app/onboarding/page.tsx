@@ -10,19 +10,25 @@ import { CATEGORIES } from "@/lib/constants";
 
 function OnboardingForm() {
   const router = useRouter();
-  const { user, markInterestsSaved } = useAuth();
+  const { user, plan, markInterestsSaved } = useAuth();
+
+  const isPro = plan === "pro";
+  const maxTopics = isPro ? 3 : 1;
 
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   function toggleCategory(id: string) {
     if (selected.includes(id)) { setSelected(selected.filter(c => c !== id)); return; }
-    if (selected.length === 3) return;
+    if (selected.length >= maxTopics) {
+      if (maxTopics === 1) { setSelected([id]); } // free: seçimi değiştir (radyo davranışı)
+      return;
+    }
     setSelected([...selected, id]);
   }
 
   async function continueToDashboard() {
-    if (selected.length !== 3 || !user) return;
+    if (selected.length !== maxTopics || !user) return;
     setLoading(true);
     try {
       await updateUserInterests(selected, user.accessToken);
@@ -50,9 +56,16 @@ function OnboardingForm() {
           Choose your interests
         </h1>
 
-        <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: 32 }}>
-          Pick 3 topics. Every morning, Cogletta selects one article and one podcast from across your interests.
+        <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: isPro ? 32 : 8 }}>
+          {isPro
+            ? "Pick 3 topics. Every morning, Cogletta selects an article for each, plus two podcasts."
+            : "Pick one topic to start. Every morning, Cogletta selects an article and a podcast episode about it."}
         </p>
+        {!isPro && (
+          <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", marginBottom: 32 }}>
+            Pro readers follow 3 topics — with an article for each, every morning. You can upgrade anytime in Settings.
+          </p>
+        )}
 
         <div style={{
           display: "grid",
@@ -98,12 +111,14 @@ function OnboardingForm() {
 
         <div style={{ marginTop: 32, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>
-            {selected.length === 3 ? "Ready! 3 topics selected" : `${selected.length}/3 selected`}
+            {selected.length === maxTopics
+              ? `Ready! ${maxTopics === 1 ? "Topic" : `${maxTopics} topics`} selected`
+              : `${selected.length}/${maxTopics} selected`}
           </p>
 
           <button
             onClick={continueToDashboard}
-            disabled={selected.length !== 3 || loading}
+            disabled={selected.length !== maxTopics || loading}
             style={{
               background: "var(--ink)",
               color: "var(--white)",
@@ -112,8 +127,8 @@ function OnboardingForm() {
               padding: "12px 24px",
               fontSize: "0.9375rem",
               fontWeight: 600,
-              cursor: selected.length !== 3 || loading ? "not-allowed" : "pointer",
-              opacity: selected.length !== 3 || loading ? 0.3 : 1,
+              cursor: selected.length !== maxTopics || loading ? "not-allowed" : "pointer",
+              opacity: selected.length !== maxTopics || loading ? 0.3 : 1,
               transition: "opacity 0.15s",
             }}
           >

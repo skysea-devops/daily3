@@ -8,9 +8,9 @@ import Navbar from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
 
 const FREE_FEATURES = [
-  "1 curated article daily, across your 3 interests",
+  "1 curated article daily on your chosen topic",
   "1 podcast recommendation daily",
-  "Choose 3 from 15 interest categories",
+  "Choose 1 of 15 interest categories",
   "Daily email digest",
   "Editorial commentary on each article",
 ];
