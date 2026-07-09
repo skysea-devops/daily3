@@ -193,13 +193,16 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Lex Fridman Podcast",         url: "https://lexfridman.com/feed/podcast/" },
     { name: "Hard Fork",                   url: "https://feeds.simplecast.com/l2i9YnTd" },
     { name: "StarTalk Radio",              url: "https://feeds.simplecast.com/4T39_jAj" },
+    { name: "Acquired",                    url: "https://feeds.transistor.fm/acquired" },
+    { name: "Search Engine",               url: "https://rss.amperwave.net/v2/feed/audacynetwork/search-engine" },
   ],
 
   "World Politics": [
-    { name: "War on the Rocks",            url: "https://warontherocks.com/feed/podcast/" },
+    { name: "War on the Rocks",            url: "https://rss.libsyn.com/shows/70702/destinations/298196.xml" },
     { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
     { name: "BBC Global News Podcast",     url: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss" },
     { name: "From Our Own Correspondent",  url: "https://podcasts.files.bbci.co.uk/b006qjlq.rss" },
+    { name: "The Foreign Affairs Interview", url: "https://feed.podbean.com/foreignaffairsmagazine/feed.xml" },
   ],
 
   "Business": [
@@ -215,14 +218,14 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "EconTalk",                    url: "https://feeds.simplecast.com/wgl4xEgL" },
     { name: "The Indicator",               url: "https://feeds.npr.org/510325/podcast.xml" },
     { name: "Freakonomics Radio",          url: "https://feeds.simplecast.com/Y8lFbOT4" },
-    { name: "Fresh Air (Economics)",       url: "https://feeds.npr.org/381444908/podcast.xml" },
+    { name: "Macro Musings",               url: "https://macromusings.libsyn.com/rss" },
   ],
 
   "Science": [
     { name: "In Our Time",                 url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
-    { name: "Science Friday",              url: "https://feeds.feedburner.com/sciencefriday" },
+    { name: "Science Friday",              url: "https://feeds.simplecast.com/h18ZIZD_" },
     { name: "Huberman Lab",                url: "https://feeds.megaphone.fm/hubermanlab" },
-    { name: "Fresh Air (Science)",         url: "https://feeds.npr.org/381444908/podcast.xml" },
+    { name: "Radiolab",                    url: "http://feeds.wnyc.org/radiolab" },
     { name: "Lex Fridman Podcast",         url: "https://lexfridman.com/feed/podcast/" },
   ],
 
@@ -239,7 +242,7 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "In Our Time",                 url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
     { name: "Throughline",                 url: "https://feeds.npr.org/510333/podcast.xml" },
     { name: "American History Tellers",    url: "https://rss.art19.com/american-history-tellers" },
-    { name: "Fresh Air (History)",         url: "https://feeds.npr.org/381444908/podcast.xml" },
+    { name: "Tides of History",            url: "https://rss.art19.com/tides-of-history" },
   ],
 
   "Arts & Culture": [
@@ -247,10 +250,11 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "99% Invisible",               url: "https://feeds.simplecast.com/BqbsxVfO" },
     { name: "Fresh Air (Arts)",            url: "https://feeds.npr.org/381444908/podcast.xml" },
     { name: "Friday Night Comedy (BBC)",   url: "https://podcasts.files.bbci.co.uk/p02pc9pj.rss" },
+    { name: "The Week in Art",             url: "https://feeds.acast.com/public/shows/5e29a2ef7644ff6b3f984cff" },
   ],
 
   "Military": [
-    { name: "War on the Rocks",            url: "https://warontherocks.com/feed/podcast/" },
+    { name: "War on the Rocks",            url: "https://rss.libsyn.com/shows/70702/destinations/298196.xml" },
     { name: "Modern War Institute",        url: "https://mwi.westpoint.edu/category/podcasts/feed/" },
     { name: "BBC Global News Podcast",     url: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss" },
     { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
@@ -260,17 +264,17 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
   "Health": [
     { name: "Huberman Lab",                url: "https://feeds.megaphone.fm/hubermanlab" },
     { name: "Hidden Brain",                url: "https://feeds.npr.org/510308/podcast.xml" },
-    { name: "Fresh Air (Health)",          url: "https://feeds.npr.org/381444908/podcast.xml" },
     { name: "In Our Time (Medicine)",      url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
-    { name: "Science Friday",              url: "https://feeds.feedburner.com/sciencefriday" },
+    { name: "Science Friday",              url: "https://feeds.simplecast.com/h18ZIZD_" },
+    { name: "The Peter Attia Drive",       url: "https://peterattiadrive.libsyn.com/rss" },
   ],
 
   "Environment": [
-    { name: "How to Save a Planet",        url: "https://feeds.megaphone.fm/howtosaveaplanet" },
-    { name: "Costing the Earth",           url: "https://podcasts.files.bbci.co.uk/b006r4wn.rss" },
-    { name: "Fresh Air (Environment)",     url: "https://feeds.npr.org/381444908/podcast.xml" },
+    { name: "Volts",                       url: "https://www.volts.wtf/feed" },
+    { name: "Outside/In",                  url: "https://rss.introcast.io/1061222770/feeds.megaphone.fm/TPG9719828981" },
+    { name: "Emergence Magazine",          url: "https://feeds.captivate.fm/emergence-magazine/" },
+    { name: "The Climate Question (BBC)",  url: "https://podcasts.files.bbci.co.uk/w13xtvb6.rss" },
     { name: "BBC Global News Podcast",     url: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss" },
-    { name: "Throughline",                 url: "https://feeds.npr.org/510333/podcast.xml" },
   ],
 
   "Philosophy & Ethics": [
@@ -278,17 +282,23 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Philosophize This!",          url: "https://feeds.feedburner.com/philosophizethis" },
     { name: "The Partially Examined Life", url: "https://partiallyexaminedlife.com/feed/podcast/" },
     { name: "Hidden Brain",                url: "https://feeds.npr.org/510308/podcast.xml" },
+    { name: "Philosophy Bites",            url: "https://philosophybites.libsyn.com/rss" },
   ],
 
   "Fashion & Style": [
-    { name: "Fresh Air (Arts)",            url: "https://feeds.npr.org/381444908/podcast.xml" },
     { name: "99% Invisible",               url: "https://feeds.simplecast.com/BqbsxVfO" },
-    { name: "Switched on Pop",             url: "https://feeds.megaphone.fm/switchedonpop" },
+    { name: "The BoF Podcast",             url: "https://feeds.acast.com/public/shows/6355d904dd5e0e0012da88d1" },
+    { name: "The Glossy Podcast",          url: "https://feeds.megaphone.fm/DIGI4036367252" },
+    { name: "Articles of Interest",        url: "https://feed.articlesofinterest.club/" },
+    { name: "Dressed: History of Fashion", url: "https://feeds.megaphone.fm/ARML9655034287" },
   ],
 
   "Life & Relationships": [
     { name: "Hidden Brain",                url: "https://feeds.npr.org/510308/podcast.xml" },
     { name: "Fresh Air",                   url: "https://feeds.npr.org/381444908/podcast.xml" },
+    { name: "Where Should We Begin?",      url: "https://feeds.megaphone.fm/ep-wswb" },
+    { name: "The Happiness Lab",           url: "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/96c5c41e-0bc8-4661-b184-ae32006cd726/d623ef0b-3fee-4c26-b815-ae32006cd739/podcast.rss" },
+    { name: "The Science of Happiness",    url: "http://feeds.feedburner.com/TheScienceOfHappiness" },
   ],
 };
 
