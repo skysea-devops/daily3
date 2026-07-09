@@ -203,6 +203,7 @@ function InterestsForm() {
   const { user, plan, markInterestsSaved } = useAuth();
 
   const isPro = plan === "pro";
+  const maxTopics = isPro ? 3 : 1;
 
   const [selected, setSelected]           = useState<string[]>([]);
   const [subTopics, setSubTopics]         = useState<Record<string, string[]>>({});
@@ -218,7 +219,7 @@ function InterestsForm() {
       try {
         const { getUserProfile } = await import("@/lib/api");
         const profile = await getUserProfile(user!.accessToken);
-        if (profile.interests?.length === 3) {
+        if (profile.interests && profile.interests.length >= 1) {
           setSelected(profile.interests);
           localStorage.setItem("cogletta-categories", JSON.stringify(profile.interests));
         } else {
@@ -248,7 +249,13 @@ function InterestsForm() {
       setSaved(false);
       return;
     }
-    if (selected.length >= 3) return;
+    if (selected.length >= maxTopics) {
+      if (maxTopics === 1) {
+        setSelected([id]); // free: seçimi değiştir (radyo davranışı)
+        setSaved(false);
+      }
+      return;
+    }
     setSelected([...selected, id]);
     setSaved(false);
   }
@@ -261,7 +268,7 @@ function InterestsForm() {
   }
 
   async function handleSave() {
-    if (selected.length !== 3 || !user) return;
+    if (selected.length !== maxTopics || !user) return;
     setLoading(true);
     setSaved(false);
     setShowTomorrow(false);
@@ -311,9 +318,20 @@ function InterestsForm() {
         <h1 style={{ fontFamily: "'Lora', serif", fontSize: "2rem", fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}>
           Your interests
         </h1>
-        <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: 32 }}>
-          Pick 3 topics. Your content refreshes every morning at 07:00.
+        <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: isPro ? 32 : 8 }}>
+          {isPro
+            ? "Pick 3 topics. Your content refreshes every morning at 07:00."
+            : "Pick your topic. Your content refreshes every morning at 07:00."}
         </p>
+        {!isPro && (
+          <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", marginBottom: 32 }}>
+            Free plan follows one topic.{" "}
+            <a href="/register#pro" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
+              Upgrade to Pro
+            </a>{" "}
+            to follow 3 topics with an article for each, plus sub-topics and weekly trend reports.
+          </p>
+        )}
 
         {showTomorrow && (
           <div style={{
@@ -406,14 +424,16 @@ function InterestsForm() {
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>
-            {selected.length === 3 ? "Ready! 3 topics selected" : `${selected.length}/3 selected`}
+            {selected.length === maxTopics
+              ? `Ready! ${maxTopics === 1 ? "Topic" : `${maxTopics} topics`} selected`
+              : `${selected.length}/${maxTopics} selected`}
           </p>
-          <button onClick={handleSave} disabled={selected.length !== 3 || loading || showTomorrow}
+          <button onClick={handleSave} disabled={selected.length !== maxTopics || loading || showTomorrow}
             style={{
               background: saved ? "#166534" : "var(--ink)",
               color: "var(--white)", border: "none", borderRadius: 10,
               padding: "12px 28px", fontSize: "0.9375rem", fontWeight: 600,
-              cursor: "pointer", opacity: (selected.length !== 3 || loading || showTomorrow) ? 0.3 : 1,
+              cursor: "pointer", opacity: (selected.length !== maxTopics || loading || showTomorrow) ? 0.3 : 1,
             }}>
             {loading ? "Saving..." : saved ? "Saved! ✓" : "Save interests"}
           </button>

@@ -82,26 +82,58 @@ export const handler = async (
 
     if (
       !Array.isArray(interests) ||
-      interests.length !== 3 ||
       !interests.every((i) => typeof i === "string" && i.trim().length > 0)
     ) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ message: "Exactly 3 non-empty interest strings are required." }),
+        body: JSON.stringify({ message: "interests must be an array of non-empty strings." }),
+      };
+    }
+
+    // Developer bypass — DEVELOPER_USER_IDS env var'ında olan kullanıcılar için limit yok
+    const isDeveloper = DEVELOPER_USER_IDS.has(userId);
+
+    // Plan'ı validasyondan ÖNCE oku: free → tam 1 interest, pro → tam 3 interest.
+    // (#plan rezerve kelime olduğu için ExpressionAttributeNames şart.)
+    let plan = "free";
+    try {
+      const profileResult = await dynamo.send(
+        new GetCommand({
+          TableName: USERS_TABLE_NAME,
+          Key: { PK: `USER#${userId}`, SK: "PROFILE" },
+          ProjectionExpression: "#plan",
+          ExpressionAttributeNames: { "#plan": "plan" },
+        })
+      );
+      const rawPlan = profileResult.Item?.plan as string | undefined;
+      plan = rawPlan?.toLowerCase() === "pro" ? "pro" : "free";
+    } catch (err) {
+      console.warn("Failed to read plan, defaulting to free:", err);
+    }
+
+    const requiredCount = plan === "pro" ? 3 : 1;
+    const countValid = isDeveloper
+      ? interests.length >= 1 && interests.length <= 3
+      : interests.length === requiredCount;
+
+    if (!countValid) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          message: `Exactly ${requiredCount} interest${requiredCount > 1 ? "s are" : " is"} required on the ${plan} plan.`,
+        }),
       };
     }
 
     const now = new Date().toISOString();
 
-    // Developer bypass — DEVELOPER_USER_IDS env var'ında olan kullanıcılar için limit yok
-    const isDeveloper = DEVELOPER_USER_IDS.has(userId);
-
     // Bugün için makale zaten üretilmiş mi kontrol et (developer'lar için atla)
     const alreadyGenerated = !isDeveloper && await articlesExistToday(userId);
 
     // Interests'i her halükarda kaydet
-    const updateResult = await dynamo.send(
+    await dynamo.send(
       new UpdateCommand({
         TableName: USERS_TABLE_NAME,
         Key: { PK: `USER#${userId}`, SK: "PROFILE" },
@@ -119,7 +151,6 @@ export const handler = async (
       })
     );
 
-    const plan  = (updateResult.Attributes?.plan as string | undefined) ?? "free";
     const email = emailFromBody ?? (claims["email"] as string | undefined) ?? undefined;
 
     if (alreadyGenerated) {
