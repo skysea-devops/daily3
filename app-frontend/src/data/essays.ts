@@ -60,10 +60,7 @@ export const ESSAYS: Essay[] = [
         type: "quote",
         text: "I need to be more disciplined. I should spend less time on my phone. I should read more books.",
       },
-      {
-        type: "p",
-        text: "Maybe I was the problem. I don't think that anymore.",
-      },
+     
       { type: "h2", text: "Maybe the problem wasn't us" },
       {
         type: "p",

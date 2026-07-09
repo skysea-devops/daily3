@@ -260,7 +260,7 @@ export default function HomePage() {
           <span className="lp-eyebrow">Curated for you. Every morning.</span>
           <h1 className="lp-h1">Read what<br /><em>matters to you.</em></h1>
           <p className="lp-sub">
-            Every morning, carefully selected long-form articles and podcasts episodes on the topic you actually care about — curated and delivered to your inbox.
+            Every morning, carefully selected articles and podcast episodes on the topic you actually care about — curated and delivered to your inbox.
           </p>
           <button onClick={() => setShowModal(true)} className="lp-cta">
             Start reading for free →
@@ -355,7 +355,7 @@ export default function HomePage() {
             I started thinking about how I used to read. I'd pick up a magazine or newspaper, discover thoughtful articles, and gradually build knowledge around  <strong>the topics that interested me.</strong> I wanted that feeling back.
           </p>
           <p className="lp-p">
-            That's why I built Cogletta. Every morning, Cogletta delivers a small collection of thoughtfully selected long-form articles based on your interests. No algorithms competing for your attention. No endless feed to scroll through.If you think like me — you're in the right place.
+            That's why I built Cogletta. Every morning, Cogletta delivers a small collection of thoughtfully selected articles based on your interests. No algorithms competing for your attention. No endless feed to scroll through.If you think like me — you're in the right place.
           </p>
           <p className="lp-sig">— Ismail Gokdeniz - Founder, Cogletta</p>
         </section>
@@ -367,7 +367,7 @@ export default function HomePage() {
           <h2 className="lp-h2">Everything you need to build a reading habit.</h2>
           <div className="lp-features">
             {[
-              { icon: "📰", title: "3 curated articles daily (1 in free plan)" , body: "Long-form, substantive pieces from think-tanks, academic journals, and quality publications. Pro readers follow 3 interests and get an article for each." },
+              { icon: "📰", title: "3 curated articles daily (1 in free plan)" , body: "Substantive pieces from think-tanks, academic journals, and quality publications. Pro readers follow 3 interests and get an article for each." },
               { icon: "✉️", title: "Daily email digest", body: "Your article and podcast delivered to your inbox every morning. Clean, readable." },
               { icon: "💡", title: "Why we picked this for you", body: "Each article comes with a short editorial note — why this piece, why today, why it's worth your time." },
               { icon: "🎙", title: "2 podcast episode daily (1 in free plan)", body: "A carefully selected episode from top podcasts in your interest area — paired with your article every morning." },
@@ -421,7 +421,7 @@ export default function HomePage() {
             <div className="lp-steps">
               {[
                 { n: "01", title: "Choose your topics", body: "Pick your interest area from 15 categories — history, economics, science, world politics, and more. Pro readers follow three." },
-                { n: "02", title: "We scan the web for you", body: "Every day, hundreds of sources are scanned. Only the best long-form article per category makes the cut." },
+                { n: "02", title: "We scan the web for you", body: "Every day, hundreds of sources are scanned. Only the best article per category makes the cut." },
                 { n: "03", title: "Ready every morning", body: "Your article and podcast episode arrive every morning — on your dashboard and in your inbox, ready to read." },
               ].map(s => (
                 <div key={s.n} className="lp-step">

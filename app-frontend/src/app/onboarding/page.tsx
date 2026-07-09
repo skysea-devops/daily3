@@ -59,7 +59,7 @@ function OnboardingForm() {
         <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: isPro ? 32 : 8 }}>
           {isPro
             ? "Pick 3 topics. Every morning, Cogletta selects an article for each, plus two podcasts."
-            : "Pick one topic to start. Every morning, Cogletta selects a long-form article and a podcast episode about it."}
+            : "Pick one topic to start. Every morning, Cogletta selects an article and a podcast episode about it."}
         </p>
         {!isPro && (
           <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", marginBottom: 32 }}>
