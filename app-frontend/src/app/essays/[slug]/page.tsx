@@ -216,7 +216,7 @@ export default async function EssayPage({ params }: Props) {
           }}
         >
           <p>
-            Cogletta delivers three long-form articles and two podcast episodes
+            Cogletta delivers three curated articles and two podcast episodes
             on your interests, every morning.{" "}
             <Link href="/" style={{ color: "var(--accent)", textDecoration: "none" }}>
               Start reading for free →

@@ -84,7 +84,7 @@ function buildWelcomeHtml(email: string): string {
                     <span style="font-size:14px;color:#9ca3af;">→</span>
                   </td>
                   <td style="padding:0 0 10px 16px;">
-                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">A carefully selected long-form article based on your interests — substantive pieces from think-tanks, academic journals, and quality publications <span style="color:#9ca3af;">(3 per day, one for each interest, with Pro)</span></p>
+                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">A carefully selected article based on your interests — substantive pieces from think-tanks, academic journals, and quality publications <span style="color:#9ca3af;">(3 per day, one for each interest, with Pro)</span></p>
                   </td>
                 </tr>
                 <tr>
@@ -171,7 +171,7 @@ A FEW THINGS TO KNOW
 → You can change your topics anytime from the Interests page. Changes take effect the next morning.
 
 HERE'S WHAT WE SHARE WITH YOU EVERY DAY
-→ A carefully selected long-form article based on your interests — substantive pieces from think-tanks, academic journals, and quality publications (3 per day, one for each interest, with Pro)
+→ A carefully selected article based on your interests — substantive pieces from think-tanks, academic journals, and quality publications (3 per day, one for each interest, with Pro)
 → A podcast episode from top shows in your interest area — paired with your article every morning (2 per day with Pro)
 → A short editorial note on each pick — why this piece, why today, why it matters
 
