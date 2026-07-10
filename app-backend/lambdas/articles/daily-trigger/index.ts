@@ -34,7 +34,9 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
       const userRegion = (item.region as string | undefined) ?? "EU";
       if (userRegion !== region) continue;
 
-      if (Array.isArray(interests) && interests.length === 3) {
+      // Free plan 1, Pro plan 3 interest kullanır — 1..3 aralığındaki herkesi işle.
+      // (Eski `=== 3` koşulu, 1 interest'e geçen free kullanıcıları sessizce atlıyordu.)
+      if (Array.isArray(interests) && interests.length >= 1 && interests.length <= 3) {
         // PK formatı: USER#<cognito-sub>
         const userId = (item.PK as string).replace("USER#", "");
         users.push({
