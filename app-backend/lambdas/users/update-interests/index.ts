@@ -133,20 +133,30 @@ export const handler = async (
     const alreadyGenerated = !isDeveloper && await articlesExistToday(userId);
 
     // Interests'i her halükarda kaydet
+    // Email'i yalnızca elimizde gerçekten varsa yaz. Access token'da email claim'i
+    // YOK (bilinen Cognito davranışı) — body'de de gelmediyse eski davranış null
+    // yazıp kayıtlı email'i siliyordu; bu da sabah e-postalarının atlanmasına yol açıyordu.
+    const resolvedEmail = emailFromBody ?? (claims["email"] as string | undefined) ?? null;
+
+    const setParts = ["interests = :interests", "updatedAt = :now", "subTopics = :subTopics", "#region = :region"];
+    const exprValues: Record<string, unknown> = {
+      ":interests": interests,
+      ":now":       now,
+      ":subTopics": subTopics,
+      ":region":    region,
+    };
+    if (resolvedEmail) {
+      setParts.push("email = :email");
+      exprValues[":email"] = resolvedEmail;
+    }
+
     await dynamo.send(
       new UpdateCommand({
         TableName: USERS_TABLE_NAME,
         Key: { PK: `USER#${userId}`, SK: "PROFILE" },
-        UpdateExpression:
-          "SET interests = :interests, updatedAt = :now, email = :email, subTopics = :subTopics, #region = :region",
+        UpdateExpression: `SET ${setParts.join(", ")}`,
         ExpressionAttributeNames: { "#region": "region" }, // region rezerve kelime olabilir
-        ExpressionAttributeValues: {
-          ":interests":  interests,
-          ":now":        now,
-          ":email":      emailFromBody ?? (claims["email"] as string | undefined) ?? null,
-          ":subTopics":  subTopics,
-          ":region":     region,
-        },
+        ExpressionAttributeValues: exprValues,
         ReturnValues: "ALL_NEW",
       })
     );

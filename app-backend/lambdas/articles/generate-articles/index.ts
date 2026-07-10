@@ -159,7 +159,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
 
   "Fashion & Style": [
     { name: "Business of Fashion",     url: "https://www.businessoffashion.com/feed/" },
-    { name: "Glossy",                  url: "https://www.glossy.co/feed/" },
+
     { name: "Dazed (Fashion)",         url: "https://www.dazeddigital.com/rss" },
     { name: "Vestoj",                  url: "https://vestoj.com/feed/" },
     { name: "Blackbird Spyplane",      url: "https://www.blackbirdspyplane.com/feed" },
@@ -567,7 +567,7 @@ function buildEmailHtml(articles: Article[], podcasts: Podcast[]): string {
         <tr>
           <td style="padding:24px 36px;background:#f9fafb;border-top:1px solid #f3f4f6;">
             <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
-              Cogletta &nbsp;·&nbsp; Curated by AI, delivered every morning.<br>
+              Cogletta &nbsp;·&nbsp; delivered every morning.<br>
               <a href="#" style="color:#9ca3af;">Unsubscribe</a> &nbsp;·&nbsp; <a href="#" style="color:#9ca3af;">View in browser</a>
             </p>
           </td>
