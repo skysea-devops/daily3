@@ -411,7 +411,7 @@ export async function fetchRSSFeed(source: { name: string; url: string }): Promi
 
 // ─── DynamoDB helpers ─────────────────────────────────────────────────────────
 
-interface RecentHistory {
+export interface RecentHistory {
   seenUrls:    Set<string>;
   seenSources: Map<string, number>;
 }
@@ -593,7 +593,7 @@ function buildEmailText(articles: Article[], podcasts: Podcast[]): string {
   return `Cogletta — ${today}\n\n${intro}\n\n${articleLines}${podcastLines}\n\nNew content arrives every morning at 07:00.`;
 }
 
-async function sendDailyEmail(toEmail: string, articles: Article[], podcasts: Podcast[]): Promise<void> {
+export async function sendDailyEmail(toEmail: string, articles: Article[], podcasts: Podcast[]): Promise<void> {
   // Fallback dışında gerçek makalesi olanları tut
   const real = articles.filter(a => a.url && a.url !== "https://news.ycombinator.com");
   if (real.length === 0) {
@@ -865,7 +865,7 @@ function fallbackArticle(interest: string): Article {
 // per interest ([interest]) so each category yields its own pick.
 // `exclude` holds URLs already used in this run so the 3 Pro picks don't repeat.
 
-async function pickArticle(
+export async function pickArticle(
   scope: string[],
   history: RecentHistory,
   subTopicContext: string,
@@ -923,7 +923,7 @@ async function pickArticle(
   }
 }
 
-async function pickPodcast(
+export async function pickPodcast(
   scope: string[],
   history: RecentHistory,
   subTopicContext: string,
