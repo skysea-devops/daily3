@@ -91,7 +91,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           try {
             const profile = await getUserProfile(accessToken);
-            if (profile.interests && profile.interests.length === 3) {
+            // Free plan 1, Pro plan 3 interest kullanır — 1+ interest onboarding'in
+            // tamamlandığı anlamına gelir. (Eski `=== 3` koşulu, 1 interest'e geçen
+            // free kullanıcıları her taze login'de onboarding'e geri atıyordu.)
+            if (profile.interests && profile.interests.length >= 1) {
               localStorage.setItem("cogletta-categories", JSON.stringify(profile.interests));
               setHasInterests(true);
             } else {
