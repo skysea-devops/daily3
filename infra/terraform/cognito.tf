@@ -136,6 +136,12 @@ resource "aws_iam_role_policy" "post_confirmation_lambda_policy" {
         Action   = ["ses:SendEmail", "ses:SendRawEmail"]
         Resource = "*"
       },
+      {
+        Sid      = "UsersTableWrite"
+        Effect   = "Allow"
+        Action   = ["dynamodb:UpdateItem"]
+        Resource = aws_dynamodb_table.users.arn
+      },
     ]
   })
 }
@@ -158,11 +164,12 @@ resource "aws_lambda_function" "post_confirmation" {
 
   environment {
     variables = {
-      SES_FROM_EMAIL = var.ses_from_email
-      APP_URL        = var.app_url
-      CONTACT_EMAIL  = var.contact_email
-      APP_NAME       = var.app_name
-      NODE_OPTIONS   = "--enable-source-maps"
+      SES_FROM_EMAIL   = var.ses_from_email
+      APP_URL          = var.app_url
+      CONTACT_EMAIL    = var.contact_email
+      APP_NAME         = var.app_name
+      USERS_TABLE_NAME = aws_dynamodb_table.users.name
+      NODE_OPTIONS     = "--enable-source-maps"
     }
   }
 

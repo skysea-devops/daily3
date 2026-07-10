@@ -1,6 +1,12 @@
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
-const ses = new SESClient({ region: process.env.AWS_REGION });
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+
+const ses    = new SESClient({ region: process.env.AWS_REGION });
+const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+
+const USERS_TABLE_NAME = process.env.USERS_TABLE_NAME ?? "";
 
 const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL!;
 const APP_URL        = process.env.APP_URL!;
@@ -199,6 +205,32 @@ export const handler = async (event: any): Promise<any> => {
   if (!email) {
     console.warn("No email found in event, skipping welcome email");
     return event;
+  }
+
+  // ── Profili kayıt anında email ile oluştur ─────────────────────────────────
+  // Email'in tek doğru kaynağı Cognito; buradan bir kez yazılır ve
+  // update-interests bir daha bu alana dokunmaz. (upsert: mevcut alanları ezmez)
+  const sub = event.request?.userAttributes?.sub ?? event.userName;
+  if (sub && USERS_TABLE_NAME) {
+    try {
+      await dynamo.send(
+        new UpdateCommand({
+          TableName: USERS_TABLE_NAME,
+          Key: { PK: `USER#${sub}`, SK: "PROFILE" },
+          UpdateExpression: "SET email = :email, createdAt = if_not_exists(createdAt, :now)",
+          ExpressionAttributeValues: {
+            ":email": email,
+            ":now":   new Date().toISOString(),
+          },
+        })
+      );
+      console.log(`Profile upserted with email for user=${sub}`);
+    } catch (err) {
+      // Kayıt akışını bozmamak için hata yutulur ama yüksek sesle loglanır
+      console.error("CRITICAL: Failed to write profile email:", err);
+    }
+  } else if (!USERS_TABLE_NAME) {
+    console.error("CRITICAL: USERS_TABLE_NAME env var missing — profile not created");
   }
 
   try {
