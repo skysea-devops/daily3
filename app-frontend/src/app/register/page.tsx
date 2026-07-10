@@ -255,7 +255,7 @@ export default function RegisterPage() {
               <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)" }}>Pro</span>
               <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)", marginTop: 8, marginBottom: 4 }}>Go deeper</h2>
               <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
-                <span style={{ fontFamily: "'Lora', serif", fontSize: "2rem", fontWeight: 600, color: "var(--ink)" }}>$4.80</span>
+                <span style={{ fontFamily: "'Lora', serif", fontSize: "2rem", fontWeight: 600, color: "var(--ink)" }}>$5.80</span>
                 <span style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>/ month</span>
               </div>
               <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.65 }}>For serious readers. More interests, deeper personalisation, and weekly reading reports.</p>
