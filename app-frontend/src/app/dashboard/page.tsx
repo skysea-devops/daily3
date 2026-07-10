@@ -209,7 +209,7 @@ function PendingCard({ category, type = "article" }: { category: string; type?: 
 
 const PRO_NUDGES = [
   { text: "Loved today's edition? Start every morning with 3 thoughtfully selected articles for every interest you follow.", cta: "Unlock Cogletta Pro →" },
-  { text: "Enjoyed today's read? Pro delivers 3 handpicked articles for each of your interests — every morning.", cta: "Explore Cogletta Pro →" },
+  { text: "Enjoyed today's read? Pro delivers 3 articles for each of your interests — every morning.", cta: "Explore Cogletta Pro →" },
 ];
 
 function ProNudge() {

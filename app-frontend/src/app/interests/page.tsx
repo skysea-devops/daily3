@@ -320,8 +320,8 @@ function InterestsForm() {
         </h1>
         <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: isPro ? 32 : 8 }}>
           {isPro
-            ? "Pick 3 topics. Your content refreshes every morning at 07:00."
-            : "Pick your topic. Your content refreshes every morning at 07:00."}
+            ? "Pick 3 topics. Your content refreshes every morning"
+            : "Pick your topic. Your content refreshes every morning"}
         </p>
         {!isPro && (
           <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", marginBottom: 32 }}>
@@ -340,7 +340,7 @@ function InterestsForm() {
           }}>
             <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#166534" }}>✓ Interests saved!</p>
             <p style={{ fontSize: "0.875rem", color: "#15803d", marginTop: 4 }}>
-              Your new articles will arrive tomorrow at 07:00. Today's articles are still available.
+              Your new articles will arrive tomorrow. Today's articles are still available.
             </p>
             <button onClick={() => router.push("/dashboard")}
               style={{ marginTop: 10, fontSize: "0.875rem", fontWeight: 600, color: "#166534", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
