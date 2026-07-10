@@ -2,10 +2,17 @@
 # Sabah e-postalarının sessizce kesilmesini engelleyen alarm katmanı:
 #   1. EmailSendFailures     — SES gönderimi hata verdi (1 saat içinde ≥1)
 #   2. EmailsSkippedNoAddr   — kullanıcının email'i yok, e-posta atlandı
-#   3. EmailsSkippedNoContent— makale üretilemedi (feed sorunu), e-posta atlandı
+#   3. EmailsSkippedNoContent— gönderilecek gerçek makale yok (feed sorunu
+#                              veya kategori havuzu üretilememiş), atlandı
 #   4. DailyEmailsSent       — son 24 saatte hiç e-posta gitmediyse alarm
 # Hepsi SNS topic üzerinden var.alert_email adresine bildirim gönderir.
 # NOT: İlk apply'dan sonra SNS'in gönderdiği onay e-postasındaki linke tıklamak gerekir.
+#
+# E-posta artık İKİ Lambda'dan çıkar: generate-articles (Pro + legacy free) ve
+# deliver-daily (havuzlu free). Metric filter'lar for_each ile her iki log
+# group'u da kapsar; aynı metrik adına/namespace'ine yazdıkları için alarmlar
+# tek kalır. Tek log group izlenseydi deliver-daily'ye taşınan gönderimler
+# alarmları yanlış tetikler ya da hatalarını görünmez kılardı.
 
 variable "alert_email" {
   description = "CloudWatch alarmlarının gönderileceği e-posta adresi"
@@ -20,7 +27,12 @@ variable "min_daily_emails" {
 }
 
 locals {
-  generate_articles_log_group = "/aws/lambda/${var.project_name}-${var.environment}-generate-articles"
+  # E-posta gönderen Lambda'ların log group'ları — resource referansı,
+  # apply sırasında log group'un filter'dan önce oluşmasını garanti eder.
+  email_sender_log_groups = {
+    generate_articles = aws_cloudwatch_log_group.generate_articles.name
+    deliver_daily     = aws_cloudwatch_log_group.deliver_daily.name
+  }
 }
 
 # ── SNS ───────────────────────────────────────────────────────────────────────
@@ -38,8 +50,9 @@ resource "aws_sns_topic_subscription" "email_pipeline_alerts" {
 # ── Metric filters ────────────────────────────────────────────────────────────
 
 resource "aws_cloudwatch_log_metric_filter" "email_send_failures" {
-  name           = "${var.project_name}-${var.environment}-email-send-failures"
-  log_group_name = local.generate_articles_log_group
+  for_each       = local.email_sender_log_groups
+  name           = "${var.project_name}-${var.environment}-email-send-failures-${each.key}"
+  log_group_name = each.value
   pattern        = "\"Failed to send email notification\""
 
   metric_transformation {
@@ -51,8 +64,9 @@ resource "aws_cloudwatch_log_metric_filter" "email_send_failures" {
 }
 
 resource "aws_cloudwatch_log_metric_filter" "emails_skipped_no_address" {
-  name           = "${var.project_name}-${var.environment}-emails-skipped-no-address"
-  log_group_name = local.generate_articles_log_group
+  for_each       = local.email_sender_log_groups
+  name           = "${var.project_name}-${var.environment}-emails-skipped-no-address-${each.key}"
+  log_group_name = each.value
   pattern        = "\"No email found\""
 
   metric_transformation {
@@ -64,8 +78,9 @@ resource "aws_cloudwatch_log_metric_filter" "emails_skipped_no_address" {
 }
 
 resource "aws_cloudwatch_log_metric_filter" "emails_skipped_no_content" {
-  name           = "${var.project_name}-${var.environment}-emails-skipped-no-content"
-  log_group_name = local.generate_articles_log_group
+  for_each       = local.email_sender_log_groups
+  name           = "${var.project_name}-${var.environment}-emails-skipped-no-content-${each.key}"
+  log_group_name = each.value
   pattern        = "\"No real article to email\""
 
   metric_transformation {
@@ -77,8 +92,9 @@ resource "aws_cloudwatch_log_metric_filter" "emails_skipped_no_content" {
 }
 
 resource "aws_cloudwatch_log_metric_filter" "daily_emails_sent" {
-  name           = "${var.project_name}-${var.environment}-daily-emails-sent"
-  log_group_name = local.generate_articles_log_group
+  for_each       = local.email_sender_log_groups
+  name           = "${var.project_name}-${var.environment}-daily-emails-sent-${each.key}"
+  log_group_name = each.value
   pattern        = "\"Email sent to\""
 
   metric_transformation {
@@ -121,7 +137,7 @@ resource "aws_cloudwatch_metric_alarm" "emails_skipped_no_address" {
 
 resource "aws_cloudwatch_metric_alarm" "emails_skipped_no_content" {
   alarm_name          = "${var.project_name}-${var.environment}-emails-skipped-no-content"
-  alarm_description   = "Kullanıcıya gönderilecek gerçek makale bulunamadı — feed sağlığını kontrol et"
+  alarm_description   = "Kullanıcıya gönderilecek gerçek makale bulunamadı — feed sağlığını ve kategori havuzunu kontrol et"
   namespace           = "Cogletta/${var.environment}"
   metric_name         = "EmailsSkippedNoContent"
   statistic           = "Sum"

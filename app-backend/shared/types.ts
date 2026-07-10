@@ -43,7 +43,9 @@ export interface DailyArticles {
 
 /** Key helpers — keep date formatting in one place */
 export const Keys = {
-  userPK:    (sub: string)             => `USER#${sub}`,
+  userPK:     (sub: string)            => `USER#${sub}`,
+  /** Kategori havuzu anahtarı — free plan günlük ortak seçim, ör. CATEGORY#Technology */
+  categoryPK: (category: string)       => `CATEGORY#${category}`,
   dateSK:    (date: Date = new Date()) => `DATE#${date.toISOString().slice(0, 10)}`,
   ttl30Days: ()                        => Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
   // Haftalık trend raporu anahtarı: ISO yıl-hafta (ör. TREND#2026-W27)
@@ -56,6 +58,27 @@ export const Keys = {
     return `TREND#${d.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
   },
 };
+
+/**
+ * Free plan kategori havuzu — kategori başına günde tek seçim.
+ * DailyArticles ile aynı içerik şekli: deliver-daily alan dönüştürmeden
+ * USER# kaydına kopyalar. status/generatingAt yalnızca "generating"
+ * placeholder aşamasında bulunur (conditional-write lock).
+ */
+export interface CategoryDailyPicks {
+  /** DynamoDB PK — CATEGORY#<name>  e.g. CATEGORY#Technology */
+  PK:          string;
+  /** DynamoDB SK — DATE#YYYY-MM-DD */
+  SK:          string;
+  articles:    Article[];
+  podcast:     Podcast | null;
+  podcasts:    Podcast[];
+  generatedAt: string;
+  ttl:         number;
+  /** "generating" iken placeholder; gerçek içerik yazılınca kaldırılır */
+  status?:       string;
+  generatingAt?: number;
+}
 
 // Haftalık trend raporu (Pro, her Pazar)
 export interface TrendInterest {

@@ -403,6 +403,20 @@ resource "aws_iam_role_policy" "daily_trigger_lambda_policy" {
         Action   = ["lambda:InvokeFunction"]
         Resource = aws_lambda_function.generate_articles.arn
       },
+      {
+        # Faz A: kategori havuzunu senkron ensure eder
+        Sid      = "InvokeGenerateCategoryPicks"
+        Effect   = "Allow"
+        Action   = ["lambda:InvokeFunction"]
+        Resource = aws_lambda_function.generate_category_picks.arn
+      },
+      {
+        # Faz B: havuzlu free kullanıcılara teslimat fan-out'u
+        Sid      = "InvokeDeliverDaily"
+        Effect   = "Allow"
+        Action   = ["lambda:InvokeFunction"]
+        Resource = aws_lambda_function.deliver_daily.arn
+      },
     ]
   })
 }
@@ -425,9 +439,11 @@ resource "aws_lambda_function" "daily_trigger" {
 
   environment {
     variables = {
-      USERS_TABLE_NAME                = aws_dynamodb_table.users.name
-      GENERATE_ARTICLES_FUNCTION_NAME = aws_lambda_function.generate_articles.function_name
-      NODE_OPTIONS                    = "--enable-source-maps"
+      USERS_TABLE_NAME                      = aws_dynamodb_table.users.name
+      GENERATE_ARTICLES_FUNCTION_NAME       = aws_lambda_function.generate_articles.function_name
+      GENERATE_CATEGORY_PICKS_FUNCTION_NAME = aws_lambda_function.generate_category_picks.function_name
+      DELIVER_DAILY_FUNCTION_NAME           = aws_lambda_function.deliver_daily.function_name
+      NODE_OPTIONS                          = "--enable-source-maps"
     }
   }
 
@@ -476,3 +492,185 @@ resource "aws_lambda_permission" "allow_eventbridge" {
 
 
 
+
+# ==============================================================================
+# generate-category-picks
+#   Free plan kategori havuzu: kategori başına günde 1 kez RSS + Bedrock ile
+#   seçim üretir, CATEGORY#<name>/DATE#<gün> altına yazar. "Ensure" semantiği:
+#   bölgesel cron'ların hepsi çağırır, ilk çağrı üretir, sonrakiler hazır
+#   seçimi bulup anında döner (DynamoDB conditional-write lock + stale takeover).
+# ==============================================================================
+
+resource "aws_cloudwatch_log_group" "generate_category_picks" {
+  name              = "/aws/lambda/${var.project_name}-${var.environment}-generate-category-picks"
+  retention_in_days = var.environment == "prod" ? 30 : 14
+}
+
+resource "aws_iam_role" "generate_category_picks_lambda_role" {
+  name = "${var.project_name}-${var.environment}-generate-category-picks-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "generate_category_picks_lambda_policy" {
+  name = "${var.project_name}-${var.environment}-generate-category-picks-policy"
+  role = aws_iam_role.generate_category_picks_lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "Logging"
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "${aws_cloudwatch_log_group.generate_category_picks.arn}:*"
+      },
+      {
+        # Get: ready-check, Put: lock + içerik, Update: stale takeover, Query: 7 günlük kategori geçmişi
+        Sid      = "DynamoCategoryPool"
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:Query"]
+        Resource = aws_dynamodb_table.articles.arn
+      },
+      {
+        Sid    = "BedrockCrossRegionProfile"
+        Effect = "Allow"
+        Action = ["bedrock:InvokeModel"]
+        Resource = [
+          "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+        ]
+      },
+      {
+        Sid    = "BedrockFoundationModels"
+        Effect = "Allow"
+        Action = ["bedrock:InvokeModel"]
+        Resource = [
+          "arn:aws:bedrock:eu-*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
+        ]
+      },
+    ]
+  })
+}
+
+data "archive_file" "generate_category_picks_lambda_zip" {
+  type        = "zip"
+  source_dir  = "${local.lambda_src_root}/articles/generate-category-picks/dist"
+  output_path = "${path.module}/generate-category-picks.zip"
+}
+
+resource "aws_lambda_function" "generate_category_picks" {
+  function_name    = "${var.project_name}-${var.environment}-generate-category-picks"
+  role             = aws_iam_role.generate_category_picks_lambda_role.arn
+  runtime          = local.lambda_runtime
+  handler          = "index.handler"
+  filename         = data.archive_file.generate_category_picks_lambda_zip.output_path
+  source_code_hash = data.archive_file.generate_category_picks_lambda_zip.output_base64sha256
+  timeout          = 150 # feed fetch + 2 Bedrock çağrısı; bekleme modunda poll max 100 sn
+  memory_size      = var.environment == "prod" ? 512 : 256
+
+  environment {
+    variables = {
+      ARTICLES_TABLE_NAME = aws_dynamodb_table.articles.name
+      BEDROCK_REGION      = var.aws_region
+      NODE_OPTIONS        = "--enable-source-maps"
+    }
+  }
+
+  depends_on = [aws_cloudwatch_log_group.generate_category_picks]
+}
+
+# ==============================================================================
+# deliver-daily
+#   Havuzlu free kullanıcı teslimatı: kategori seçimini USER# kaydına kopyalar
+#   (dashboard uyumluluğu) ve SES ile kişisel e-postayı gönderir. Bedrock izni
+#   YOK — bu Lambda hiçbir koşulda üretim maliyeti oluşturamaz.
+# ==============================================================================
+
+resource "aws_cloudwatch_log_group" "deliver_daily" {
+  name              = "/aws/lambda/${var.project_name}-${var.environment}-deliver-daily"
+  retention_in_days = var.environment == "prod" ? 30 : 14
+}
+
+resource "aws_iam_role" "deliver_daily_lambda_role" {
+  name = "${var.project_name}-${var.environment}-deliver-daily-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "deliver_daily_lambda_policy" {
+  name = "${var.project_name}-${var.environment}-deliver-daily-policy"
+  role = aws_iam_role.deliver_daily_lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "Logging"
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "${aws_cloudwatch_log_group.deliver_daily.arn}:*"
+      },
+      {
+        # Get: kategori seçimi + kullanıcının mevcut kaydı, Put: kullanıcıya kopya
+        Sid      = "DynamoReadWriteArticles"
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem", "dynamodb:PutItem"]
+        Resource = aws_dynamodb_table.articles.arn
+      },
+      {
+        Sid      = "DynamoReadUsers"
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem"]
+        Resource = aws_dynamodb_table.users.arn
+      },
+      {
+        Sid      = "SESsendEmail"
+        Effect   = "Allow"
+        Action   = ["ses:SendEmail", "ses:SendRawEmail"]
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+data "archive_file" "deliver_daily_lambda_zip" {
+  type        = "zip"
+  source_dir  = "${local.lambda_src_root}/articles/deliver-daily/dist"
+  output_path = "${path.module}/deliver-daily.zip"
+}
+
+resource "aws_lambda_function" "deliver_daily" {
+  function_name    = "${var.project_name}-${var.environment}-deliver-daily"
+  role             = aws_iam_role.deliver_daily_lambda_role.arn
+  runtime          = local.lambda_runtime
+  handler          = "index.handler"
+  filename         = data.archive_file.deliver_daily_lambda_zip.output_path
+  source_code_hash = data.archive_file.deliver_daily_lambda_zip.output_base64sha256
+  timeout          = 30 # 2-3 DynamoDB işlemi + 1 SES gönderimi
+  memory_size      = 256
+
+  environment {
+    variables = {
+      ARTICLES_TABLE_NAME = aws_dynamodb_table.articles.name
+      USERS_TABLE_NAME    = aws_dynamodb_table.users.name
+      SES_FROM_EMAIL      = var.ses_from_email
+      NODE_OPTIONS        = "--enable-source-maps"
+    }
+  }
+
+  depends_on = [aws_cloudwatch_log_group.deliver_daily]
+}
