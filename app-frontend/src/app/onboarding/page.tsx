@@ -31,7 +31,7 @@ function OnboardingForm() {
     if (selected.length !== maxTopics || !user) return;
     setLoading(true);
     try {
-      await updateUserInterests(selected, user.accessToken);
+      await updateUserInterests(selected, user.accessToken, user.email);
       localStorage.setItem("cogletta-categories", JSON.stringify(selected));
       markInterestsSaved();
       router.push("/dashboard");
