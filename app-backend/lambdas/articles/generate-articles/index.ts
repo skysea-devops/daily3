@@ -159,7 +159,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
 
   "Fashion & Style": [
     { name: "Business of Fashion",     url: "https://www.businessoffashion.com/feed/" },
-    { name: "Glossy",                  url: "https://www.glossy.co/feed/" },
+
     { name: "Dazed (Fashion)",         url: "https://www.dazeddigital.com/rss" },
     { name: "Vestoj",                  url: "https://vestoj.com/feed/" },
     { name: "Blackbird Spyplane",      url: "https://www.blackbirdspyplane.com/feed" },
