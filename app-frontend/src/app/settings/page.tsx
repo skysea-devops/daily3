@@ -350,12 +350,12 @@ function SettingsContent() {
 
         {/* Plan & Billing */}
         <Section title="Plan & Billing">
-          <Row label="Current plan" value={plan === "pro" ? "Cogletta Pro — $4.80/month" : "Free"} />
+          <Row label="Current plan" value={plan === "pro" ? "Cogletta Pro — $5.80/month" : "Free"} />
           {plan === "free" && CHECKOUT_CONFIGURED && (
             <Row topBorder label="Upgrade to Pro" description="3 articles per interest, sub-topics, weekly trend reports. Yearly saves two months.">
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                <ActionBtn label={billingBusy ? "Redirecting…" : "Yearly · $48"} onClick={() => handleUpgrade("yearly")} disabled={billingBusy} style="accent" />
-                <ActionBtn label="Monthly · $4.80" onClick={() => handleUpgrade("monthly")} disabled={billingBusy} />
+                <ActionBtn label={billingBusy ? "Redirecting…" : "Yearly · $58"} onClick={() => handleUpgrade("yearly")} disabled={billingBusy} style="accent" />
+                <ActionBtn label="Monthly · $5.80" onClick={() => handleUpgrade("monthly")} disabled={billingBusy} />
               </div>
             </Row>
           )}
