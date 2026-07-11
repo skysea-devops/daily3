@@ -434,7 +434,7 @@ resource "aws_lambda_function" "daily_trigger" {
   handler          = "index.handler"
   filename         = data.archive_file.daily_trigger_lambda_zip.output_path
   source_code_hash = data.archive_file.daily_trigger_lambda_zip.output_base64sha256
-  timeout          = 300
+  timeout          = 600
   memory_size      = 256
 
   environment {
