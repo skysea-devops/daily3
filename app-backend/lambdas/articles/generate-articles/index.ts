@@ -71,6 +71,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Marginal Revolution",     url: "https://marginalrevolution.com/feed" },
     { name: "Project Syndicate",       url: "https://www.project-syndicate.org/rss" },
     { name: "VoxEU (CEPR)",            url: "https://cepr.org/rss/vox-content" },
+    { name: "Knowledge at Wharton",    url: "https://knowledge.wharton.upenn.edu/feed/" },
   ],
 
   "Science": [
@@ -128,15 +129,17 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Defense One",             url: "https://www.defenseone.com/rss/all/" },
     { name: "Breaking Defense",        url: "https://breakingdefense.com/feed/" },
     { name: "The War Zone",            url: "https://www.twz.com/feed" },
+    { name: "The Diplomat",            url: "https://thediplomat.com/feed/" },
   ],
 
   "Health": [
     { name: "Stat News",               url: "https://www.statnews.com/feed/" },
     { name: "Psyche (Aeon)",           url: "https://psyche.co/feed" },
     { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
-    { name: "KFF Health News",         url: "https://kffhealthnews.org/feed/" },
     { name: "NPR Health (Shots)",      url: "https://feeds.npr.org/1128/rss.xml" },
     { name: "The Conversation (Health)", url: "https://theconversation.com/us/health/articles.atom" },
+    { name: "Undark",                  url: "https://undark.org/feed/" },
+    { name: "Nautilus",                url: "https://nautil.us/feed/" },
   ],
 
   "Environment": [
@@ -144,10 +147,10 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Carbon Brief",            url: "https://www.carbonbrief.org/feed/" },
     { name: "Grist",                   url: "https://grist.org/feed/" },
     { name: "Anthropocene Magazine",   url: "https://www.anthropocenemagazine.org/feed/" },
-    { name: "Inside Climate News",     url: "https://insideclimatenews.org/feed/" },
-    { name: "Mongabay",                url: "https://news.mongabay.com/feed/" },
     { name: "bioGraphic",              url: "https://www.biographic.com/feed/" },
     { name: "Atmos",                   url: "https://atmos.earth/feed/" },
+    { name: "Noema Magazine",          url: "https://www.noemamag.com/feed/" },
+    { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
   ],
 
   "Philosophy & Ethics": [
@@ -164,15 +167,13 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
 
   "Religion & Faith": [
   { name: "Risale English",          url: "https://risaleenglish.com/feed/" },
-  { name: "The Muslim Vibe",         url: "https://themuslimvibe.com/feed" },
   { name: "The Pen Magazine",        url: "https://thepenmagazine.net/feed/" },
   { name: "First Things",            url: "https://www.firstthings.com/rss" },
-  { name: "The Gospel Coalition",    url: "https://www.thegospelcoalition.org/feed/" },
   { name: "Religion News Service",   url: "https://religionnews.com/feed/" },
-  { name: "The Tablet",              url: "https://www.thetablet.co.uk/rss" },
   { name: "Jewish Review of Books",  url: "https://jewishreviewofbooks.com/feed/" },
   { name: "Tricycle Magazine",       url: "https://tricycle.org/feed/" },
   { name: "Lion's Roar",             url: "https://www.lionsroar.com/feed/" },
+  { name: "The Revealer",            url: "https://therevealer.org/feed/" },
   ],
 
   "Life & Relationships": [
@@ -183,6 +184,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "The Gottman Institute",   url: "https://www.gottman.com/blog/feed/" },
     { name: "Behavioral Scientist",    url: "https://behavioralscientist.org/feed/" },
     { name: "Tiny Buddha",             url: "https://tinybuddha.com/feed/" },
+    { name: "Raptitude",               url: "https://www.raptitude.com/feed/" },
   ],
 };
 
@@ -292,13 +294,12 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
 
   "Religion & Faith": [
-  { name: "BibleProject Podcast",        url: "https://feeds.simplecast.com/7hK1gQ9M" },
-  { name: "Unbelievable?",               url: "https://feeds.premier.org.uk/unbelievable" },
-  { name: "Ask NT Wright Anything",      url: "https://feeds.megaphone.fm/askntwright" },
-  { name: "OnScript",                    url: "https://onscript.study/feed/podcast/" },
-  { name: "Jew Oughta Know",             url: "https://feeds.simplecast.com/jewoughtaknow" },
-  { name: "Buddhist Geeks",              url: "https://feeds.soundcloud.com/users/soundcloud:users:3698613/sounds.rss" },
-],
+    { name: "BibleProject Podcast",      url: "https://feeds.simplecast.com/3NVmUWZO" },
+    { name: "Ask NT Wright Anything",    url: "https://feeds.megaphone.fm/NSR7466770103" },
+    { name: "Yaqeen Podcast",            url: "https://rss.buzzsprout.com/1014445.rss" },
+    { name: "18Forty",                   url: "https://www.spreaker.com/show/4344730/episodes/feed" },
+    { name: "Buddhist Geeks",            url: "https://feeds.soundcloud.com/users/soundcloud:users:3698613/sounds.rss" },
+  ],
 
   "Life & Relationships": [
     { name: "Hidden Brain",                url: "https://feeds.npr.org/510308/podcast.xml" },
@@ -805,10 +806,13 @@ async function selectBestArticle(candidates: ScoredCandidate[], interests: strin
 
   const categoryList = interests.map(i => `"${i}"`).join(", ");
 
-  const LIGHT_CATEGORIES = ["Life & Relationships"];
-  const toneNote = interests.some(i => LIGHT_CATEGORIES.includes(i))
-    ? `\nTONE (applies to Life & Relationships): readers of these sections want pieces that are uplifting, warm, practical, or delightful — personal growth, style, joy, connection, creativity, everyday life. Strongly prefer positive, hopeful, or genuinely useful angles. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness, tragedy) unless there is truly nothing else on-topic. When two candidates fit, always choose the lighter, more enjoyable one.`
+  const FAITH_NOTE = interests.includes("Religion & Faith")
+    ? `\nTONE (Religion & Faith): rotate across faith traditions; prefer theology, spirituality, sacred-text study and lived practice; reject sectarian polemics, proselytising, and current-events/geopolitical framing of religious communities.`
     : "";
+  const LIGHT_CATEGORIES = ["Life & Relationships"];
+  const toneNote = FAITH_NOTE + (interests.some(i => LIGHT_CATEGORIES.includes(i))
+    ? `\nTONE (applies to Life & Relationships): readers of these sections want pieces that are uplifting, warm, practical, or delightful — personal growth, style, joy, connection, creativity, everyday life. Strongly prefer positive, hopeful, or genuinely useful angles. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness, tragedy) unless there is truly nothing else on-topic. When two candidates fit, always choose the lighter, more enjoyable one.`
+    : "");
 
   const prompt = `You curate Cogletta's daily long-form reading picks.
 
@@ -900,10 +904,13 @@ async function selectBestPodcast(candidates: ScoredCandidate[], interests: strin
 
   const categoryList = interests.map(i => `"${i}"`).join(", ");
 
-  const LIGHT_CATEGORIES = ["Life & Relationships"];
-  const toneNote = interests.some(i => LIGHT_CATEGORIES.includes(i))
-    ? `\nTONE (applies to Life & Relationships): prefer episodes that are uplifting, warm, practical, or fun — personal growth, style, joy, connection, creativity, everyday life. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness) unless there is truly nothing else on-topic. When two fit, choose the lighter, more enjoyable one.`
+  const FAITH_NOTE = interests.includes("Religion & Faith")
+    ? `\nTONE (Religion & Faith): rotate across faith traditions; prefer theology, spirituality, sacred-text study and lived practice; reject sectarian polemics, proselytising, and current-events/geopolitical framing of religious communities.`
     : "";
+  const LIGHT_CATEGORIES = ["Life & Relationships"];
+  const toneNote = FAITH_NOTE + (interests.some(i => LIGHT_CATEGORIES.includes(i))
+    ? `\nTONE (applies to Life & Relationships): prefer episodes that are uplifting, warm, practical, or fun — personal growth, style, joy, connection, creativity, everyday life. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness) unless there is truly nothing else on-topic. When two fit, choose the lighter, more enjoyable one.`
+    : "");
 
   const prompt = `You are an editorial assistant for Cogletta, a daily content curation app.
 
@@ -1047,7 +1054,13 @@ async function selectPoolWithBedrock(
   const extraFields = isPodcast
     ? `"duration": "<duration or estimate>"`
     : `"readingTime": "<estimate such as '8 min read'>"`;
-  const prompt = `Create today's shared Cogletta ${category} pool from the candidates below.\n\nSelect up to ${desiredSize} high-quality ${contentType}. Rank best first. Never repeat an index. Reject off-topic, roundup, transcript, video, breaking-news or liveblog content. Prefer depth, freshness and source diversity.\n\nActive sub-topics selected by users:\n${subTopicText}\n\nCoverage rule: when a clearly relevant quality candidate exists, include at least one item for every active sub-topic. Never force weak or unrelated content merely to fill coverage. Tag each selected item only with exact sub-topic names from the list. General ${category} pieces may have an empty subTopics array.\n\nCandidates:\n${candidateList}\n\nReturn only valid JSON:\n{\n  "items": [\n    {\n      "selectedIndex": <candidate index>,\n      "subTopics": ["<exact active sub-topic>"],\n      "qualityScore": <0-100>,\n      "summary": "<specific ${isPodcast ? "2-3" : "3-4"} sentence summary>",\n      "reason": "<max 18 words; concrete hook>",\n      ${extraFields}\n    }\n  ],\n  "unrepresentedSubTopics": ["<exact active sub-topic with no suitable selected item>"]\n}`;
+  // Religion & Faith: gelenekler arası denge + jeopolitik/polemik filtresi.
+  // Kaynak dengesi tek başına yetmez; seçimi model yaptığı için kural prompt'ta da yaşamalı.
+  const faithNote = category === "Religion & Faith"
+    ? `\n\nTradition balance rule (Religion & Faith): rotate across faith traditions (Islam, Christianity, Judaism, Buddhism and others) from day to day rather than favouring any single one — use the recently-shown-source markers to balance. Prefer theology, spirituality, sacred-text study, comparative religion, ethics and lived practice. REJECT sectarian polemics, proselytising content, and items framing religious communities through current events, conflict or geopolitics.`
+    : "";
+
+  const prompt = `Create today's shared Cogletta ${category} pool from the candidates below.\n\nSelect up to ${desiredSize} high-quality ${contentType}. Rank best first. Never repeat an index. Include at most two items from any single source. Reject off-topic, roundup, transcript, video, breaking-news or liveblog content. Prefer depth, freshness and source diversity.\n\nActive sub-topics selected by users:\n${subTopicText}${faithNote}\n\nCoverage rule: when a clearly relevant quality candidate exists, include at least one item for every active sub-topic. Never force weak or unrelated content merely to fill coverage. Tag each selected item only with exact sub-topic names from the list. General ${category} pieces may have an empty subTopics array.\n\nCandidates:\n${candidateList}\n\nReturn only valid JSON:\n{\n  "items": [\n    {\n      "selectedIndex": <candidate index>,\n      "subTopics": ["<exact active sub-topic>"],\n      "qualityScore": <0-100>,\n      "summary": "<specific ${isPodcast ? "2-3" : "3-4"} sentence summary>",\n      "reason": "<max 18 words; concrete hook>",\n      ${extraFields}\n    }\n  ],\n  "unrepresentedSubTopics": ["<exact active sub-topic with no suitable selected item>"]\n}`;
   const command = new InvokeModelCommand({
     modelId: "eu.anthropic.claude-haiku-4-5-20251001-v1:0",
     contentType: "application/json",

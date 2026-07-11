@@ -238,9 +238,9 @@ export const handler = async (event: DeliverEvent): Promise<void> => {
     return;
   }
 
-  const history = isPro
-    ? await fetchRecentHistory(userId)
-    : { seenUrls: new Set<string>(), seenSources: new Map<string, number>() };
+  // Geçmiş free için de okunur: kaynak rotasyonu (aynı sitenin art arda
+  // gelmemesi) plan'dan bağımsız bir kalite kuralıdır. Maliyet: 1 Query/gün.
+  const history = await fetchRecentHistory(userId);
 
   const articles: Article[] = [];
   const podcasts: Podcast[] = [];
@@ -289,8 +289,11 @@ export const handler = async (event: DeliverEvent): Promise<void> => {
       }
     }
   } else {
-    // Free geriye uyumluluğu: PR-1 havuzu 10–20 öğe olsa da kullanıcıya yalnızca
-    // tek makale ve tek podcast teslim edilir.
+    // Free: tek makale + tek podcast, ama havuzun körlemesine 1 numarası değil —
+    // Pro ile aynı skorlayıcı, boş sub-topic listesiyle. recentSourceCount cezası
+    // (−60/görünüm) dünkü kaynağı ~6 sıra geriye iter; qualityScore bariz üstün
+    // olduğunda aynı kaynak yine kazanabilir (körü körüne rotasyon yok). Havuz
+    // kohortunun geçmişleri özdeş olduğundan free kullanıcılar senkron kalır.
     const category = interests[0];
     const pool = await fetchCategoryPool(category, dateSK);
     if (!pool) {
@@ -298,10 +301,16 @@ export const handler = async (event: DeliverEvent): Promise<void> => {
       return;
     }
 
-    const article = pool.articles[0];
-    if (article) articles.push(article);
-    const firstPodcast = pool.podcasts?.[0] ?? pool.podcast ?? null;
-    if (firstPodcast) podcasts.push(firstPodcast);
+    const article = selectArticleFromPool(pool.articles, [], history, usedUrls, usedSources);
+    if (article) {
+      articles.push(article);
+      usedUrls.add(canonicalizeUrl(article.url));
+      usedSources.set(article.source, (usedSources.get(article.source) ?? 0) + 1);
+    }
+
+    const podcastPool = pool.podcasts ?? (pool.podcast ? [pool.podcast] : []);
+    const podcast = selectPodcastFromPool(podcastPool, [], history, usedUrls, usedSources);
+    if (podcast) podcasts.push(podcast);
   }
 
   if (articles.length === 0) {
