@@ -37,6 +37,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Rest of World",           url: "https://restofworld.org/feed/" },
     { name: "Wired",                   url: "https://www.wired.com/feed/rss" },
     { name: "404 Media",               url: "https://www.404media.co/rss/" },
+    { name: "Sentiers",               url: "https://sentiers.media/feed/" },         // [VERIFY] teknoloji/gelecek üzerine haftalık düşünsel küratörlük
+    { name: "Why is this interesting?", url: "https://whyisthisinteresting.substack.com/feed" }, // günlük deneme + seçilmiş linkler
   ],
 
   "World Politics": [
@@ -69,6 +71,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Marginal Revolution",     url: "https://marginalrevolution.com/feed" },
     { name: "Project Syndicate",       url: "https://www.project-syndicate.org/rss" },
     { name: "VoxEU (CEPR)",            url: "https://cepr.org/rss/vox-content" },
+    { name: "Knowledge at Wharton",    url: "https://knowledge.wharton.upenn.edu/feed/" },
   ],
 
   "Science": [
@@ -113,7 +116,10 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Eurozine",                url: "https://www.eurozine.com/feed/" },
     { name: "Longreads",               url: "https://longreads.com/feed/" },
     { name: "Hyperallergic",           url: "https://hyperallergic.com/feed/" },
-  ],
+    { name: "Arts & Letters Daily",   url: "https://www.aldaily.com/feed/" },        // [VERIFY] türün atası — günde 3 seçilmiş deneme/eleştiri, 1998'den beri
+    { name: "Kottke",                 url: "https://feeds.kottke.org/main" },        // 25+ yıldır kültür/fikir küratörlüğü yapan klasik blog
+    { name: "The Sunday Long Read",   url: "https://sundaylongread.com/feed/" },
+      ],
 
   "Military": [
     { name: "War on the Rocks",        url: "https://warontherocks.com/feed/" },
@@ -123,16 +129,17 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Defense One",             url: "https://www.defenseone.com/rss/all/" },
     { name: "Breaking Defense",        url: "https://breakingdefense.com/feed/" },
     { name: "The War Zone",            url: "https://www.twz.com/feed" },
+    { name: "The Diplomat",            url: "https://thediplomat.com/feed/" },
   ],
 
   "Health": [
     { name: "Stat News",               url: "https://www.statnews.com/feed/" },
     { name: "Psyche (Aeon)",           url: "https://psyche.co/feed" },
     { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
-    { name: "KFF Health News",         url: "https://kffhealthnews.org/feed/" },
     { name: "NPR Health (Shots)",      url: "https://feeds.npr.org/1128/rss.xml" },
-    { name: "MedPage Today",           url: "https://www.medpagetoday.com/rss/headlines.xml" },
     { name: "The Conversation (Health)", url: "https://theconversation.com/us/health/articles.atom" },
+    { name: "Undark",                  url: "https://undark.org/feed/" },
+    { name: "Nautilus",                url: "https://nautil.us/feed/" },
   ],
 
   "Environment": [
@@ -140,10 +147,10 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Carbon Brief",            url: "https://www.carbonbrief.org/feed/" },
     { name: "Grist",                   url: "https://grist.org/feed/" },
     { name: "Anthropocene Magazine",   url: "https://www.anthropocenemagazine.org/feed/" },
-    { name: "Inside Climate News",     url: "https://insideclimatenews.org/feed/" },
-    { name: "Mongabay",                url: "https://news.mongabay.com/feed/" },
     { name: "bioGraphic",              url: "https://www.biographic.com/feed/" },
     { name: "Atmos",                   url: "https://atmos.earth/feed/" },
+    { name: "Noema Magazine",          url: "https://www.noemamag.com/feed/" },
+    { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
   ],
 
   "Philosophy & Ethics": [
@@ -155,15 +162,18 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Practical Ethics (Oxford)", url: "http://blog.practicalethics.ox.ac.uk/feed/" },
     { name: "The Point Magazine",      url: "https://thepointmag.com/feed/" },
     { name: "3 Quarks Daily",          url: "https://3quarksdaily.com/feed" },
+    { name: "Arts & Letters Daily",   url: "https://www.aldaily.com/feed/" },
   ],
 
-  "Fashion & Style": [
-    { name: "Business of Fashion",     url: "https://www.businessoffashion.com/feed/" },
-
-    { name: "Dazed (Fashion)",         url: "https://www.dazeddigital.com/rss" },
-    { name: "Vestoj",                  url: "https://vestoj.com/feed/" },
-    { name: "Blackbird Spyplane",      url: "https://www.blackbirdspyplane.com/feed" },
-    { name: "Put This On",             url: "https://putthison.com/feed/" },
+  "Religion & Faith": [
+  { name: "Risale English",          url: "https://risaleenglish.com/feed/" },
+  { name: "The Pen Magazine",        url: "https://thepenmagazine.net/feed/" },
+  { name: "First Things",            url: "https://www.firstthings.com/rss" },
+  { name: "Religion News Service",   url: "https://religionnews.com/feed/" },
+  { name: "Jewish Review of Books",  url: "https://jewishreviewofbooks.com/feed/" },
+  { name: "Tricycle Magazine",       url: "https://tricycle.org/feed/" },
+  { name: "Lion's Roar",             url: "https://www.lionsroar.com/feed/" },
+  { name: "The Revealer",            url: "https://therevealer.org/feed/" },
   ],
 
   "Life & Relationships": [
@@ -174,6 +184,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "The Gottman Institute",   url: "https://www.gottman.com/blog/feed/" },
     { name: "Behavioral Scientist",    url: "https://behavioralscientist.org/feed/" },
     { name: "Tiny Buddha",             url: "https://tinybuddha.com/feed/" },
+    { name: "Raptitude",               url: "https://www.raptitude.com/feed/" },
   ],
 };
 
@@ -200,7 +211,6 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
   "World Politics": [
     { name: "War on the Rocks",            url: "https://rss.libsyn.com/shows/70702/destinations/298196.xml" },
     { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
-    { name: "BBC Global News Podcast",     url: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss" },
     { name: "From Our Own Correspondent",  url: "https://podcasts.files.bbci.co.uk/b006qjlq.rss" },
     { name: "The Foreign Affairs Interview", url: "https://feed.podbean.com/foreignaffairsmagazine/feed.xml" },
   ],
@@ -256,7 +266,6 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
   "Military": [
     { name: "War on the Rocks",            url: "https://rss.libsyn.com/shows/70702/destinations/298196.xml" },
     { name: "Modern War Institute",        url: "https://mwi.westpoint.edu/category/podcasts/feed/" },
-    { name: "BBC Global News Podcast",     url: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss" },
     { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
     { name: "Throughline",                 url: "https://feeds.npr.org/510333/podcast.xml" },
   ],
@@ -274,7 +283,6 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Outside/In",                  url: "https://rss.introcast.io/1061222770/feeds.megaphone.fm/TPG9719828981" },
     { name: "Emergence Magazine",          url: "https://feeds.captivate.fm/emergence-magazine/" },
     { name: "The Climate Question (BBC)",  url: "https://podcasts.files.bbci.co.uk/w13xtvb6.rss" },
-    { name: "BBC Global News Podcast",     url: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss" },
   ],
 
   "Philosophy & Ethics": [
@@ -285,12 +293,12 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Philosophy Bites",            url: "https://philosophybites.libsyn.com/rss" },
   ],
 
-  "Fashion & Style": [
-    { name: "99% Invisible",               url: "https://feeds.simplecast.com/BqbsxVfO" },
-    { name: "The BoF Podcast",             url: "https://feeds.acast.com/public/shows/6355d904dd5e0e0012da88d1" },
-    { name: "The Glossy Podcast",          url: "https://feeds.megaphone.fm/DIGI4036367252" },
-    { name: "Articles of Interest",        url: "https://feed.articlesofinterest.club/" },
-    { name: "Dressed: History of Fashion", url: "https://feeds.megaphone.fm/ARML9655034287" },
+  "Religion & Faith": [
+    { name: "BibleProject Podcast",      url: "https://feeds.simplecast.com/3NVmUWZO" },
+    { name: "Ask NT Wright Anything",    url: "https://feeds.megaphone.fm/NSR7466770103" },
+    { name: "Yaqeen Podcast",            url: "https://rss.buzzsprout.com/1014445.rss" },
+    { name: "18Forty",                   url: "https://www.spreaker.com/show/4344730/episodes/feed" },
+    { name: "Buddhist Geeks",            url: "https://feeds.soundcloud.com/users/soundcloud:users:3698613/sounds.rss" },
   ],
 
   "Life & Relationships": [
@@ -329,6 +337,41 @@ function parsePubDate(raw: string): number {
   return isNaN(ts) ? 0 : ts;
 }
 
+/**
+ * Normalises tracking variants of the same article URL without changing the
+ * destination itself. If parsing fails, the original URL is preserved.
+ */
+export function canonicalizeUrl(raw: string): string {
+  const value = raw.trim();
+  if (!value) return value;
+
+  try {
+    const url = new URL(value);
+    url.hash = "";
+
+    const trackingParams = new Set([
+      "fbclid", "gclid", "dclid", "mc_cid", "mc_eid",
+      "ref", "referrer", "source",
+    ]);
+    for (const key of [...url.searchParams.keys()]) {
+      if (key.toLowerCase().startsWith("utm_") || trackingParams.has(key.toLowerCase())) {
+        url.searchParams.delete(key);
+      }
+    }
+
+    url.hostname = url.hostname.toLowerCase();
+    if ((url.protocol === "https:" && url.port === "443") ||
+        (url.protocol === "http:" && url.port === "80")) {
+      url.port = "";
+    }
+    if (url.pathname.length > 1) url.pathname = url.pathname.replace(/\/+$/, "");
+    url.searchParams.sort();
+    return url.toString();
+  } catch {
+    return value.replace(/#.*$/, "").replace(/\/$/, "");
+  }
+}
+
 function extractItems(xml: string, sourceName: string): RSSItem[] {
   const itemTag  = xml.includes("<entry") ? "entry" : "item";
   const segments = xml.split(`<${itemTag}`).slice(1).slice(0, 20);
@@ -343,9 +386,9 @@ function extractItems(xml: string, sourceName: string): RSSItem[] {
 
       const rawUrl = extractText(seg, "link") ||
         seg.match(/<link[^>]+href="([^"]+)"/)?.[1] || "";
-      const url = rawUrl
+      const url = canonicalizeUrl(rawUrl
         .replace(/&#038;/g, "&").replace(/&amp;/g, "&")
-        .replace(/&#\d+;/g, "").trim();
+        .replace(/&#\d+;/g, "").trim());
 
       const description =
         extractText(seg, "description") ||
@@ -433,11 +476,11 @@ async function fetchRecentHistory(userId: string): Promise<RecentHistory> {
     for (const item of result.Items ?? []) {
       const articles = (item.articles ?? []) as Article[];
       for (const a of articles) {
-        if (a.url)    seenUrls.add(a.url);
+        if (a.url)    seenUrls.add(canonicalizeUrl(a.url));
         if (a.source) seenSources.set(a.source, (seenSources.get(a.source) ?? 0) + 1);
       }
       const podcast = item.podcast as Podcast | null;
-      if (podcast?.url)    seenUrls.add(podcast.url);
+      if (podcast?.url)    seenUrls.add(canonicalizeUrl(podcast.url));
       if (podcast?.source) seenSources.set(podcast.source, (seenSources.get(podcast.source) ?? 0) + 1);
     }
   } catch (err) {
@@ -477,7 +520,7 @@ const CATEGORY_EMOJI: Record<string, string> = {
   "Health":             "🧬",
   "Environment":        "🌿",
   "Philosophy & Ethics": "🧠",
-  "Fashion & Style":    "👗",
+  "Religion & Faith":    "🕊️",
   "Life & Relationships": "💛",
 };
 
@@ -622,26 +665,67 @@ interface ScoredCandidate extends RSSItem {
   penalised: boolean;
 }
 
-const ROUNDUP_PATTERNS    = /\b(weekly|roundup|link list|best of|this week in|top \d+)\b/i;
-const PODCAST_PATTERNS    = /\b(podcast|transcript|episode|listen now|audio|ep\.|ep \d+)\b/i;
-const VIDEO_PATTERNS      = /\b(video|watch|newsfeed|news feed)\b/i;
-const VIDEO_URL_PATTERN   = /\/(video|videos|watch)\//i;
-const BREAKING_PATTERNS   = /\b(breaking|live|live blog|live updates|live coverage|as it happened|in pictures|in maps)\b/i;
+const ROUNDUP_PATTERNS     = /\b(weekly|roundup|link list|best of|this week in|top \d+)\b/i;
+const PODCAST_PATTERNS     = /\b(podcast|transcript|episode|listen now|audio|ep\.|ep \d+)\b/i;
+const VIDEO_PATTERNS       = /\b(video|watch|newsfeed|news feed)\b/i;
+const VIDEO_URL_PATTERN    = /\/(video|videos|watch)\//i;
+const BREAKING_PATTERNS    = /\b(breaking|live|live blog|live updates|live coverage|as it happened|in pictures|in maps)\b/i;
 const LIVEBLOG_URL_PATTERN = /\/(liveblog|live-blog|live_blog|breaking|live\/)\//i;
 
-function scoreAndFilter(items: RSSItem[], history: RecentHistory, isPodcast = false): ScoredCandidate[] {
+const ARTICLE_MAX_AGE_DAYS: Record<string, number> = {
+  "Software & DevOps": 14,
+  "Technology": 7,
+  "World Politics": 4,
+  "Business": 10,
+  "Economics": 10,
+  "Science": 14,
+  "Productivity": 30,
+  "History": 60,
+  "Arts & Culture": 30,
+  "Military": 10,
+  "Health": 14,
+  "Environment": 21,
+  "Philosophy & Ethics": 60,
+  "Religion & Faith": 60,
+  "Life & Relationships": 30,
+};
+
+function normaliseTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[’‘]/g, "'")
+    .replace(/[^a-z0-9]+/g, " " )
+    .replace(/\s+/g, " " )
+    .trim();
+}
+
+function scoreAndFilter(
+  items: RSSItem[],
+  history: RecentHistory,
+  isPodcast = false,
+  scope: string[] = []
+): ScoredCandidate[] {
   const now       = Date.now();
   const oneDayMs  = 24 * 60 * 60 * 1000;
   const twoDaysMs = 48 * 60 * 60 * 1000;
+  // For multi-interest pools use the most permissive category window so an
+  // evergreen category is not accidentally starved by a news-heavy one.
+  const maxAgeDays = isPodcast
+    ? 45
+    : Math.max(7, ...scope.map(category => ARTICLE_MAX_AGE_DAYS[category] ?? 30));
+  const maxAgeMs = maxAgeDays * oneDayMs;
 
-  return items
+  const sorted = items
     .map((item): ScoredCandidate => {
-      const age       = now - item.pubTimestamp;
-      const freshness = age <= oneDayMs ? "today" : age <= twoDaysMs ? "recent" : "older";
-      const penalised = history.seenUrls.has(item.url) || (history.seenSources.get(item.sourceName) ?? 0) >= 3;
-      return { ...item, freshness, penalised };
+      const url        = canonicalizeUrl(item.url);
+      const age        = item.pubTimestamp > 0 ? now - item.pubTimestamp : Number.POSITIVE_INFINITY;
+      const freshness  = age <= oneDayMs ? "today" : age <= twoDaysMs ? "recent" : "older";
+      const penalised  = history.seenUrls.has(url) || (history.seenSources.get(item.sourceName) ?? 0) >= 3;
+      return { ...item, url, freshness, penalised };
     })
     .filter((item) => !history.seenUrls.has(item.url))
+    .filter((item) => item.pubTimestamp === 0 || now - item.pubTimestamp <= maxAgeMs)
     .filter((item) => !ROUNDUP_PATTERNS.test(item.title))
     .filter((item) => !VIDEO_PATTERNS.test(item.title))
     .filter((item) => !VIDEO_URL_PATTERN.test(item.url))
@@ -655,6 +739,46 @@ function scoreAndFilter(items: RSSItem[], history: RecentHistory, isPodcast = fa
       if (a.penalised !== b.penalised) return a.penalised ? 1 : -1;
       return b.pubTimestamp - a.pubTimestamp;
     });
+
+  // Remove exact URL duplicates and near-identical title duplicates after
+  // ranking, keeping the strongest/freshest occurrence.
+  const seenUrls = new Set<string>();
+  const seenTitles = new Set<string>();
+  return sorted.filter(item => {
+    const titleKey = normaliseTitle(item.title);
+    if (seenUrls.has(item.url) || (titleKey && seenTitles.has(titleKey))) return false;
+    seenUrls.add(item.url);
+    if (titleKey) seenTitles.add(titleKey);
+    return true;
+  });
+}
+
+/** Selects a source-balanced shortlist while preserving the ranking order. */
+function buildBalancedShortlist(candidates: ScoredCandidate[], limit = 12, maxPerSource = 2): ScoredCandidate[] {
+  const selected: ScoredCandidate[] = [];
+  const sourceCounts = new Map<string, number>();
+
+  for (const candidate of candidates) {
+    const count = sourceCounts.get(candidate.sourceName) ?? 0;
+    if (count >= maxPerSource) continue;
+    selected.push(candidate);
+    sourceCounts.set(candidate.sourceName, count + 1);
+    if (selected.length >= limit) break;
+  }
+
+  return selected;
+}
+
+function truncateDescription(description: string, maxLength = 320): string {
+  const clean = description.replace(/\s+/g, " " ).trim();
+  if (clean.length <= maxLength) return clean;
+
+  const window = clean.slice(0, maxLength + 1);
+  const sentenceEnd = Math.max(window.lastIndexOf(". "), window.lastIndexOf("? "), window.lastIndexOf("! "));
+  if (sentenceEnd >= Math.floor(maxLength * 0.65)) return window.slice(0, sentenceEnd + 1).trim();
+
+  const wordEnd = window.lastIndexOf(" " );
+  return `${window.slice(0, wordEnd > 0 ? wordEnd : maxLength).trim()}…`;
 }
 
 // ─── Bedrock ──────────────────────────────────────────────────────────────────
@@ -673,7 +797,7 @@ async function selectBestArticle(candidates: ScoredCandidate[], interests: strin
     .filter(([, count]) => count >= 2).map(([src]) => src).join(", ");
 
   const candidateList = candidates
-    .map((c, i) => `[${i}] "${c.title}" — ${c.sourceName} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    URL: ${c.url}\n    ${c.description.slice(0, 400)}`)
+    .map((c, i) => `[${i}] "${c.title}" — ${c.sourceName} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    URL: ${c.url}\n    ${truncateDescription(c.description, 320)}`)
     .join("\n\n");
 
   const diversityNote = recentSourcesList
@@ -682,38 +806,40 @@ async function selectBestArticle(candidates: ScoredCandidate[], interests: strin
 
   const categoryList = interests.map(i => `"${i}"`).join(", ");
 
-  const LIGHT_CATEGORIES = ["Life & Relationships", "Fashion & Style"];
-  const toneNote = interests.some(i => LIGHT_CATEGORIES.includes(i))
-    ? `\nTONE (applies to Life & Relationships and Fashion & Style): readers of these sections want pieces that are uplifting, warm, practical, or delightful — personal growth, style, joy, connection, creativity, everyday life. Strongly prefer positive, hopeful, or genuinely useful angles. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness, tragedy) unless there is truly nothing else on-topic. When two candidates fit, always choose the lighter, more enjoyable one.`
+  const FAITH_NOTE = interests.includes("Religion & Faith")
+    ? `\nTONE (Religion & Faith): rotate across faith traditions; prefer theology, spirituality, sacred-text study and lived practice; reject sectarian polemics, proselytising, and current-events/geopolitical framing of religious communities.`
     : "";
+  const LIGHT_CATEGORIES = ["Life & Relationships"];
+  const toneNote = FAITH_NOTE + (interests.some(i => LIGHT_CATEGORIES.includes(i))
+    ? `\nTONE (applies to Life & Relationships): readers of these sections want pieces that are uplifting, warm, practical, or delightful — personal growth, style, joy, connection, creativity, everyday life. Strongly prefer positive, hopeful, or genuinely useful angles. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness, tragedy) unless there is truly nothing else on-topic. When two candidates fit, always choose the lighter, more enjoyable one.`
+    : "");
 
-  const prompt = `You are an editorial assistant for Cogletta, a daily long-form article curation app for professionals who want to learn deeply.
+  const prompt = `You curate Cogletta's daily long-form reading picks.
 
-The user follows these interests — these are the ONLY valid categories:
+Valid user interests only:
 ${categoryList}${subTopicContext}
 ${diversityNote}
 
-Select the single best LONG-FORM ARTICLE that is genuinely ABOUT one of the user's interests above.
+Choose the single best written long-form article genuinely about one valid interest.
 
-HARD REQUIREMENTS — a candidate that fails ANY of these is NOT eligible, no matter how well written:
-- RELEVANCE: the article must clearly belong to one of the user's interests. Judge from the title, the description, AND the URL slug (e.g. a URL containing "fifa-world-cup" is a sports piece and does NOT belong under Fashion & Style, Business, etc.). General-aggregator sources (e.g. Longreads, Aeon, The Conversation) publish on every topic, so never assume relevance from the source name — judge by content.
-- FORMAT: a written long-form article. Reject podcast transcripts, episode summaries, video reports.
-- NO breaking news, liveblogs, or news dispatches.
+Reject any candidate that is:
+- off-topic when judged from title, description and URL slug; never infer topic from a general-interest source name
+- a transcript, episode summary, video report, breaking-news dispatch or liveblog
 
-Among the ELIGIBLE candidates, prefer: (1) depth — essays, research summaries, analysis, think-tank reports; (2) freshness — published today or recently; (3) source variety — avoid sources marked "[source shown recently]" unless clearly superior.
+Among eligible pieces prefer depth (essay, analysis, research or report), then freshness and source variety. Avoid a recently shown source unless clearly better.
 ${toneNote}
-If NONE of the candidates is clearly about one of the user's interests, respond with selectedIndex -1.
+Return selectedIndex -1 when none is clearly eligible.
 
 Candidates:
 ${candidateList}
 
-Respond ONLY with valid JSON (no markdown):
+Return only valid JSON:
 {
-  "selectedIndex": <0-${candidates.length - 1}, or -1 if no candidate is on-topic>,
-  "category": "<the ONE user interest this article belongs to, copied EXACTLY from the list above; empty string if selectedIndex is -1>",
-  "summary": "<3-4 sentences (~75 words). Recommend as if to a smart friend. Direct, curious, specific. No jargon. Don't start with 'This article'. Don't use 'delve', 'explore', 'unpack', 'shed light on'.>",
-  "reason": "<One short, natural sentence (max 18 words) that names a CONCRETE hook from THIS piece — a specific idea, question, tension, or takeaway a reader would be curious about. Sound like a friend recommending it. NEVER use filler like 'directly relevant to your interests', 'relevant to you', 'for your interest in', 'aligns with your interests', 'a must-read', 'perfect for you', and do NOT just name the category.>",
-  "readingTime": "<estimated reading time e.g. '8 min read'>"
+  "selectedIndex": <0-${candidates.length - 1}, or -1>,
+  "category": "<one exact valid interest; empty when -1>",
+  "summary": "<3-4 sentences, about 75 words; direct, specific and jargon-free; do not begin 'This article' or use delve/explore/unpack/shed light on>",
+  "reason": "<max 18 words; a concrete idea, question, tension or takeaway; no generic relevance or must-read wording>",
+  "readingTime": "<estimate such as '8 min read'>"
 }`;
 
   const command = new InvokeModelCommand({
@@ -737,11 +863,14 @@ Respond ONLY with valid JSON (no markdown):
   try {
     parsed = JSON.parse(text) as BedrockSelection;
   } catch {
-    console.warn("Bedrock JSON parse failed, using index 0. Raw:", text.slice(0, 200));
+    console.warn("Bedrock JSON parse failed; using the highest-ranked candidate safely. Raw:", text.slice(0, 200));
     parsed = { selectedIndex: 0, category: "", summary: "", reason: "", readingTime: "~5 min read" };
   }
 
-  if (typeof parsed.selectedIndex !== "number" || isNaN(parsed.selectedIndex)) parsed.selectedIndex = 0;
+  if (!Number.isInteger(parsed.selectedIndex) || parsed.selectedIndex < -1 || parsed.selectedIndex >= candidates.length) {
+    console.warn(`Bedrock returned invalid article index ${parsed.selectedIndex}; using highest-ranked candidate.`);
+    parsed.selectedIndex = 0;
+  }
 
   const cleanStr = (s: string) => s
     .replace(/&#8217;/g, "'").replace(/&#8216;/g, "'")
@@ -766,7 +895,7 @@ async function selectBestPodcast(candidates: ScoredCandidate[], interests: strin
     .filter(([, count]) => count >= 2).map(([src]) => src).join(", ");
 
   const candidateList = candidates
-    .map((c, i) => `[${i}] "${c.title}" — ${c.sourceName}${c.duration ? ` (${c.duration})` : ""} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    URL: ${c.url}\n    ${c.description.slice(0, 300)}`)
+    .map((c, i) => `[${i}] "${c.title}" — ${c.sourceName}${c.duration ? ` (${c.duration})` : ""} (${c.freshness})${c.penalised ? " [source shown recently]" : ""}\n    URL: ${c.url}\n    ${truncateDescription(c.description, 300)}`)
     .join("\n\n");
 
   const diversityNote = recentSourcesList
@@ -775,10 +904,13 @@ async function selectBestPodcast(candidates: ScoredCandidate[], interests: strin
 
   const categoryList = interests.map(i => `"${i}"`).join(", ");
 
-  const LIGHT_CATEGORIES = ["Life & Relationships", "Fashion & Style"];
-  const toneNote = interests.some(i => LIGHT_CATEGORIES.includes(i))
-    ? `\nTONE (applies to Life & Relationships and Fashion & Style): prefer episodes that are uplifting, warm, practical, or fun — personal growth, style, joy, connection, creativity, everyday life. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness) unless there is truly nothing else on-topic. When two fit, choose the lighter, more enjoyable one.`
+  const FAITH_NOTE = interests.includes("Religion & Faith")
+    ? `\nTONE (Religion & Faith): rotate across faith traditions; prefer theology, spirituality, sacred-text study and lived practice; reject sectarian polemics, proselytising, and current-events/geopolitical framing of religious communities.`
     : "";
+  const LIGHT_CATEGORIES = ["Life & Relationships"];
+  const toneNote = FAITH_NOTE + (interests.some(i => LIGHT_CATEGORIES.includes(i))
+    ? `\nTONE (applies to Life & Relationships): prefer episodes that are uplifting, warm, practical, or fun — personal growth, style, joy, connection, creativity, everyday life. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness) unless there is truly nothing else on-topic. When two fit, choose the lighter, more enjoyable one.`
+    : "");
 
   const prompt = `You are an editorial assistant for Cogletta, a daily content curation app.
 
@@ -829,11 +961,14 @@ Respond ONLY with valid JSON (no markdown):
   try {
     parsed = JSON.parse(text) as BedrockPodcastSelection;
   } catch {
-    console.warn("Podcast Bedrock JSON parse failed, using index 0. Raw:", text.slice(0, 200));
+    console.warn("Podcast Bedrock JSON parse failed; using the highest-ranked candidate safely. Raw:", text.slice(0, 200));
     parsed = { selectedIndex: 0, category: "", summary: "", reason: "", duration: "" };
   }
 
-  if (typeof parsed.selectedIndex !== "number" || isNaN(parsed.selectedIndex)) parsed.selectedIndex = 0;
+  if (!Number.isInteger(parsed.selectedIndex) || parsed.selectedIndex < -1 || parsed.selectedIndex >= candidates.length) {
+    console.warn(`Bedrock returned invalid podcast index ${parsed.selectedIndex}; using highest-ranked candidate.`);
+    parsed.selectedIndex = 0;
+  }
 
   const cleanStr = (s: string) => s
     .replace(/&#8217;/g, "'").replace(/&#8216;/g, "'")
@@ -842,6 +977,172 @@ Respond ONLY with valid JSON (no markdown):
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"');
 
   return { ...parsed, category: (parsed.category ?? "").trim(), summary: cleanStr(parsed.summary ?? ""), reason: cleanStr(parsed.reason ?? "") };
+}
+
+
+// ─── Shared topic-pool generation ─────────────────────────────────────────────
+
+export interface TopicPoolOptions {
+  activeSubTopics?: string[];
+  minSize?: number;
+  maxSize?: number;
+}
+
+interface PoolSelectionItem {
+  selectedIndex: number;
+  subTopics?: string[];
+  qualityScore?: number;
+  summary?: string;
+  reason?: string;
+  readingTime?: string;
+  duration?: string;
+}
+
+interface PoolSelectionResponse {
+  items: PoolSelectionItem[];
+  unrepresentedSubTopics?: string[];
+}
+
+function normaliseSubTopic(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function poolSizeFor(activeSubTopics: string[], minSize = 10, maxSize = 20): number {
+  return Math.min(maxSize, Math.max(minSize, activeSubTopics.length + 4));
+}
+
+function sanitiseSubTopics(values: unknown, allowed: string[]): string[] {
+  if (!Array.isArray(values)) return [];
+  const allowedMap = new Map(allowed.map(v => [normaliseSubTopic(v), v]));
+  const result: string[] = [];
+  for (const raw of values) {
+    if (typeof raw !== "string") continue;
+    const exact = allowedMap.get(normaliseSubTopic(raw));
+    if (exact && !result.includes(exact)) result.push(exact);
+  }
+  return result;
+}
+
+async function fetchPoolCandidates(category: string, history: RecentHistory, isPodcast: boolean): Promise<ScoredCandidate[]> {
+  const sourceMap = isPodcast ? PODCAST_SOURCES : RSS_SOURCES;
+  const sources = sourceMap[category] ?? [];
+  if (!sources.length) return [];
+  const results = await Promise.allSettled(sources.map(fetchRSSFeed));
+  const allItems: RSSItem[] = [];
+  results.forEach((r, i) => {
+    if (r.status === "fulfilled") allItems.push(...r.value);
+    else console.warn(`${isPodcast ? "Podcast" : "Article"} feed failed: ${sources[i].url}`, r.reason);
+  });
+  const filtered = scoreAndFilter(allItems, history, isPodcast, [category]);
+  return buildBalancedShortlist(filtered, isPodcast ? 24 : 40, isPodcast ? 3 : 4);
+}
+
+async function selectPoolWithBedrock(
+  candidates: ScoredCandidate[],
+  category: string,
+  activeSubTopics: string[],
+  desiredSize: number,
+  isPodcast: boolean
+): Promise<PoolSelectionResponse> {
+  const candidateList = candidates.map((c, i) =>
+    `[${i}] "${c.title}" — ${c.sourceName} (${c.freshness})\nURL: ${c.url}\n${truncateDescription(c.description, isPodcast ? 260 : 300)}`
+  ).join("\n\n");
+  const subTopicText = activeSubTopics.length
+    ? activeSubTopics.map(s => `- ${s}`).join("\n")
+    : "- none configured; use an empty subTopics array";
+  const contentType = isPodcast ? "podcast episodes" : "long-form articles";
+  const extraFields = isPodcast
+    ? `"duration": "<duration or estimate>"`
+    : `"readingTime": "<estimate such as '8 min read'>"`;
+  // Religion & Faith: gelenekler arası denge + jeopolitik/polemik filtresi.
+  // Kaynak dengesi tek başına yetmez; seçimi model yaptığı için kural prompt'ta da yaşamalı.
+  const faithNote = category === "Religion & Faith"
+    ? `\n\nTradition balance rule (Religion & Faith): rotate across faith traditions (Islam, Christianity, Judaism, Buddhism and others) from day to day rather than favouring any single one — use the recently-shown-source markers to balance. Prefer theology, spirituality, sacred-text study, comparative religion, ethics and lived practice. REJECT sectarian polemics, proselytising content, and items framing religious communities through current events, conflict or geopolitics.`
+    : "";
+
+  const prompt = `Create today's shared Cogletta ${category} pool from the candidates below.\n\nSelect up to ${desiredSize} high-quality ${contentType}. Rank best first. Never repeat an index. Include at most two items from any single source. Reject off-topic, roundup, transcript, video, breaking-news or liveblog content. Prefer depth, freshness and source diversity.\n\nActive sub-topics selected by users:\n${subTopicText}${faithNote}\n\nCoverage rule: when a clearly relevant quality candidate exists, include at least one item for every active sub-topic. Never force weak or unrelated content merely to fill coverage. Tag each selected item only with exact sub-topic names from the list. General ${category} pieces may have an empty subTopics array.\n\nCandidates:\n${candidateList}\n\nReturn only valid JSON:\n{\n  "items": [\n    {\n      "selectedIndex": <candidate index>,\n      "subTopics": ["<exact active sub-topic>"],\n      "qualityScore": <0-100>,\n      "summary": "<specific ${isPodcast ? "2-3" : "3-4"} sentence summary>",\n      "reason": "<max 18 words; concrete hook>",\n      ${extraFields}\n    }\n  ],\n  "unrepresentedSubTopics": ["<exact active sub-topic with no suitable selected item>"]\n}`;
+  const command = new InvokeModelCommand({
+    modelId: "eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+    contentType: "application/json",
+    accept: "application/json",
+    body: JSON.stringify({
+      anthropic_version: "bedrock-2023-05-31",
+      max_tokens: isPodcast ? 1800 : 3200,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  try {
+    const response = await bedrock.send(command);
+    const raw = JSON.parse(new TextDecoder().decode(response.body));
+    const text = raw.content[0].text.trim().replace(/^```json\s*/i, "").replace(/\s*```$/i, "");
+    const parsed = JSON.parse(text) as PoolSelectionResponse;
+    const seen = new Set<number>();
+    const items = (Array.isArray(parsed.items) ? parsed.items : []).filter(item => {
+      if (!Number.isInteger(item.selectedIndex) || item.selectedIndex < 0 || item.selectedIndex >= candidates.length || seen.has(item.selectedIndex)) return false;
+      seen.add(item.selectedIndex);
+      return true;
+    }).slice(0, desiredSize);
+    return {
+      items,
+      unrepresentedSubTopics: sanitiseSubTopics(parsed.unrepresentedSubTopics, activeSubTopics),
+    };
+  } catch (err) {
+    console.warn(`Pool Bedrock response failed for ${category}; using deterministic shortlist fallback`, err);
+    return {
+      items: candidates.slice(0, desiredSize).map((_, selectedIndex) => ({ selectedIndex, subTopics: [], qualityScore: Math.max(50, 90 - selectedIndex) })),
+      unrepresentedSubTopics: activeSubTopics,
+    };
+  }
+}
+
+export async function pickArticlePool(category: string, history: RecentHistory, options: TopicPoolOptions = {}): Promise<{ articles: Article[]; unrepresentedSubTopics: string[] }> {
+  const activeSubTopics = [...new Set((options.activeSubTopics ?? []).map(s => s.trim()).filter(Boolean))];
+  const desiredSize = poolSizeFor(activeSubTopics, options.minSize ?? 10, options.maxSize ?? 20);
+  const candidates = await fetchPoolCandidates(category, history, false);
+  if (!candidates.length) return { articles: [fallbackArticle(category)], unrepresentedSubTopics: activeSubTopics };
+  const selection = await selectPoolWithBedrock(candidates, category, activeSubTopics, desiredSize, false);
+  const articles = selection.items.map((item, rank) => {
+    const chosen = candidates[item.selectedIndex];
+    return {
+      category,
+      title: chosen.title,
+      summary: item.summary || chosen.description || "Click to read the full article.",
+      reason: item.reason || "A strong, timely read selected for today.",
+      url: chosen.url,
+      source: chosen.sourceName,
+      readingTime: item.readingTime || "~5 min read",
+      publishedAt: chosen.pubDate || new Date().toISOString(),
+      subTopics: sanitiseSubTopics(item.subTopics, activeSubTopics),
+      poolRank: rank + 1,
+      qualityScore: typeof item.qualityScore === "number" ? Math.max(0, Math.min(100, item.qualityScore)) : undefined,
+    } as Article;
+  });
+  return { articles: articles.length ? articles : [fallbackArticle(category)], unrepresentedSubTopics: selection.unrepresentedSubTopics ?? [] };
+}
+
+export async function pickPodcastPool(category: string, history: RecentHistory, options: TopicPoolOptions = {}): Promise<{ podcasts: Podcast[]; unrepresentedSubTopics: string[] }> {
+  const activeSubTopics = [...new Set((options.activeSubTopics ?? []).map(s => s.trim()).filter(Boolean))];
+  const desiredSize = Math.min(10, Math.max(5, activeSubTopics.length + 2));
+  const candidates = await fetchPoolCandidates(category, history, true);
+  if (!candidates.length) return { podcasts: [], unrepresentedSubTopics: activeSubTopics };
+  const selection = await selectPoolWithBedrock(candidates, category, activeSubTopics, desiredSize, true);
+  const podcasts = selection.items.map((item, rank) => {
+    const chosen = candidates[item.selectedIndex];
+    return {
+      category,
+      title: chosen.title,
+      summary: item.summary || chosen.description || "Click to listen.",
+      reason: item.reason || "A worthwhile episode selected for today.",
+      url: chosen.url,
+      source: chosen.sourceName,
+      duration: item.duration || chosen.duration || "—",
+      publishedAt: chosen.pubDate || new Date().toISOString(),
+      subTopics: sanitiseSubTopics(item.subTopics, activeSubTopics),
+      poolRank: rank + 1,
+      qualityScore: typeof item.qualityScore === "number" ? Math.max(0, Math.min(100, item.qualityScore)) : undefined,
+    } as Podcast;
+  });
+  return { podcasts, unrepresentedSubTopics: selection.unrepresentedSubTopics ?? [] };
 }
 
 // ─── Fallback ─────────────────────────────────────────────────────────────────
@@ -884,22 +1185,21 @@ export async function pickArticle(
     });
     if (allItems.length === 0) throw new Error(`All article feeds failed for: ${label}`);
 
-    const candidates = scoreAndFilter(allItems, history, false)
-      .filter(c => !exclude.has(c.url));
+    const candidates = scoreAndFilter(allItems, history, false, scope)
+      .filter(c => !exclude.has(canonicalizeUrl(c.url)));
     if (candidates.length === 0) throw new Error(`No fresh articles for: ${label}`);
 
     console.log(`${label}: ${allItems.length} raw → ${candidates.length} article candidates`);
 
-    const top10     = candidates.slice(0, 10);
-    const selection = await selectBestArticle(top10, scope, history, subTopicContext);
+    const shortlist = buildBalancedShortlist(candidates, 12, 2);
+    const selection = await selectBestArticle(shortlist, scope, history, subTopicContext);
 
     if (selection.selectedIndex === -1) {
       console.log(`No on-topic article for ${label}; using fallback`);
       return fallbackArticle(scope[0]);
     }
 
-    const idx    = Math.max(0, Math.min(selection.selectedIndex, top10.length - 1));
-    const chosen = top10[idx] ?? top10[0];
+    const chosen = shortlist[selection.selectedIndex] ?? shortlist[0];
     if (!chosen) return fallbackArticle(scope[0]);
 
     // Kategori MODELDEN gelir (scope içinde doğrulanır), kaynak-üyeliğinden DEĞİL.
@@ -942,22 +1242,21 @@ export async function pickPodcast(
     });
     if (items.length === 0) throw new Error(`All podcast feeds failed for: ${label}`);
 
-    const candidates = scoreAndFilter(items, history, true)
-      .filter(c => !exclude.has(c.url));
+    const candidates = scoreAndFilter(items, history, true, scope)
+      .filter(c => !exclude.has(canonicalizeUrl(c.url)));
     if (candidates.length === 0) throw new Error(`No fresh podcast episodes for: ${label}`);
 
     console.log(`${label}: ${items.length} raw → ${candidates.length} podcast candidates`);
 
-    const top10     = candidates.slice(0, 10);
-    const selection = await selectBestPodcast(top10, scope, history, subTopicContext);
+    const shortlist = buildBalancedShortlist(candidates, 12, 2);
+    const selection = await selectBestPodcast(shortlist, scope, history, subTopicContext);
 
     if (selection.selectedIndex === -1) {
       console.log(`No on-topic podcast for ${label}; skipping`);
       return null;
     }
 
-    const idx    = Math.max(0, Math.min(selection.selectedIndex, top10.length - 1));
-    const chosen = top10[idx] ?? top10[0];
+    const chosen = shortlist[selection.selectedIndex] ?? shortlist[0];
     if (!chosen) return null;
 
     const modelCat  = scope.find(i => i.toLowerCase() === selection.category.toLowerCase());

@@ -13,6 +13,9 @@ export interface Article {
   readingTime: string;
   publishedAt: string;
   audioUrl?:   string;
+  subTopics?:   string[];
+  poolRank?:    number;
+  qualityScore?: number;
 }
 
 export interface Podcast {
@@ -24,6 +27,9 @@ export interface Podcast {
   source:      string;
   duration:    string;
   publishedAt: string;
+  subTopics?:   string[];
+  poolRank?:    number;
+  qualityScore?: number;
 }
 
 export interface DailyArticles {
@@ -78,6 +84,9 @@ export interface CategoryDailyPicks {
   /** "generating" iken placeholder; gerçek içerik yazılınca kaldırılır */
   status?:       string;
   generatingAt?: number;
+  activeSubTopics?: string[];
+  unrepresentedSubTopics?: string[];
+  poolVersion?: number;
 }
 
 // Haftalık trend raporu (Pro, her Pazar)
