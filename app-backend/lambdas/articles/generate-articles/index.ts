@@ -37,6 +37,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Rest of World",           url: "https://restofworld.org/feed/" },
     { name: "Wired",                   url: "https://www.wired.com/feed/rss" },
     { name: "404 Media",               url: "https://www.404media.co/rss/" },
+    { name: "Sentiers",               url: "https://sentiers.media/feed/" },         // [VERIFY] teknoloji/gelecek üzerine haftalık düşünsel küratörlük
+    { name: "Why is this interesting?", url: "https://whyisthisinteresting.substack.com/feed" }, // günlük deneme + seçilmiş linkler
   ],
 
   "World Politics": [
@@ -113,7 +115,10 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Eurozine",                url: "https://www.eurozine.com/feed/" },
     { name: "Longreads",               url: "https://longreads.com/feed/" },
     { name: "Hyperallergic",           url: "https://hyperallergic.com/feed/" },
-  ],
+    { name: "Arts & Letters Daily",   url: "https://www.aldaily.com/feed/" },        // [VERIFY] türün atası — günde 3 seçilmiş deneme/eleştiri, 1998'den beri
+    { name: "Kottke",                 url: "https://feeds.kottke.org/main" },        // 25+ yıldır kültür/fikir küratörlüğü yapan klasik blog
+    { name: "The Sunday Long Read",   url: "https://sundaylongread.com/feed/" },
+      ],
 
   "Military": [
     { name: "War on the Rocks",        url: "https://warontherocks.com/feed/" },
@@ -131,7 +136,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
     { name: "KFF Health News",         url: "https://kffhealthnews.org/feed/" },
     { name: "NPR Health (Shots)",      url: "https://feeds.npr.org/1128/rss.xml" },
-   
     { name: "The Conversation (Health)", url: "https://theconversation.com/us/health/articles.atom" },
   ],
 
@@ -155,11 +159,11 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Practical Ethics (Oxford)", url: "http://blog.practicalethics.ox.ac.uk/feed/" },
     { name: "The Point Magazine",      url: "https://thepointmag.com/feed/" },
     { name: "3 Quarks Daily",          url: "https://3quarksdaily.com/feed" },
+    { name: "Arts & Letters Daily",   url: "https://www.aldaily.com/feed/" },
   ],
 
   "Fashion & Style": [
     { name: "Business of Fashion",     url: "https://www.businessoffashion.com/feed/" },
-
     { name: "Dazed (Fashion)",         url: "https://www.dazeddigital.com/rss" },
     { name: "Vestoj",                  url: "https://vestoj.com/feed/" },
     { name: "Blackbird Spyplane",      url: "https://www.blackbirdspyplane.com/feed" },
@@ -200,7 +204,6 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
   "World Politics": [
     { name: "War on the Rocks",            url: "https://rss.libsyn.com/shows/70702/destinations/298196.xml" },
     { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
-    { name: "BBC Global News Podcast",     url: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss" },
     { name: "From Our Own Correspondent",  url: "https://podcasts.files.bbci.co.uk/b006qjlq.rss" },
     { name: "The Foreign Affairs Interview", url: "https://feed.podbean.com/foreignaffairsmagazine/feed.xml" },
   ],
@@ -256,7 +259,6 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
   "Military": [
     { name: "War on the Rocks",            url: "https://rss.libsyn.com/shows/70702/destinations/298196.xml" },
     { name: "Modern War Institute",        url: "https://mwi.westpoint.edu/category/podcasts/feed/" },
-    { name: "BBC Global News Podcast",     url: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss" },
     { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
     { name: "Throughline",                 url: "https://feeds.npr.org/510333/podcast.xml" },
   ],
@@ -274,7 +276,6 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Outside/In",                  url: "https://rss.introcast.io/1061222770/feeds.megaphone.fm/TPG9719828981" },
     { name: "Emergence Magazine",          url: "https://feeds.captivate.fm/emergence-magazine/" },
     { name: "The Climate Question (BBC)",  url: "https://podcasts.files.bbci.co.uk/w13xtvb6.rss" },
-    { name: "BBC Global News Podcast",     url: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss" },
   ],
 
   "Philosophy & Ethics": [
