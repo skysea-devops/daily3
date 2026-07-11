@@ -131,7 +131,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
     { name: "KFF Health News",         url: "https://kffhealthnews.org/feed/" },
     { name: "NPR Health (Shots)",      url: "https://feeds.npr.org/1128/rss.xml" },
-    { name: "MedPage Today",           url: "https://www.medpagetoday.com/rss/headlines.xml" },
+   
     { name: "The Conversation (Health)", url: "https://theconversation.com/us/health/articles.atom" },
   ],
 
