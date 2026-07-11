@@ -62,15 +62,18 @@ export const handler = async (event: DeliverEvent): Promise<void> => {
   const existing     = existingRes.Item as DailyArticles | undefined;
   const hasRealContent = Array.isArray(existing?.articles) && existing.articles.length > 0;
 
+  if (hasRealContent) {
+    // Erken on-demand üretim — generate-articles üretim anında e-postayı zaten
+    // gönderdi. Tekrar göndermek çift e-posta yaratıyor (2026-07-11'de görüldü);
+    // içeriğe dokunma, e-postayı da atla.
+    console.log(`User already has content today (early on-demand generate) — user=${userId}, skipping copy and email`);
+    return;
+  }
+
   let articles: Article[];
   let podcasts: Podcast[];
 
-  if (hasRealContent) {
-    // Erken on-demand üretim — dokunma, aynısını e-postala
-    console.log(`User already has content today (early on-demand generate) — user=${userId}, emailing existing picks`);
-    articles = existing!.articles;
-    podcasts = existing!.podcasts ?? (existing!.podcast ? [existing!.podcast] : []);
-  } else {
+  {
     // ── Kategori havuzundan oku ───────────────────────────────────────────────
     const pickRes = await dynamo.send(new GetCommand({
       TableName: ARTICLES_TABLE,
