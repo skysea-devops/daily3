@@ -17,7 +17,7 @@ export const CATEGORIES: {
   { id: "Health",               label: "Health",               emoji: "🧬", description: "Medicine, mental health, longevity, well-being" },
   { id: "Environment",          label: "Environment",          emoji: "🌿", description: "Climate, ecology, sustainability, energy" },
   { id: "Philosophy & Ethics",  label: "Philosophy & Ethics",  emoji: "🧠", description: "Moral philosophy, ethics, logic, political thought" },
-  { id: "Fashion & Style",      label: "Fashion & Style",      emoji: "👗", description: "Design, industry, sustainability, culture" },
+  { id: "Religion & Faith",     label: "Religion & Faith", emoji: "🕊️", description: "World religions, theology, spirituality, sacred texts and religious thought" },
   { id: "Life & Relationships", label: "Life & Relationships", emoji: "💛", description: "Relationships, family, personal growth, well-being" },
 ];
 
@@ -35,6 +35,6 @@ export const SUB_TOPICS: Record<string, string[]> = {
   "Health":               ["Nutrition & Longevity", "Mental Health", "Neuroscience", "Exercise Science", "Medicine & Research", "Public Health"],
   "Environment":          ["Climate Change", "Renewable Energy", "Biodiversity", "Oceans", "Urban Sustainability", "Policy & Activism"],
   "Philosophy & Ethics":  ["Moral Philosophy", "Political Philosophy", "Existentialism", "Applied Ethics", "Philosophy of Mind", "Logic & Epistemology"],
-  "Fashion & Style":      ["Sustainable Fashion", "Luxury & Design", "Street Style", "Fashion Industry", "Beauty & Wellness", "Fashion History"],
+  "Religion & Faith":     ["Islam", "Christianity", "Judaism", "Buddhism", "Comparative Religion", "Spirituality"],
   "Life & Relationships": ["Relationships & Dating", "Parenting", "Career & Life Balance", "Personal Finance", "Self-Development", "Community & Belonging"],
 };
