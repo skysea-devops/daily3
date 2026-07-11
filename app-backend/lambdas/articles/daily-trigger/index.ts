@@ -54,24 +54,52 @@ async function ensureCategoryPick(category: string): Promise<EnsureResult> {
   return (payload ?? { status: "failed", category, generated: false }) as EnsureResult;
 }
 
+// Hesabın eşzamanlı Lambda limiti düşük olabilir (yeni hesaplarda varsayılan 10).
+// 15 senkron invoke'u tek seferde atmak ConcurrentInvocationLimitExceeded (429)
+// üretir — 2026-07-11 prod'da 6/15 kategori tam bu sebeple üretilemedi. Çözüm:
+// sınırlı paralellik (1 trigger + 4 invoke = 5 eşzamanlı) + throttle'da retry.
+const PHASE_A_PARALLELISM    = 4;
+const PHASE_A_MAX_ATTEMPTS   = 3;
+const PHASE_A_RETRY_DELAY_MS = 8_000; // bir üretim dalgası ~10 sn — retry anına kadar kapasite boşalır
+
+async function ensureCategoryPickWithRetry(category: string): Promise<EnsureResult> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await ensureCategoryPick(category);
+    } catch (err: any) {
+      const throttled = err?.name === "TooManyRequestsException" || err?.$metadata?.httpStatusCode === 429;
+      if (throttled && attempt < PHASE_A_MAX_ATTEMPTS) {
+        console.warn(`Throttled ensuring "${category}" (attempt ${attempt}/${PHASE_A_MAX_ATTEMPTS}), retrying in ${PHASE_A_RETRY_DELAY_MS / 1000}s`);
+        await new Promise((r) => setTimeout(r, PHASE_A_RETRY_DELAY_MS));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 async function ensureCategoryPicks(categories: string[]): Promise<void> {
   if (categories.length === 0) return;
 
   console.log(`Phase A: ensuring ${categories.length} category pick(s): ${categories.join(", ")}`);
 
-  const results = await Promise.allSettled(categories.map(ensureCategoryPick));
-
   let ready = 0, generated = 0, failed = 0;
-  results.forEach((r, i) => {
-    if (r.status === "fulfilled" && r.value.status === "ready") {
-      ready++;
-      if (r.value.generated) generated++;
-    } else {
-      failed++;
-      const reason = r.status === "rejected" ? r.reason : `status=${r.value.status}`;
-      console.warn(`Category pick not ready: "${categories[i]}" —`, reason);
-    }
-  });
+
+  for (let i = 0; i < categories.length; i += PHASE_A_PARALLELISM) {
+    const wave    = categories.slice(i, i + PHASE_A_PARALLELISM);
+    const results = await Promise.allSettled(wave.map(ensureCategoryPickWithRetry));
+
+    results.forEach((r, j) => {
+      if (r.status === "fulfilled" && r.value.status === "ready") {
+        ready++;
+        if (r.value.generated) generated++;
+      } else {
+        failed++;
+        const reason = r.status === "rejected" ? r.reason : `status=${r.value.status}`;
+        console.warn(`Category pick not ready: "${wave[j]}" —`, reason);
+      }
+    });
+  }
 
   console.log(`Phase A complete: ${ready}/${categories.length} ready (${generated} freshly generated, ${failed} failed)`);
 }
