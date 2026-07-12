@@ -37,8 +37,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Rest of World",           url: "https://restofworld.org/feed/" },
     { name: "Wired",                   url: "https://www.wired.com/feed/rss" },
     { name: "404 Media",               url: "https://www.404media.co/rss/" },
-    { name: "Sentiers",               url: "https://sentiers.media/feed/" },         // [VERIFY] teknoloji/gelecek üzerine haftalık düşünsel küratörlük
-    { name: "Why is this interesting?", url: "https://whyisthisinteresting.substack.com/feed" }, // günlük deneme + seçilmiş linkler
+    { name: "Sentiers",               url: "https://sentiers.media/feed/" },       
+    { name: "Why is this interesting?", url: "https://whyisthisinteresting.substack.com/feed" }, 
   ],
 
   "World Politics": [
@@ -72,6 +72,10 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Project Syndicate",       url: "https://www.project-syndicate.org/rss" },
     { name: "VoxEU (CEPR)",            url: "https://cepr.org/rss/vox-content" },
     { name: "Knowledge at Wharton",    url: "https://knowledge.wharton.upenn.edu/feed/" },
+    { name: "Econbrowser",             url: "https://econbrowser.com/feed" },
+    { name: "FRED Blog",               url: "https://fredblog.stlouisfed.org/feed" },
+    { name: "The Big Picture",         url: "https://ritholtz.com/feed" },
+    { name: "Chris Blattman",          url: "https://chrisblattman.com/feed" },
   ],
 
   "Science": [
@@ -94,7 +98,11 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Cal Newport",             url: "https://calnewport.com/feed/" },
     { name: "Scott H. Young",          url: "https://www.scotthyoung.com/blog/feed/" },
     { name: "Raptitude",               url: "https://www.raptitude.com/feed/" },
-    { name: "Kendra Nicole",           url: "https://kendranicole.net/feed/" },
+    { name: "Wait But Why",            url: "https://waitbutwhy.com/feed" },
+    { name: "Steve Pavlina",           url: "https://stevepavlina.com/feed" },
+    { name: "Productivityist",         url: "https://productivityist.com/category/blog/feed/" },
+    { name: "Sources of Insight",      url: "http://feeds.feedburner.com/SourcesOfInsight" },
+    { name: "Happier Human",           url: "https://happierhuman.com/feed" },
   ],
 
   "History": [
@@ -117,8 +125,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Eurozine",                url: "https://www.eurozine.com/feed/" },
     { name: "Longreads",               url: "https://longreads.com/feed/" },
     { name: "Hyperallergic",           url: "https://hyperallergic.com/feed/" },
-    { name: "Arts & Letters Daily",   url: "https://www.aldaily.com/feed/" },        // [VERIFY] türün atası — günde 3 seçilmiş deneme/eleştiri, 1998'den beri
-    { name: "Kottke",                 url: "https://feeds.kottke.org/main" },        // 25+ yıldır kültür/fikir küratörlüğü yapan klasik blog
+    { name: "Arts & Letters Daily",   url: "https://www.aldaily.com/feed/" },       
+    { name: "Kottke",                 url: "https://feeds.kottke.org/main" },       
     { name: "The Sunday Long Read",   url: "https://sundaylongread.com/feed/" },
       ],
 
@@ -142,6 +150,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "The Conversation (Health)", url: "https://theconversation.com/us/health/articles.atom" },
     { name: "Undark",                  url: "https://undark.org/feed/" },
     { name: "Nautilus",                url: "https://nautil.us/feed/" },
+    { name: "Fight Aging",             url: "https://www.fightaging.org/feed" },
+    { name: "Peter Attia (Articles)",  url: "https://peterattiamd.com/feed" },
   ],
 
   "Environment": [
@@ -153,6 +163,10 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Atmos",                   url: "https://atmos.earth/feed/" },
     { name: "Noema Magazine",          url: "https://www.noemamag.com/feed/" },
     { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
+    { name: "Yale Climate Connections", url: "https://yaleclimateconnections.org/feed" },
+    { name: "Legal Planet",            url: "https://legal-planet.org/feed" },
+    { name: "Weather West",            url: "https://weatherwest.com/feed" },
+    { name: "CleanTechnica",           url: "https://cleantechnica.com/feed" },
   ],
 
   "Philosophy & Ethics": [
@@ -188,6 +202,10 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Tiny Buddha",             url: "https://tinybuddha.com/feed/" },
     { name: "Raptitude",               url: "https://www.raptitude.com/feed/" },
     { name: "Kendra Nicole",           url: "https://kendranicole.net/feed/" },
+    { name: "Mark Manson",             url: "https://markmanson.net/feed" },
+    { name: "Gretchen Rubin",          url: "https://gretchenrubin.com/feed" },
+    { name: "Child & Family Blog",     url: "https://childandfamilyblog.com/feed" },
+    { name: "The Positivity Blog",     url: "https://positivityblog.com/feed" },
   ],
 };
 
