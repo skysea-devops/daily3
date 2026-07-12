@@ -37,8 +37,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Rest of World",           url: "https://restofworld.org/feed/" },
     { name: "Wired",                   url: "https://www.wired.com/feed/rss" },
     { name: "404 Media",               url: "https://www.404media.co/rss/" },
-    { name: "Sentiers",               url: "https://sentiers.media/feed/" },         // [VERIFY] teknoloji/gelecek üzerine haftalık düşünsel küratörlük
-    { name: "Why is this interesting?", url: "https://whyisthisinteresting.substack.com/feed" }, // günlük deneme + seçilmiş linkler
+    { name: "Sentiers",               url: "https://sentiers.media/feed/" },       
+    { name: "Why is this interesting?", url: "https://whyisthisinteresting.substack.com/feed" }, 
   ],
 
   "World Politics": [
@@ -72,6 +72,10 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Project Syndicate",       url: "https://www.project-syndicate.org/rss" },
     { name: "VoxEU (CEPR)",            url: "https://cepr.org/rss/vox-content" },
     { name: "Knowledge at Wharton",    url: "https://knowledge.wharton.upenn.edu/feed/" },
+    { name: "Econbrowser",             url: "https://econbrowser.com/feed" },
+    { name: "FRED Blog",               url: "https://fredblog.stlouisfed.org/feed" },
+    { name: "The Big Picture",         url: "https://ritholtz.com/feed" },
+    { name: "Chris Blattman",          url: "https://chrisblattman.com/feed" },
   ],
 
   "Science": [
@@ -94,6 +98,11 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Cal Newport",             url: "https://calnewport.com/feed/" },
     { name: "Scott H. Young",          url: "https://www.scotthyoung.com/blog/feed/" },
     { name: "Raptitude",               url: "https://www.raptitude.com/feed/" },
+    { name: "Wait But Why",            url: "https://waitbutwhy.com/feed" },
+    { name: "Steve Pavlina",           url: "https://stevepavlina.com/feed" },
+    { name: "Productivityist",         url: "https://productivityist.com/category/blog/feed/" },
+    { name: "Sources of Insight",      url: "http://feeds.feedburner.com/SourcesOfInsight" },
+    { name: "Happier Human",           url: "https://happierhuman.com/feed" },
   ],
 
   "History": [
@@ -116,8 +125,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Eurozine",                url: "https://www.eurozine.com/feed/" },
     { name: "Longreads",               url: "https://longreads.com/feed/" },
     { name: "Hyperallergic",           url: "https://hyperallergic.com/feed/" },
-    { name: "Arts & Letters Daily",   url: "https://www.aldaily.com/feed/" },        // [VERIFY] türün atası — günde 3 seçilmiş deneme/eleştiri, 1998'den beri
-    { name: "Kottke",                 url: "https://feeds.kottke.org/main" },        // 25+ yıldır kültür/fikir küratörlüğü yapan klasik blog
+    { name: "Arts & Letters Daily",   url: "https://www.aldaily.com/feed/" },       
+    { name: "Kottke",                 url: "https://feeds.kottke.org/main" },       
     { name: "The Sunday Long Read",   url: "https://sundaylongread.com/feed/" },
       ],
 
@@ -136,10 +145,13 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Stat News",               url: "https://www.statnews.com/feed/" },
     { name: "Psyche (Aeon)",           url: "https://psyche.co/feed" },
     { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
+    { name: "Scientific American",     url: "http://rss.sciam.com/ScientificAmerican-Global" },
     { name: "NPR Health (Shots)",      url: "https://feeds.npr.org/1128/rss.xml" },
     { name: "The Conversation (Health)", url: "https://theconversation.com/us/health/articles.atom" },
     { name: "Undark",                  url: "https://undark.org/feed/" },
     { name: "Nautilus",                url: "https://nautil.us/feed/" },
+    { name: "Fight Aging",             url: "https://www.fightaging.org/feed" },
+    { name: "Peter Attia (Articles)",  url: "https://peterattiamd.com/feed" },
   ],
 
   "Environment": [
@@ -151,6 +163,10 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Atmos",                   url: "https://atmos.earth/feed/" },
     { name: "Noema Magazine",          url: "https://www.noemamag.com/feed/" },
     { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
+    { name: "Yale Climate Connections", url: "https://yaleclimateconnections.org/feed" },
+    { name: "Legal Planet",            url: "https://legal-planet.org/feed" },
+    { name: "Weather West",            url: "https://weatherwest.com/feed" },
+    { name: "CleanTechnica",           url: "https://cleantechnica.com/feed" },
   ],
 
   "Philosophy & Ethics": [
@@ -165,16 +181,16 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Arts & Letters Daily",   url: "https://www.aldaily.com/feed/" },
   ],
 
-  "Religion & Faith": [
-  { name: "Risale English",          url: "https://risaleenglish.com/feed/" },
-  { name: "The Pen Magazine",        url: "https://thepenmagazine.net/feed/" },
-  { name: "First Things",            url: "https://www.firstthings.com/rss" },
-  { name: "Religion News Service",   url: "https://religionnews.com/feed/" },
-  { name: "Jewish Review of Books",  url: "https://jewishreviewofbooks.com/feed/" },
-  { name: "Tricycle Magazine",       url: "https://tricycle.org/feed/" },
-  { name: "Lion's Roar",             url: "https://www.lionsroar.com/feed/" },
-  { name: "The Revealer",            url: "https://therevealer.org/feed/" },
-  ],
+  "Fashion & Style": [
+  { name: "Business of Fashion",     url: "https://www.businessoffashion.com/feed/" },
+  { name: "Dazed (Fashion)",         url: "https://www.dazeddigital.com/rss" },
+  { name: "Vestoj",                  url: "https://vestoj.com/feed/" },
+  { name: "Blackbird Spyplane",      url: "https://www.blackbirdspyplane.com/feed" },
+  { name: "Put This On",             url: "https://putthison.com/feed/" },
+  { name: "Who What Wear",           url: "https://www.whowhatwear.com/feeds.xml" },
+  { name: "Permanent Style",         url: "https://www.permanentstyle.com/feed" },
+  { name: "Ape to Gentleman",        url: "https://apetogentleman.com/feed" },
+],
 
   "Life & Relationships": [
     { name: "Psyche (Aeon)",           url: "https://psyche.co/feed" },
@@ -185,6 +201,11 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Behavioral Scientist",    url: "https://behavioralscientist.org/feed/" },
     { name: "Tiny Buddha",             url: "https://tinybuddha.com/feed/" },
     { name: "Raptitude",               url: "https://www.raptitude.com/feed/" },
+    { name: "Kendra Nicole",           url: "https://kendranicole.net/feed/" },
+    { name: "Mark Manson",             url: "https://markmanson.net/feed" },
+    { name: "Gretchen Rubin",          url: "https://gretchenrubin.com/feed" },
+    { name: "Child & Family Blog",     url: "https://childandfamilyblog.com/feed" },
+    { name: "The Positivity Blog",     url: "https://positivityblog.com/feed" },
   ],
 };
 
@@ -293,12 +314,12 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Philosophy Bites",            url: "https://philosophybites.libsyn.com/rss" },
   ],
 
-  "Religion & Faith": [
-    { name: "BibleProject Podcast",      url: "https://feeds.simplecast.com/3NVmUWZO" },
-    { name: "Ask NT Wright Anything",    url: "https://feeds.megaphone.fm/NSR7466770103" },
-    { name: "Yaqeen Podcast",            url: "https://rss.buzzsprout.com/1014445.rss" },
-    { name: "18Forty",                   url: "https://www.spreaker.com/show/4344730/episodes/feed" },
-    { name: "Buddhist Geeks",            url: "https://feeds.soundcloud.com/users/soundcloud:users:3698613/sounds.rss" },
+  "Fashion & Style": [
+    { name: "99% Invisible",             url: "https://feeds.simplecast.com/BqbsxVfO" },
+    { name: "The BoF Podcast",           url: "https://feeds.acast.com/public/shows/6355d904dd5e0e0012da88d1" },
+    { name: "The Glossy Podcast",        url: "https://feeds.megaphone.fm/DIGI4036367252" },
+    { name: "Articles of Interest",      url: "https://feed.articlesofinterest.club/" },
+    { name: "Dressed: History of Fashion", url: "https://feeds.megaphone.fm/ARML9655034287" },
   ],
 
   "Life & Relationships": [
@@ -520,7 +541,7 @@ const CATEGORY_EMOJI: Record<string, string> = {
   "Health":             "🧬",
   "Environment":        "🌿",
   "Philosophy & Ethics": "🧠",
-  "Religion & Faith":    "🕊️",
+  "Fashion & Style":     "👗",
   "Life & Relationships": "💛",
 };
 
@@ -671,6 +692,15 @@ const VIDEO_PATTERNS       = /\b(video|watch|newsfeed|news feed)\b/i;
 const VIDEO_URL_PATTERN    = /\/(video|videos|watch)\//i;
 const BREAKING_PATTERNS    = /\b(breaking|live|live blog|live updates|live coverage|as it happened|in pictures|in maps)\b/i;
 const LIVEBLOG_URL_PATTERN = /\/(liveblog|live-blog|live_blog|breaking|live\/)\//i;
+// URL YOLUNDA haber göstergesi: /news/, /news-features/ vb. altındaki içerik
+// haber raporudur, analiz değil — ürün tezi gereği elenir. Yalnızca path'e
+// bakılır; hostname'e bakılmaz (statnews.com gibi alan adları kurban gitmesin).
+const NEWS_URL_PATH_PATTERN = /\/(news|news-features|breaking-news|headlines|newswire|latest-news)(\/|$)/i;
+// "blog" içeren URL'lere sıralama önceliği — kişisel/kurumsal bloglar tercih edilir.
+const BLOG_URL_PATTERN = /(\/blog\/|\/blogs\/|^https?:\/\/blog\.)/i;
+function urlPath(u: string): string {
+  try { return new URL(u).pathname; } catch { return u; }
+}
 
 const ARTICLE_MAX_AGE_DAYS: Record<string, number> = {
   "Software & DevOps": 14,
@@ -686,7 +716,7 @@ const ARTICLE_MAX_AGE_DAYS: Record<string, number> = {
   "Health": 14,
   "Environment": 21,
   "Philosophy & Ethics": 60,
-  "Religion & Faith": 60,
+  "Fashion & Style": 45,
   "Life & Relationships": 30,
 };
 
@@ -731,12 +761,15 @@ function scoreAndFilter(
     .filter((item) => !VIDEO_URL_PATTERN.test(item.url))
     .filter((item) => !BREAKING_PATTERNS.test(item.title))
     .filter((item) => !LIVEBLOG_URL_PATTERN.test(item.url))
+    .filter((item) => isPodcast || !NEWS_URL_PATH_PATTERN.test(urlPath(item.url)))
     .filter((item) => isPodcast || !PODCAST_PATTERNS.test(item.title))
     .sort((a, b) => {
       const freshnessScore = (f: string) => f === "today" ? 2 : f === "recent" ? 1 : 0;
       const diff = freshnessScore(b.freshness) - freshnessScore(a.freshness);
       if (diff !== 0) return diff;
       if (a.penalised !== b.penalised) return a.penalised ? 1 : -1;
+      const blogDiff = (BLOG_URL_PATTERN.test(b.url) ? 1 : 0) - (BLOG_URL_PATTERN.test(a.url) ? 1 : 0);
+      if (blogDiff !== 0) return blogDiff;
       return b.pubTimestamp - a.pubTimestamp;
     });
 
@@ -806,13 +839,10 @@ async function selectBestArticle(candidates: ScoredCandidate[], interests: strin
 
   const categoryList = interests.map(i => `"${i}"`).join(", ");
 
-  const FAITH_NOTE = interests.includes("Religion & Faith")
-    ? `\nTONE (Religion & Faith): rotate across faith traditions; prefer theology, spirituality, sacred-text study and lived practice; reject sectarian polemics, proselytising, and current-events/geopolitical framing of religious communities.`
-    : "";
   const LIGHT_CATEGORIES = ["Life & Relationships"];
-  const toneNote = FAITH_NOTE + (interests.some(i => LIGHT_CATEGORIES.includes(i))
+  const toneNote = interests.some(i => LIGHT_CATEGORIES.includes(i))
     ? `\nTONE (applies to Life & Relationships): readers of these sections want pieces that are uplifting, warm, practical, or delightful — personal growth, style, joy, connection, creativity, everyday life. Strongly prefer positive, hopeful, or genuinely useful angles. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness, tragedy) unless there is truly nothing else on-topic. When two candidates fit, always choose the lighter, more enjoyable one.`
-    : "");
+    : "";
 
   const prompt = `You curate Cogletta's daily long-form reading picks.
 
@@ -904,13 +934,10 @@ async function selectBestPodcast(candidates: ScoredCandidate[], interests: strin
 
   const categoryList = interests.map(i => `"${i}"`).join(", ");
 
-  const FAITH_NOTE = interests.includes("Religion & Faith")
-    ? `\nTONE (Religion & Faith): rotate across faith traditions; prefer theology, spirituality, sacred-text study and lived practice; reject sectarian polemics, proselytising, and current-events/geopolitical framing of religious communities.`
-    : "";
   const LIGHT_CATEGORIES = ["Life & Relationships"];
-  const toneNote = FAITH_NOTE + (interests.some(i => LIGHT_CATEGORIES.includes(i))
+  const toneNote = interests.some(i => LIGHT_CATEGORIES.includes(i))
     ? `\nTONE (applies to Life & Relationships): prefer episodes that are uplifting, warm, practical, or fun — personal growth, style, joy, connection, creativity, everyday life. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness) unless there is truly nothing else on-topic. When two fit, choose the lighter, more enjoyable one.`
-    : "");
+    : "";
 
   const prompt = `You are an editorial assistant for Cogletta, a daily content curation app.
 
@@ -1054,13 +1081,7 @@ async function selectPoolWithBedrock(
   const extraFields = isPodcast
     ? `"duration": "<duration or estimate>"`
     : `"readingTime": "<estimate such as '8 min read'>"`;
-  // Religion & Faith: gelenekler arası denge + jeopolitik/polemik filtresi.
-  // Kaynak dengesi tek başına yetmez; seçimi model yaptığı için kural prompt'ta da yaşamalı.
-  const faithNote = category === "Religion & Faith"
-    ? `\n\nTradition balance rule (Religion & Faith): rotate across faith traditions (Islam, Christianity, Judaism, Buddhism and others) from day to day rather than favouring any single one — use the recently-shown-source markers to balance. Prefer theology, spirituality, sacred-text study, comparative religion, ethics and lived practice. REJECT sectarian polemics, proselytising content, and items framing religious communities through current events, conflict or geopolitics.`
-    : "";
-
-  const prompt = `Create today's shared Cogletta ${category} pool from the candidates below.\n\nSelect up to ${desiredSize} high-quality ${contentType}. Rank best first. Never repeat an index. Include at most two items from any single source. Reject off-topic, roundup, transcript, video, breaking-news or liveblog content. Prefer depth, freshness and source diversity.\n\nActive sub-topics selected by users:\n${subTopicText}${faithNote}\n\nCoverage rule: when a clearly relevant quality candidate exists, include at least one item for every active sub-topic. Never force weak or unrelated content merely to fill coverage. Tag each selected item only with exact sub-topic names from the list. General ${category} pieces may have an empty subTopics array.\n\nCandidates:\n${candidateList}\n\nReturn only valid JSON:\n{\n  "items": [\n    {\n      "selectedIndex": <candidate index>,\n      "subTopics": ["<exact active sub-topic>"],\n      "qualityScore": <0-100>,\n      "summary": "<specific ${isPodcast ? "2-3" : "3-4"} sentence summary>",\n      "reason": "<max 18 words; concrete hook>",\n      ${extraFields}\n    }\n  ],\n  "unrepresentedSubTopics": ["<exact active sub-topic with no suitable selected item>"]\n}`;
+  const prompt = `Create today's shared Cogletta ${category} pool from the candidates below.\n\nSelect up to ${desiredSize} high-quality ${contentType}. Rank best first. Never repeat an index. Include at most two items from any single source. REJECT incident reports, battlefield updates and other current-events coverage; choose analysis, essays and explainers with lasting value. Reject off-topic, roundup, transcript, video, breaking-news or liveblog content. Prefer depth, freshness and source diversity.\n\nActive sub-topics selected by users:\n${subTopicText}\n\nCoverage rule: when a clearly relevant quality candidate exists, include at least one item for every active sub-topic. Never force weak or unrelated content merely to fill coverage. Tag each selected item only with exact sub-topic names from the list. General ${category} pieces may have an empty subTopics array.\n\nCandidates:\n${candidateList}\n\nReturn only valid JSON:\n{\n  "items": [\n    {\n      "selectedIndex": <candidate index>,\n      "subTopics": ["<exact active sub-topic>"],\n      "qualityScore": <0-100>,\n      "summary": "<specific ${isPodcast ? "2-3" : "3-4"} sentence summary>",\n      "reason": "<max 18 words; concrete hook>",\n      ${extraFields}\n    }\n  ],\n  "unrepresentedSubTopics": ["<exact active sub-topic with no suitable selected item>"]\n}`;
   const command = new InvokeModelCommand({
     modelId: "eu.anthropic.claude-haiku-4-5-20251001-v1:0",
     contentType: "application/json",
