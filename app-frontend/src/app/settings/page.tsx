@@ -13,20 +13,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
 // Lemon Squeezy checkout linkleri build sırasında inline edilir. Prod'da bu
 // değişkenler henüz tanımlı olmadığından upgrade butonları yerine "Coming soon"
 // gösterilir; dev'de tanımlı oldukları için checkout akışı aynen çalışır.
-// const CHECKOUT_CONFIGURED = Boolean(
-//   process.env.NEXT_PUBLIC_LS_CHECKOUT_MONTHLY &&
-//   process.env.NEXT_PUBLIC_LS_CHECKOUT_YEARLY
-// );
-
-// Lemon Squeezy müşteri portalı: iptal, kart güncelleme, faturalar.
-  // NOT: webhook'un sakladığı lsPortalUrl İMZALI ve ~24 saat geçerli — bir gün
-  // sonra "link expired" sayfasına düşer. Mağazanın kalıcı portalı (/billing)
-  // e-posta doğrulamalı ama süresiz; garanti çalışan yol budur.
-  function handleManageBilling() {
-    if (billingBusy) return;
-    setModal(null);
-    window.location.href = "https://cogletta.lemonsqueezy.com/billing";
-  }
+const CHECKOUT_CONFIGURED = Boolean(
+  process.env.NEXT_PUBLIC_LS_CHECKOUT_MONTHLY &&
+  process.env.NEXT_PUBLIC_LS_CHECKOUT_YEARLY
+);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -279,15 +269,14 @@ function SettingsContent() {
     }
   }
 
-  // Lemon Squeezy müşteri portalı: iptal, kart güncelleme, faturalar
+  // Lemon Squeezy müşteri portalı: iptal, kart güncelleme, faturalar.
+  // NOT: webhook'un sakladığı lsPortalUrl İMZALI ve ~24 saat geçerli — bir gün
+  // sonra "link expired" sayfasına düşer. Mağazanın kalıcı portalı (/billing)
+  // e-posta doğrulamalı ama süresiz; garanti çalışan yol budur.
   function handleManageBilling() {
     if (billingBusy) return;
     setModal(null);
-    if (portalUrl) {
-      window.location.href = portalUrl;
-    } else {
-      setBillingError("Billing portal link isn't ready yet. Please refresh in a moment.");
-    }
+    window.location.href = "https://cogletta.lemonsqueezy.com/billing";
   }
 
   async function handleDeleteAccount() {
