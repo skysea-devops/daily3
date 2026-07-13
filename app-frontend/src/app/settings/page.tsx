@@ -269,15 +269,14 @@ function SettingsContent() {
     }
   }
 
-  // Lemon Squeezy müşteri portalı: iptal, kart güncelleme, faturalar
+  // Lemon Squeezy müşteri portalı: iptal, kart güncelleme, faturalar.
+  // NOT: webhook'un sakladığı lsPortalUrl İMZALI ve ~24 saat geçerli — bir gün
+  // sonra "link expired" sayfasına düşer. Mağazanın kalıcı portalı (/billing)
+  // e-posta doğrulamalı ama süresiz; garanti çalışan yol budur.
   function handleManageBilling() {
     if (billingBusy) return;
     setModal(null);
-    if (portalUrl) {
-      window.location.href = portalUrl;
-    } else {
-      setBillingError("Billing portal link isn't ready yet. Please refresh in a moment.");
-    }
+    window.location.href = "https://cogletta.lemonsqueezy.com/billing";
   }
 
   async function handleDeleteAccount() {

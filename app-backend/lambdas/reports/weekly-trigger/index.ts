@@ -22,7 +22,10 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
       new ScanCommand({
         TableName:                 USERS_TABLE,
         FilterExpression:          "SK = :profile AND attribute_exists(interests)",
-        ExpressionAttributeValues: { ":profile": "PROFILE", ":pro": "pro" },
+        // NOT: Pro filtresi bilinçli olarak kodda (plan !== "pro" → continue).
+        // Expression'da kullanılmayan değer bırakmak ValidationException üretir —
+        // 2026-07-12'de tüm Pro trend raporlarının atlanmasının nedeni buydu.
+        ExpressionAttributeValues: { ":profile": "PROFILE" },
         ExpressionAttributeNames:  { "#plan": "plan", "#region": "region" },
         ProjectionExpression:      "PK, interests, email, #plan, #region",
         ExclusiveStartKey:         lastEvaluatedKey,
