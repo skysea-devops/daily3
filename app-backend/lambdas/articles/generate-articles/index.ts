@@ -37,8 +37,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Rest of World",           url: "https://restofworld.org/feed/" },
     { name: "Wired",                   url: "https://www.wired.com/feed/rss" },
     { name: "404 Media",               url: "https://www.404media.co/rss/" },
-    { name: "Sentiers",               url: "https://sentiers.media/feed/" },       
-    { name: "Why is this interesting?", url: "https://whyisthisinteresting.substack.com/feed" }, 
+    { name: "Sentiers",               url: "https://sentiers.media/feed/" },         // [VERIFY] teknoloji/gelecek üzerine haftalık düşünsel küratörlük
+    { name: "Why is this interesting?", url: "https://whyisthisinteresting.substack.com/feed" }, // günlük deneme + seçilmiş linkler
   ],
 
   "World Politics": [
@@ -125,8 +125,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Eurozine",                url: "https://www.eurozine.com/feed/" },
     { name: "Longreads",               url: "https://longreads.com/feed/" },
     { name: "Hyperallergic",           url: "https://hyperallergic.com/feed/" },
-    { name: "Arts & Letters Daily",   url: "https://www.aldaily.com/feed/" },       
-    { name: "Kottke",                 url: "https://feeds.kottke.org/main" },       
+    { name: "Arts & Letters Daily",   url: "https://www.aldaily.com/feed/" },        // [VERIFY] türün atası — günde 3 seçilmiş deneme/eleştiri, 1998'den beri
+    { name: "Kottke",                 url: "https://feeds.kottke.org/main" },        // 25+ yıldır kültür/fikir küratörlüğü yapan klasik blog
     { name: "The Sunday Long Read",   url: "https://sundaylongread.com/feed/" },
       ],
 
@@ -174,7 +174,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Psyche (Aeon)",           url: "https://psyche.co/feed" },
     { name: "Philosophy Now",          url: "https://philosophynow.org/rss" },
     { name: "The Conversation (Phil)", url: "https://theconversation.com/us/articles.atom" },
-    { name: "Daily Nous",              url: "https://dailynous.com/feed/" },
     { name: "Practical Ethics (Oxford)", url: "http://blog.practicalethics.ox.ac.uk/feed/" },
     { name: "The Point Magazine",      url: "https://thepointmag.com/feed/" },
     { name: "3 Quarks Daily",          url: "https://3quarksdaily.com/feed" },
@@ -1081,7 +1080,7 @@ async function selectPoolWithBedrock(
   const extraFields = isPodcast
     ? `"duration": "<duration or estimate>"`
     : `"readingTime": "<estimate such as '8 min read'>"`;
-  const prompt = `Create today's shared Cogletta ${category} pool from the candidates below.\n\nSelect up to ${desiredSize} high-quality ${contentType}. Rank best first. Never repeat an index. Include at most two items from any single source. REJECT incident reports, battlefield updates and other current-events coverage; choose analysis, essays and explainers with lasting value. Reject off-topic, roundup, transcript, video, breaking-news or liveblog content. Prefer depth, freshness and source diversity.\n\nActive sub-topics selected by users:\n${subTopicText}\n\nCoverage rule: when a clearly relevant quality candidate exists, include at least one item for every active sub-topic. Never force weak or unrelated content merely to fill coverage. Tag each selected item only with exact sub-topic names from the list. General ${category} pieces may have an empty subTopics array.\n\nCandidates:\n${candidateList}\n\nReturn only valid JSON:\n{\n  "items": [\n    {\n      "selectedIndex": <candidate index>,\n      "subTopics": ["<exact active sub-topic>"],\n      "qualityScore": <0-100>,\n      "summary": "<specific ${isPodcast ? "2-3" : "3-4"} sentence summary>",\n      "reason": "<max 18 words; concrete hook>",\n      ${extraFields}\n    }\n  ],\n  "unrepresentedSubTopics": ["<exact active sub-topic with no suitable selected item>"]\n}`;
+  const prompt = `Create today's shared Cogletta ${category} pool from the candidates below.\n\nSelect up to ${desiredSize} high-quality ${contentType}. Rank best first. Never repeat an index. Include at most two items from any single source. REJECT incident reports, battlefield updates and other current-events coverage; choose analysis, essays and explainers with lasting value. Also REJECT announcements, product or tool releases, calls for papers, event listings and other meta/professional-news posts — every item must itself be a substantive read. Reject off-topic, roundup, transcript, video, breaking-news or liveblog content. Prefer depth, freshness and source diversity.\n\nActive sub-topics selected by users:\n${subTopicText}\n\nCoverage rule: when a clearly relevant quality candidate exists, include at least one item for every active sub-topic. Never force weak or unrelated content merely to fill coverage. Tag each selected item only with exact sub-topic names from the list. General ${category} pieces may have an empty subTopics array.\n\nCandidates:\n${candidateList}\n\nReturn only valid JSON:\n{\n  "items": [\n    {\n      "selectedIndex": <candidate index>,\n      "subTopics": ["<exact active sub-topic>"],\n      "qualityScore": <0-100>,\n      "summary": "<specific ${isPodcast ? "2-3" : "3-4"} sentence summary>",\n      "reason": "<max 18 words; concrete hook>",\n      ${extraFields}\n    }\n  ],\n  "unrepresentedSubTopics": ["<exact active sub-topic with no suitable selected item>"]\n}`;
   const command = new InvokeModelCommand({
     modelId: "eu.anthropic.claude-haiku-4-5-20251001-v1:0",
     contentType: "application/json",
