@@ -40,70 +40,46 @@ export const ESSAYS: Essay[] = [
       },
       {
         type: "p",
-        text: "Behavioral science keeps pointing at the same quiet truth: the habits that actually last are almost always small. Ten minutes of walking. Making the bed each morning. A few lines written before the day begins. They look like nothing. But repeated, day after day, they stop being tasks and start becoming part of who you are.",
+        text: "Behavioral science keeps pointing at the same quiet truth: the habits that actually last are almost always small. Ten minutes of walking. Making the bed each morning. A few lines written before the day begins. They look like nothing. But repeated, day after day, they stop being tasks and start becoming part of who you are. What changes people isn't the grand beginning. It's the small repetition.",
       },
 
       { type: "h2", text: "Why three?" },
 
       {
         type: "p",
-        text: "Three is a strange and useful number. Do something once and it might be luck. Set yourself ten and it starts to feel like a wall. But three feels finishable.",
-      },
-      {
-        type: "p",
-        text: "Three small things beside your morning coffee. Three new words. Three thank-yous. Three pages. Three articles. Small enough to actually do. Big enough to change the direction of a day.",
+        text: "Three is a strange and useful number. Do something once and it might be luck. Set yourself ten and it starts to feel like a wall. But three feels finishable. Three small things beside your morning coffee. Three new words. Three thank-yous. Three pages. Three articles. Small enough to actually do. Big enough to change the direction of a day.",
       },
 
-      { type: "h2", text: "Why articles?" },
+      { type: "h2", text: "Why articles, though?" },
 
       {
         type: "p",
-        text: "Because reading is still one of the most powerful ways we have of becoming a little more than we were yesterday. Read every day and you meet new ideas, widen your vocabulary, sharpen your focus, and borrow perspectives you'd never have arrived at alone.",
-      },
-      {
-        type: "p",
-        text: "None of it happens overnight. Reading works much like exercise. One session won't change you. A hundred will. The value isn't in a single article—it's in returning tomorrow, and the day after that.",
+        text: "Because reading is still one of the most powerful ways we have of becoming a little more than we were yesterday. Read every day and you meet new ideas, widen your vocabulary, sharpen your focus, and borrow perspectives you'd never have arrived at alone. But none of it happens overnight. It's like training. One session won't change you. A hundred will.",
       },
 
       { type: "h2", text: "The real problem today" },
 
       {
         type: "p",
-        text: "The problem was never that people stopped reading. It's that choosing what to read has quietly become exhausting. Thousands of articles are published every day, each claiming to be essential. Faced with endless choice, we save more, open more tabs, and somehow finish less.",
-      },
-      {
-        type: "p",
-        text: "We're not suffering from a lack of information. We're suffering from too much of it. Finding something worth reading has become harder than reading itself.",
+        text: "Here's the thing: the problem was never that people stopped reading. It's that we can't decide what to read. Thousands of pieces are published every day, and every single one insists it's essential. Overwhelmed by all of them, we finish none of them. This isn't a shortage of information. It's a flood of choice.",
       },
 
-      { type: "h2", text: "A Daily 3" },
+      { type: "h2", text: "Which is where Cogletta comes in" },
 
       {
         type: "p",
-        text: "That's where the idea of a Daily 3 came from. Not to give you more content — the internet already does that relentlessly. The idea was to give you less, but make every choice count.",
-      },
-      {
-        type: "p",
-        text: "Every morning, three thoughtfully selected articles based on the subjects you care about. Enough to learn something new. Enough to stay curious. Enough to begin the day with intention instead of an endless feed.",
-      },
-      {
-        type: "p",
-        text: "The goal was never to help people keep up with everything. It was to make reading feel manageable again — something you can actually finish before your day begins.",
+        text: "That's exactly where the idea of a Daily 3 came from. Not to give you more to read — the internet already does that, relentlessly. To give you less, and better. Every morning, three articles, chosen around what you actually care about. That's all. Because the goal was to build a habit you'll want to return to tomorrow morning — a small ritual instead of an endless feed.",
       },
 
-      { type: "h2", text: "Final thoughts" },
+      { type: "h2", text: "In the end" },
 
       {
         type: "p",
-        text: "Maybe the habit that changes your life isn't reading everything. Maybe it's simply reading three things well.",
+        text: "Maybe the thing that changes your life isn't reading everything. Maybe it's really reading three.",
       },
       {
         type: "p",
-        text: "Three articles won't make you an expert overnight. But read three thoughtful articles every morning for a year, and you'll be surprised how much you've learned, remembered, and enjoyed along the way.",
-      },
-      {
-        type: "p",
-        text: "Three articles. Every morning. It turns out that's enough.",
+        text: "Three articles. Every morning.",
       },
     ],
   },
@@ -117,7 +93,7 @@ export const ESSAYS: Essay[] = [
     blocks: [
       {
         type: "p",
-        text: "Here's something I've been thinking about. We might actually be reading more than ever before. Every day we move through hundreds of messages, headlines, social media posts, comments, and emails — perhaps no generation has ever been exposed to this much written content. But if we stopped at the end of the day and asked ourselves, “What did I actually learn today?”, it would often be difficult to answer.",
+        text: "Here's something I've been thinking about. We might actually be reading more than ever before. Every day we move through hundreds of messages, headlines, social media posts, comments, and emails — perhaps no generation has ever been exposed to this much written content. But if we stopped at the end of the day and asked ourselves, \u201CWhat did I actually learn today?\u201D, it would often be difficult to answer.",
       },
       {
         type: "p",
@@ -153,7 +129,7 @@ export const ESSAYS: Essay[] = [
       { type: "h2", text: "What magazines got right" },
       {
         type: "p",
-        text: "I only understood this later. I used to buy magazines, or spend Sunday mornings reading the newspaper supplements. Whenever I came across an article about something I cared about, I'd read it with genuine curiosity, trying to understand it rather than simply get through it. More often than not, I'd finish thinking, “I'm glad I read that.”",
+        text: "I only understood this later. I used to buy magazines, or spend Sunday mornings reading the newspaper supplements. Whenever I came across an article about something I cared about, I'd read it with genuine curiosity, trying to understand it rather than simply get through it. More often than not, I'd finish thinking, \u201CI'm glad I read that.\u201D",
       },
       {
         type: "p",
