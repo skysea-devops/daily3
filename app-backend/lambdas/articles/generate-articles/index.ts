@@ -145,7 +145,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Stat News",               url: "https://www.statnews.com/feed/" },
     { name: "Psyche (Aeon)",           url: "https://psyche.co/feed" },
     { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
-    { name: "Scientific American",     url: "http://rss.sciam.com/ScientificAmerican-Global" },
     { name: "NPR Health (Shots)",      url: "https://feeds.npr.org/1128/rss.xml" },
     { name: "The Conversation (Health)", url: "https://theconversation.com/us/health/articles.atom" },
     { name: "Undark",                  url: "https://undark.org/feed/" },

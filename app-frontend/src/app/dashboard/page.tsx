@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Navbar from "@/components/Navbar";
+import ShareCard from "@/components/ShareCard";
 import { getDailyArticles, getTrendReport } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
@@ -398,6 +399,10 @@ function DashboardContent() {
             </button>
           </div>
         )}
+
+        <div style={{ marginTop: 40 }}>
+          <ShareCard />
+        </div>
 
       </main>
     </div>

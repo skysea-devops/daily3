@@ -5,6 +5,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { signUp } from "@/lib/cognito";
 import { useAuth } from "@/lib/auth-context";
+import Navbar from "@/components/Navbar";
 
 function RegisterModal({ onClose }: { onClose: () => void }) {
   const router = useRouter();
@@ -235,25 +236,22 @@ export default function HomePage() {
 
       <div className="lp-body">
 
-        {/* NAV */}
-        <nav className="lp-nav">
-          <a href="/" className="lp-logo">Cogletta</a>
-          <div className="lp-nav-links">
-            {!loading && user ? (
-              <>
-                <Link href="/dashboard" style={{ fontSize: "0.875rem", color: "var(--ink-soft)", textDecoration: "none" }}>Dashboard</Link>
-                <Link href="/interests" style={{ fontSize: "0.875rem", color: "var(--ink-soft)", textDecoration: "none" }}>Interests</Link>
-              </>
-            ) : (
-              <>
-                <Link href="/login">Sign in</Link>
-                <Link href="/register" className="lp-btn-nav" style={{ background: "var(--ink)", color: "var(--white)", padding: "8px 18px", borderRadius: 6, fontWeight: 500, fontSize: "0.875rem", textDecoration: "none" }}>
-                  Start reading
-                </Link>
-              </>
-            )}
-          </div>
-        </nav>
+        {/* NAV — üye girişliyse uygulamanın ortak Navbar'ı (avatar menüsü,
+            Essays linki dahil); ziyaretçiye pazarlama nav'ı. Böylece üye hangi
+            sayfada olursa olsun aynı chrome'u görür. */}
+        {!loading && user ? (
+          <Navbar />
+        ) : (
+          <nav className="lp-nav">
+            <a href="/" className="lp-logo">Cogletta</a>
+            <div className="lp-nav-links">
+              <Link href="/login">Sign in</Link>
+              <Link href="/register" className="lp-btn-nav" style={{ background: "var(--ink)", color: "var(--white)", padding: "8px 18px", borderRadius: 6, fontWeight: 500, fontSize: "0.875rem", textDecoration: "none" }}>
+                Start reading
+              </Link>
+            </div>
+          </nav>
+        )}
 
         {/* HERO */}
         <section className="lp-hero">
