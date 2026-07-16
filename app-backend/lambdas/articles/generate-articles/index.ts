@@ -145,6 +145,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Stat News",               url: "https://www.statnews.com/feed/" },
     { name: "Psyche (Aeon)",           url: "https://psyche.co/feed" },
     { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
+    { name: "Scientific American",     url: "http://rss.sciam.com/ScientificAmerican-Global" },
     { name: "NPR Health (Shots)",      url: "https://feeds.npr.org/1128/rss.xml" },
     { name: "The Conversation (Health)", url: "https://theconversation.com/us/health/articles.atom" },
     { name: "Undark",                  url: "https://undark.org/feed/" },
@@ -172,7 +173,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Aeon",                    url: "https://aeon.co/feed.rss" },
     { name: "Psyche (Aeon)",           url: "https://psyche.co/feed" },
     { name: "Philosophy Now",          url: "https://philosophynow.org/rss" },
-    { name: "The Conversation (Phil)", url: "https://theconversation.com/us/articles.atom" },
+    { name: "Blog of the APA",         url: "https://blog.apaonline.org/feed" },
+    { name: "Justice Everywhere",      url: "https://justice-everywhere.org/feed" },
     { name: "Practical Ethics (Oxford)", url: "http://blog.practicalethics.ox.ac.uk/feed/" },
     { name: "The Point Magazine",      url: "https://thepointmag.com/feed/" },
     { name: "3 Quarks Daily",          url: "https://3quarksdaily.com/feed" },
@@ -187,7 +189,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   { name: "Put This On",             url: "https://putthison.com/feed/" },
   { name: "Who What Wear",           url: "https://www.whowhatwear.com/feeds.xml" },
   { name: "Permanent Style",         url: "https://www.permanentstyle.com/feed" },
-  { name: "Ape to Gentleman",        url: "https://apetogentleman.com/feed" },
+  { name: "Advanced Style",          url: "https://advanced.style/feed" },
+  { name: "Corporette",              url: "https://corporette.com/feed" },
 ],
 
   "Life & Relationships": [
@@ -1079,7 +1082,14 @@ async function selectPoolWithBedrock(
   const extraFields = isPodcast
     ? `"duration": "<duration or estimate>"`
     : `"readingTime": "<estimate such as '8 min read'>"`;
-  const prompt = `Create today's shared Cogletta ${category} pool from the candidates below.\n\nSelect up to ${desiredSize} high-quality ${contentType}. Rank best first. Never repeat an index. Include at most two items from any single source. REJECT incident reports, battlefield updates and other current-events coverage; choose analysis, essays and explainers with lasting value. Also REJECT announcements, product or tool releases, calls for papers, event listings and other meta/professional-news posts — every item must itself be a substantive read. Reject off-topic, roundup, transcript, video, breaking-news or liveblog content. Prefer depth, freshness and source diversity.\n\nActive sub-topics selected by users:\n${subTopicText}\n\nCoverage rule: when a clearly relevant quality candidate exists, include at least one item for every active sub-topic. Never force weak or unrelated content merely to fill coverage. Tag each selected item only with exact sub-topic names from the list. General ${category} pieces may have an empty subTopics array.\n\nCandidates:\n${candidateList}\n\nReturn only valid JSON:\n{\n  "items": [\n    {\n      "selectedIndex": <candidate index>,\n      "subTopics": ["<exact active sub-topic>"],\n      "qualityScore": <0-100>,\n      "summary": "<specific ${isPodcast ? "2-3" : "3-4"} sentence summary>",\n      "reason": "<max 18 words; concrete hook>",\n      ${extraFields}\n    }\n  ],\n  "unrepresentedSubTopics": ["<exact active sub-topic with no suitable selected item>"]\n}`;
+  // Fashion & Style: kaynak listesi tek başına yetmez — kitle dengesi havuz
+  // seviyesinde kurala bağlanmalı, yoksa güçlü menswear kaynakları üst sıraları
+  // domine ediyor (2026-07-15: 3 gün üst üste erkek giyimi vakası).
+  const fashionNote = category === "Fashion & Style"
+    ? `\n\nAudience balance rule (Fashion & Style): the pool MUST mix menswear and womenswear items every day — neither may exceed roughly two-thirds of the pool. Tag every item with "Menswear" or "Womenswear" in its subTopics (both for unisex/industry pieces), even when those tags are not in the active sub-topic list. Vary the audience of the TOP-RANKED items from day to day: if recently-shown markers indicate one audience dominated recent days, rank the other audience first today.`
+    : "";
+
+  const prompt = `Create today's shared Cogletta ${category} pool from the candidates below.\n\nSelect up to ${desiredSize} high-quality ${contentType}. Rank best first. Never repeat an index. Include at most two items from any single source. REJECT incident reports, battlefield updates and other current-events coverage; choose analysis, essays and explainers with lasting value. Also REJECT announcements, product or tool releases, calls for papers, event listings and other meta/professional-news posts — every item must itself be a substantive read. Reject off-topic, roundup, transcript, video, breaking-news or liveblog content. Prefer depth, freshness and source diversity.\n\nActive sub-topics selected by users:\n${subTopicText}${fashionNote}\n\nCoverage rule: when a clearly relevant quality candidate exists, include at least one item for every active sub-topic. Never force weak or unrelated content merely to fill coverage. Tag each selected item only with exact sub-topic names from the list. General ${category} pieces may have an empty subTopics array.\n\nCandidates:\n${candidateList}\n\nReturn only valid JSON:\n{\n  "items": [\n    {\n      "selectedIndex": <candidate index>,\n      "subTopics": ["<exact active sub-topic>"],\n      "qualityScore": <0-100>,\n      "summary": "<specific ${isPodcast ? "2-3" : "3-4"} sentence summary>",\n      "reason": "<max 18 words; concrete hook>",\n      ${extraFields}\n    }\n  ],\n  "unrepresentedSubTopics": ["<exact active sub-topic with no suitable selected item>"]\n}`;
   const command = new InvokeModelCommand({
     modelId: "eu.anthropic.claude-haiku-4-5-20251001-v1:0",
     contentType: "application/json",
