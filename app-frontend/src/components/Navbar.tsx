@@ -58,6 +58,7 @@ export default function Navbar() {
           {!loading && user ? (
             <>
               <Link href="/dashboard" style={navLink}>Dashboard</Link>
+              <Link href="/essays" style={navLink}>Essays</Link>
               <Link href="/interests" style={navLink}>Interests</Link>
 
               {/* User dropdown */}

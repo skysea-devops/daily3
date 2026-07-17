@@ -13,6 +13,7 @@ export interface Article {
   readingTime: string;
   publishedAt: string;
   audioUrl?:   string;
+  imageQuery?:  string;
   subTopics?:   string[];
   poolRank?:    number;
   qualityScore?: number;
