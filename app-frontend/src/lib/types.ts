@@ -10,6 +10,7 @@ export interface Article {
   readingTime: string;
   publishedAt: string;
   audioUrl?:   string;
+  imageQuery?:  string;
 }
 
 export interface Podcast {

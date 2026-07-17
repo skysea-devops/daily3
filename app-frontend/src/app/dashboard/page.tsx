@@ -34,10 +34,12 @@ function extractKeywords(title: string, category: string): string {
 
 interface UnsplashPhoto { url: string; authorName: string; authorUrl: string; }
 
-function useUnsplashPhoto(title: string, category: string): UnsplashPhoto | null {
+function useUnsplashPhoto(article: Article): UnsplashPhoto | null {
   const [photo, setPhoto] = useState<UnsplashPhoto | null>(null);
   useEffect(() => {
-    const kw = extractKeywords(title, category);
+    // Bedrock'un tema bazlı sorgusu varsa onu kullan (başlık kelimeleri çift
+    // anlamlıdır: 'How to Bear Your Sorrows' → ayı fotoğrafı vakası, 2026-07-17)
+    const kw = article.imageQuery?.trim() || extractKeywords(article.title, article.category);
     const key = `unsplash:${kw}`;
     const cached = sessionStorage.getItem(key);
     if (cached) { setPhoto(JSON.parse(cached)); return; }
@@ -51,7 +53,7 @@ function useUnsplashPhoto(title: string, category: string): UnsplashPhoto | null
           setPhoto(p);
         }
       }).catch(()=>{});
-  }, [title, category]);
+  }, [article]);
   return photo;
 }
 
@@ -60,7 +62,7 @@ function ArticleCard({ article }: { article: Article }) {
   const isFallback = !article.url || article.url === "https://news.ycombinator.com";
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const photo = useUnsplashPhoto(article.title, article.category);
+  const photo = useUnsplashPhoto(article);
 
   function toggleAudio() {
     if (!article.audioUrl) return;
