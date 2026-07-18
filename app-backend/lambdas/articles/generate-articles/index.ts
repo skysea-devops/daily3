@@ -146,7 +146,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Stat News",               url: "https://www.statnews.com/feed/" },
     { name: "Psyche (Aeon)",           url: "https://psyche.co/feed" },
     { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
-    { name: "Scientific American",     url: "http://rss.sciam.com/ScientificAmerican-Global" },
     { name: "NPR Health (Shots)",      url: "https://feeds.npr.org/1128/rss.xml" },
     { name: "The Conversation (Health)", url: "https://theconversation.com/us/health/articles.atom" },
     { name: "Undark",                  url: "https://undark.org/feed/" },
@@ -178,8 +177,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Justice Everywhere",      url: "https://justice-everywhere.org/feed" },
     { name: "Practical Ethics (Oxford)", url: "http://blog.practicalethics.ox.ac.uk/feed/" },
     { name: "The Point Magazine",      url: "https://thepointmag.com/feed/" },
-    { name: "3 Quarks Daily",          url: "https://3quarksdaily.com/feed" },
-    { name: "Arts & Letters Daily",   url: "https://www.aldaily.com/feed/" },
+    { name: "Daily Jstor",             url: "https://daily.jstor.org/feed/" },
+    { name: "Arts & Letters Daily",    url: "https://www.aldaily.com/feed/" },
   ],
 
   "Fashion & Style": [
