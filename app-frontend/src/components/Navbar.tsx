@@ -54,8 +54,27 @@ export default function Navbar() {
           Cogletta
         </Link>
 
-        <nav style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          {!loading && user ? (
+        <nav
+          aria-busy={loading}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            gap: 20,
+            minWidth: "min(390px, 60vw)",
+            minHeight: 36,
+          }}
+        >
+          {loading ? (
+            <div
+              aria-hidden="true"
+              style={{
+                width: "100%",
+                height: 36,
+                visibility: "hidden",
+              }}
+            />
+          ) : user ? (
             <>
               <Link href="/dashboard" style={navLink}>Dashboard</Link>
               <Link href="/essays" style={navLink}>Essays</Link>
