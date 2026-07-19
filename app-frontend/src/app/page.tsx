@@ -258,7 +258,7 @@ export default function HomePage() {
           <span className="lp-eyebrow">Curated for you. Every morning.</span>
           <h1 className="lp-h1">Read what<br /><em>matters to you.</em></h1>
           <p className="lp-sub">
-            Every morning, carefully selected articles and podcast episodes on the topic you actually care about — curated and delivered to your inbox.
+            Thoughtfully curated articles and podcast recommendations based on the interests you choose, delivered to your inbox every morning.
           </p>
           <button onClick={() => setShowModal(true)} className="lp-cta">
             Start reading for free →
