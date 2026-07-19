@@ -7,6 +7,20 @@ import { signUp } from "@/lib/cognito";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
 
+// Checkout linkleri build-time inline edilir; yoksa Pro kartı "Coming soon" modunda kalır.
+const CHECKOUT_CONFIGURED = Boolean(
+  process.env.NEXT_PUBLIC_LS_CHECKOUT_MONTHLY &&
+  process.env.NEXT_PUBLIC_LS_CHECKOUT_YEARLY
+);
+
+// Kayıt→doğrulama→giriş zinciri boyunca Pro niyetini taşır (yeni sekmede
+// açılan doğrulama linkine dayanıklı olması için localStorage; 1 saat geçerli).
+function setPlanIntent(billing: "monthly" | "yearly") {
+  try {
+    localStorage.setItem("cogletta_plan_intent", JSON.stringify({ billing, exp: Date.now() + 3600_000 }));
+  } catch {}
+}
+
 const FREE_FEATURES = [
   "1 curated article daily on your chosen topic",
   "1 podcast recommendation daily",
@@ -16,11 +30,11 @@ const FREE_FEATURES = [
 ];
 
 const PRO_FEATURES = [
-  "Everything in Free",
-  "3 interests, 3 articles daily",
-  "6 sub-topics per interest category",
-  "2 podcast recommendations daily",
-  "Weekly trend report every Sunday",
+  "3 interests",
+  "3 curated articles for each interest",
+  "Personalized sub-topics",
+  "2 daily podcast recommendations",
+  "Weekly reading review",
 ];
 
 const input: React.CSSProperties = {
@@ -139,14 +153,49 @@ function RegisterModal({ plan, onClose }: { plan: "free" | "pro"; onClose: () =>
   );
 }
 
-function ProNotifyButton() {
+function ProNotifyButton({ onStart }: { onStart: (billing: "monthly" | "yearly") => void }) {
   const { user } = useAuth();
+  const router = useRouter();
   const [notified, setNotified] = useState(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("cogletta-pro-notify") === "true";
   });
 
-  // Sign in olmamışsa eski disabled buton
+  // Checkout hazır: hem ziyaretçi hem üye için canlı satın alma yolu
+  if (CHECKOUT_CONFIGURED) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <button
+          onClick={() => {
+            if (user) { setPlanIntent("yearly"); router.push("/settings?upgrade=yearly"); }
+            else onStart("yearly");
+          }}
+          style={{
+            width: "100%", background: "var(--accent)", color: "var(--white)",
+            border: "none", borderRadius: 10, padding: "13px 24px",
+            fontSize: "0.9375rem", fontWeight: 600, cursor: "pointer",
+          }}
+        >
+          Start with Pro — $58/year →
+        </button>
+        <button
+          onClick={() => {
+            if (user) { setPlanIntent("monthly"); router.push("/settings?upgrade=monthly"); }
+            else onStart("monthly");
+          }}
+          style={{
+            width: "100%", background: "none", color: "var(--ink-soft)",
+            border: "1px solid var(--rule)", borderRadius: 10, padding: "11px 24px",
+            fontSize: "0.875rem", fontWeight: 600, cursor: "pointer",
+          }}
+        >
+          or monthly · $5.80
+        </button>
+      </div>
+    );
+  }
+
+  // Checkout henüz yapılandırılmadı: eski "notify" davranışı
   if (!user) {
     return (
       <button disabled style={{
@@ -159,7 +208,6 @@ function ProNotifyButton() {
     );
   }
 
-  // Sign in olmuş — aktif buton
   if (notified) {
     return (
       <div style={{
@@ -249,16 +297,19 @@ export default function RegisterPage() {
               fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em",
               textTransform: "uppercase", padding: "4px 12px", borderRadius: 20,
             }}>
-              Coming soon
+              {CHECKOUT_CONFIGURED ? "Two months free yearly" : "Coming soon"}
             </div>
             <div style={{ marginBottom: 24 }}>
               <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)" }}>Pro</span>
-              <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)", marginTop: 8, marginBottom: 4 }}>Go deeper</h2>
+              <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)", marginTop: 8, marginBottom: 4 }}>For a richer reading habit</h2>
               <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
                 <span style={{ fontFamily: "'Lora', serif", fontSize: "2rem", fontWeight: 600, color: "var(--ink)" }}>$5.80</span>
                 <span style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>/ month</span>
               </div>
-              <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.65 }}>For serious readers. More interests, deeper personalisation, and weekly reading reports.</p>
+              <p style={{ fontSize: "0.8125rem", color: "var(--accent)", fontWeight: 600, marginBottom: 8 }}>
+                or $58 / year — two months free
+              </p>
+              <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.65 }}>More topics, more thoughtful recommendations, and a richer morning reading ritual.</p>
             </div>
             <ul style={{ flex: 1, listStyle: "none", marginBottom: 28, display: "flex", flexDirection: "column", gap: 12 }}>
               {PRO_FEATURES.map(f => (
@@ -268,7 +319,7 @@ export default function RegisterPage() {
                 </li>
               ))}
             </ul>
-            <ProNotifyButton />
+            <ProNotifyButton onStart={(billing) => { setPlanIntent(billing); setModal("pro"); }} />
           </div>
 
         </div>

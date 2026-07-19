@@ -109,6 +109,20 @@ function LoginForm() {
     try {
       await signIn(email, password);
       await refreshSession();
+      // Kayıt akışından taşınan Pro niyeti varsa doğrudan checkout'a yönlendir
+      let intent: "monthly" | "yearly" | null = null;
+      try {
+        const raw = localStorage.getItem("cogletta_plan_intent");
+        if (raw) {
+          const p = JSON.parse(raw);
+          if ((p?.billing === "monthly" || p?.billing === "yearly") && p.exp > Date.now()) intent = p.billing;
+          localStorage.removeItem("cogletta_plan_intent");
+        }
+      } catch {}
+      if (intent) {
+        router.push(`/settings?upgrade=${intent}`);
+        return;
+      }
       const saved = localStorage.getItem("cogletta-categories");
       router.push(saved ? "/dashboard" : "/onboarding");
     } catch (err: any) {
