@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Navbar from "@/components/Navbar";
-import { getDailyArticles } from "@/lib/api";
+import ShareCard from "@/components/ShareCard";
+import { getDailyArticles, getTrendReport } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
-import type { Article, Podcast } from "@/lib/types";
+import type { Article, Podcast, WeeklyTrendReport } from "@/lib/types";
 
 const UNSPLASH_ACCESS_KEY = "rp-OBp3MMcxOlSCIV6GyPh3DOkX4IgmEGq8XBJQVnvs";
 
@@ -209,7 +210,7 @@ function PendingCard({ category, type = "article" }: { category: string; type?: 
 
 const PRO_NUDGES = [
   { text: "Loved today's edition? Start every morning with 3 thoughtfully selected articles for every interest you follow.", cta: "Unlock Cogletta Pro →" },
-  { text: "Enjoyed today's read? Pro delivers 3 handpicked articles for each of your interests — every morning.", cta: "Explore Cogletta Pro →" },
+  { text: "Enjoyed today's read? Pro delivers 3 articles for each of your interests — every morning.", cta: "Explore Cogletta Pro →" },
 ];
 
 function ProNudge() {
@@ -241,12 +242,64 @@ function ProNudge() {
   );
 }
 
+function TrendCard({ report }: { report: WeeklyTrendReport }) {
+  return (
+    <div style={{
+      background: "var(--white)", border: "1px solid var(--rule)",
+      borderRadius: 16, padding: 28,
+    }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 4 }}>
+        <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--accent)" }}>
+          ✦ This week
+        </span>
+        <span style={{ fontSize: "0.8125rem", color: "var(--ink-muted)" }}>{report.weekLabel}</span>
+      </div>
+      <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.375rem", fontWeight: 600, color: "var(--ink)", margin: "0 0 20px" }}>
+        Your week in review
+      </h2>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+        {report.interests.map((t, i) => (
+          <div key={i} style={{ borderTop: i === 0 ? "none" : "1px solid var(--rule)", paddingTop: i === 0 ? 0 : 20 }}>
+            <p style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--ink-muted)", marginBottom: 10 }}>
+              {t.category}
+            </p>
+            <ul style={{ margin: "0 0 12px", paddingLeft: 18 }}>
+              {t.themes.map((th, j) => (
+                <li key={j} style={{ fontSize: "0.9375rem", lineHeight: 1.65, color: "var(--ink-soft)", marginBottom: 6 }}>{th}</li>
+              ))}
+            </ul>
+            {t.topUrl && (
+              <a href={t.topUrl} target="_blank" rel="noreferrer" style={{ fontSize: "0.875rem", color: "var(--ink)", textDecoration: "none" }}>
+                <span style={{ color: "var(--ink-muted)" }}>Read of the week — </span>
+                <span style={{ fontWeight: 600 }}>{t.topTitle}</span>
+                <span style={{ color: "var(--ink-muted)" }}> ({t.topSource}) →</span>
+              </a>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function DashboardContent() {
   const { user, plan } = useAuth();
   const [articles, setArticles]       = useState<Article[]>([]);
   const [podcasts, setPodcasts]       = useState<Podcast[]>([]);
   const [status, setStatus]           = useState<"loading" | "ready" | "pending" | "error">("loading");
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
+  const [trend, setTrend]             = useState<WeeklyTrendReport | null>(null);
+
+  // Haftalık trend raporu (sadece Pro) — dashboard'un üstünde "This week" kartı
+  useEffect(() => {
+    if (!user?.accessToken || plan !== "pro") { setTrend(null); return; }
+    let cancelled = false;
+    getTrendReport(user.accessToken)
+      .then((r) => { if (!cancelled) setTrend(r.report); })
+      .catch(() => { /* sessiz geç */ });
+    return () => { cancelled = true; };
+  }, [user, plan]);
 
   useEffect(() => {
     if (!user) return;
@@ -325,6 +378,7 @@ function DashboardContent() {
         {/* Ready */}
         {status === "ready" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {plan === "pro" && trend && <TrendCard report={trend} />}
             {articles.map((a, i) => <ArticleCard key={`a-${i}`} article={a} />)}
             {plan !== "pro" && <ProNudge />}
             {podcasts.map((p, i) => <PodcastCard key={`p-${i}`} podcast={p} />)}
@@ -345,6 +399,10 @@ function DashboardContent() {
             </button>
           </div>
         )}
+
+        <div style={{ marginTop: 40 }}>
+          <ShareCard />
+        </div>
 
       </main>
     </div>

@@ -1,6 +1,7 @@
 // src/app/essays/page.tsx
 // Server component — metadata is embedded in static HTML for SEO.
 
+import ShareCard from "@/components/ShareCard";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
@@ -127,6 +128,10 @@ export default function EssaysPage() {
               </p>
             </article>
           ))}
+        </div>
+
+        <div style={{ marginTop: 48 }}>
+          <ShareCard compact />
         </div>
       </main>
     </>

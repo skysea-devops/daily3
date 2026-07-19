@@ -151,6 +151,7 @@ export function confirmForgotPassword(
   });
 }
 
+
 export function updateDisplayName(
   givenName: string,
   familyName: string
@@ -193,3 +194,5 @@ export function changePassword(
     });
   });
 }
+
+

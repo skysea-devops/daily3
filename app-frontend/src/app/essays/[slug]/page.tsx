@@ -3,6 +3,8 @@
 // generateStaticParams() is pre-rendered to static HTML at build time,
 // including full metadata and JSON-LD — ideal for Google and AI crawlers.
 
+import ShareCard from "@/components/ShareCard";
+import EssayFooterCta from "@/components/EssayFooterCta";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -205,6 +207,10 @@ export default async function EssayPage({ params }: Props) {
           ))}
         </article>
 
+        <div style={{ margin: "40px 0" }}>
+          <ShareCard compact />
+        </div>
+
         <footer
           style={{
             marginTop: 64,
@@ -215,13 +221,7 @@ export default async function EssayPage({ params }: Props) {
             lineHeight: 1.7,
           }}
         >
-          <p>
-            Cogletta delivers three curated articles and two podcast episodes
-            on your interests, every morning.{" "}
-            <Link href="/" style={{ color: "var(--accent)", textDecoration: "none" }}>
-              Start reading for free →
-            </Link>
-          </p>
+          <EssayFooterCta />
         </footer>
       </main>
     </>

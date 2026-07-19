@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Navbar from "@/components/Navbar";
+import ShareCard from "@/components/ShareCard";
 import { getDailyArticles, getTrendReport } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
@@ -33,10 +34,12 @@ function extractKeywords(title: string, category: string): string {
 
 interface UnsplashPhoto { url: string; authorName: string; authorUrl: string; }
 
-function useUnsplashPhoto(title: string, category: string): UnsplashPhoto | null {
+function useUnsplashPhoto(article: Article): UnsplashPhoto | null {
   const [photo, setPhoto] = useState<UnsplashPhoto | null>(null);
   useEffect(() => {
-    const kw = extractKeywords(title, category);
+    // Bedrock'un tema bazlı sorgusu varsa onu kullan (başlık kelimeleri çift
+    // anlamlıdır: 'How to Bear Your Sorrows' → ayı fotoğrafı vakası, 2026-07-17)
+    const kw = article.imageQuery?.trim() || extractKeywords(article.title, article.category);
     const key = `unsplash:${kw}`;
     const cached = sessionStorage.getItem(key);
     if (cached) { setPhoto(JSON.parse(cached)); return; }
@@ -50,7 +53,7 @@ function useUnsplashPhoto(title: string, category: string): UnsplashPhoto | null
           setPhoto(p);
         }
       }).catch(()=>{});
-  }, [title, category]);
+  }, [article]);
   return photo;
 }
 
@@ -59,7 +62,7 @@ function ArticleCard({ article }: { article: Article }) {
   const isFallback = !article.url || article.url === "https://news.ycombinator.com";
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const photo = useUnsplashPhoto(article.title, article.category);
+  const photo = useUnsplashPhoto(article);
 
   function toggleAudio() {
     if (!article.audioUrl) return;
@@ -257,6 +260,10 @@ function TrendCard({ report }: { report: WeeklyTrendReport }) {
         Your week in review
       </h2>
 
+      <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", margin: "4px 0 26px", lineHeight: 1.5 }}>
+          Highlights from this week's reading:
+      </p>
+
       <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
         {report.interests.map((t, i) => (
           <div key={i} style={{ borderTop: i === 0 ? "none" : "1px solid var(--rule)", paddingTop: i === 0 ? 0 : 20 }}>
@@ -344,6 +351,10 @@ function DashboardContent() {
           </p>
         </div>
 
+        <div style={{ margin: "24px 0 32px" }}>
+          <ShareCard compact />
+        </div>
+
         {/* Loading */}
         {status === "loading" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -398,6 +409,10 @@ function DashboardContent() {
             </button>
           </div>
         )}
+
+        <div style={{ marginTop: 40 }}>
+          <ShareCard />
+        </div>
 
       </main>
     </div>
