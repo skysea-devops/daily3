@@ -241,11 +241,15 @@ function SettingsContent() {
     const checkout = params.get("checkout");
     if (checkout === "success") {
       setBanner("success");
-      // plan webhook ile güncelleniyor — session'ı hemen ve birkaç saniye sonra tazele
-      refreshSession();
-      const t = setTimeout(() => refreshSession(), 3000);
       window.history.replaceState({}, "", "/settings");
-      return () => clearTimeout(t);
+
+      // Checkout dönüşü webhook'tan önce gelebilir. Profili artan aralıklarla
+      // yeniden okuyarak kullanıcıyı sayfayı yenilemeye zorlamadan Pro'ya geçir.
+      const delays = [0, 1500, 3000, 5000, 8000, 12000];
+      const timers = delays.map((delay) =>
+        window.setTimeout(() => { void refreshSession(); }, delay)
+      );
+      return () => timers.forEach((timer) => window.clearTimeout(timer));
     }
     if (checkout === "cancel") {
       setBanner("cancel");
@@ -253,22 +257,11 @@ function SettingsContent() {
     }
   }, [refreshSession]);
 
-  // Kayıt akışından gelen Pro niyeti: ?upgrade=... veya localStorage → otomatik checkout.
-  // Niyeti tüketen (silen) TEK yer burası; login/onboarding yalnızca yönlendirir.
+  // Kayıt akışından gelen Pro niyeti: /settings?upgrade=monthly|yearly → otomatik checkout
   useEffect(() => {
-    let upgrade = new URLSearchParams(window.location.search).get("upgrade");
-    if (upgrade !== "monthly" && upgrade !== "yearly") {
-      try {
-        const raw = localStorage.getItem("cogletta_plan_intent");
-        if (raw) {
-          const p = JSON.parse(raw);
-          if ((p?.billing === "monthly" || p?.billing === "yearly") && p.exp > Date.now()) upgrade = p.billing;
-        }
-      } catch {}
-    }
+    const upgrade = new URLSearchParams(window.location.search).get("upgrade");
     if (upgrade !== "monthly" && upgrade !== "yearly") return;
     if (!user || plan !== "free" || !CHECKOUT_CONFIGURED) return;
-    try { localStorage.removeItem("cogletta_plan_intent"); } catch {}
     window.history.replaceState({}, "", "/settings");
     handleUpgrade(upgrade);
     // eslint-disable-next-line react-hooks/exhaustive-deps

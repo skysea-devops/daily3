@@ -126,15 +126,21 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
   const plan = planForStatus(status);
 
   // 4) userId'yi bul: önce checkout custom_data.user_id, yoksa eşleme tablosundan
-  let userId: string | undefined =
-    payload?.meta?.custom_data?.user_id ?? payload?.meta?.custom_data?.userId;
+  const rawUserId =
+    payload?.meta?.custom_data?.user_id ??
+    payload?.meta?.custom_data?.userId;
+
+  let userId = rawUserId == null ? undefined : String(rawUserId).trim();
   if (!userId && subscriptionId) {
     userId = await userIdForSub(subscriptionId);
   }
   if (!userId) {
-    console.error(`LS webhook: userId çözülemedi (sub=${subscriptionId}, event=${eventName})`);
-    // 200 dön ki LS tekrar tekrar denemesin; ama logla
-    return ok("no user mapping");
+    // Bu event'i 200 ile yutmak ödeme alınmış kullanıcıyı kalıcı olarak Free'de
+    // bırakır. 500 dönerek Lemon Squeezy'nin webhook retry mekanizmasını çalıştır.
+    console.error(
+      `LS webhook: userId çözülemedi; retry gerekli (sub=${subscriptionId}, event=${eventName}, customData=${JSON.stringify(payload?.meta?.custom_data ?? null)})`
+    );
+    return bad(500, "user mapping unavailable");
   }
 
   // 5) Profildeki ekstra alanlar
@@ -145,12 +151,13 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
   if (attrs?.variant_id != null)          extra.lsVariantId  = String(attrs.variant_id);
   if (attrs?.urls?.customer_portal)       extra.lsPortalUrl  = String(attrs.urls.customer_portal);
 
-  await setPlan(userId, plan, extra);
-
-  // İlk oluşturmada subscriptionId → userId eşlemesini kaydet
-  if (eventName === "subscription_created" && subscriptionId) {
+  // Eşlemeyi profil güncellemesinden önce yaz. Böylece aynı aboneliğe ait hemen
+  // arkasından gelen subscription_updated event'i custom_data içermese bile çözülür.
+  if (subscriptionId) {
     await saveSubMap(subscriptionId, userId);
   }
+
+  await setPlan(userId, plan, extra);
 
   console.log(`LS webhook: user=${userId} status=${status} → plan=${plan}`);
   return ok();
