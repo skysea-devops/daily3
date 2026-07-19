@@ -55,8 +55,10 @@ export async function getUserProfile(accessToken: string): Promise<{
 
   const response = await fetch(`${API_BASE_URL}/me/profile`, {
     method: "GET",
+    cache: "no-store",
     headers: {
       Authorization: `Bearer ${accessToken}`,
+     
     },
   });
 

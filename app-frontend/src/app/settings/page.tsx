@@ -241,11 +241,15 @@ function SettingsContent() {
     const checkout = params.get("checkout");
     if (checkout === "success") {
       setBanner("success");
-      // plan webhook ile güncelleniyor — session'ı hemen ve birkaç saniye sonra tazele
-      refreshSession();
-      const t = setTimeout(() => refreshSession(), 3000);
       window.history.replaceState({}, "", "/settings");
-      return () => clearTimeout(t);
+
+      // Checkout dönüşü webhook'tan önce gelebilir. Profili artan aralıklarla
+      // yeniden okuyarak kullanıcıyı sayfayı yenilemeye zorlamadan Pro'ya geçir.
+      const delays = [0, 1500, 3000, 5000, 8000, 12000];
+      const timers = delays.map((delay) =>
+        window.setTimeout(() => { void refreshSession(); }, delay)
+      );
+      return () => timers.forEach((timer) => window.clearTimeout(timer));
     }
     if (checkout === "cancel") {
       setBanner("cancel");

@@ -34,7 +34,17 @@ function OnboardingForm() {
       await updateUserInterests(selected, user.accessToken, user.email);
       localStorage.setItem("cogletta-categories", JSON.stringify(selected));
       markInterestsSaved();
-      router.push("/dashboard");
+      // Kayıt akışından Pro niyeti taşınıyorsa dashboard yerine checkout'a devam et.
+      // Niyet burada SİLİNMEZ; tüketen yer settings'teki upgrade effect'idir.
+      let intent: string | null = null;
+      try {
+        const raw = localStorage.getItem("cogletta_plan_intent");
+        if (raw) {
+          const p = JSON.parse(raw);
+          if ((p?.billing === "monthly" || p?.billing === "yearly") && p.exp > Date.now()) intent = p.billing;
+        }
+      } catch {}
+      router.push(intent ? `/settings?upgrade=${intent}` : "/dashboard");
     } catch (error) {
       console.error("Failed to save interests:", error);
       alert("Failed to save interests. Please try again.");
