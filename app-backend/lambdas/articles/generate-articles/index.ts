@@ -166,6 +166,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Legal Planet",            url: "https://legal-planet.org/feed" },
     { name: "Weather West",            url: "https://weatherwest.com/feed" },
     { name: "CleanTechnica",           url: "https://cleantechnica.com/feed" },
+    { name: "My Planet First",           url: "https://myplanetfirst.com/feed" },
   ],
 
   "Philosophy & Ethics": [
@@ -330,6 +331,7 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "The Science of Happiness",    url: "http://feeds.feedburner.com/TheScienceOfHappiness" },
   ],
 };
+
 
 
 // ─── RSS fetch & parse ────────────────────────────────────────────────────────
