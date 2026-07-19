@@ -260,6 +260,10 @@ function TrendCard({ report }: { report: WeeklyTrendReport }) {
         Your week in review
       </h2>
 
+      <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", margin: "4px 0 26px", lineHeight: 1.5 }}>
+          Highlights from this week's reading:
+      </p>
+
       <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
         {report.interests.map((t, i) => (
           <div key={i} style={{ borderTop: i === 0 ? "none" : "1px solid var(--rule)", paddingTop: i === 0 ? 0 : 20 }}>
@@ -345,6 +349,10 @@ function DashboardContent() {
           <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)" }}>
             Curated for you, every morning.
           </p>
+        </div>
+
+        <div style={{ margin: "24px 0 32px" }}>
+          <ShareCard compact />
         </div>
 
         {/* Loading */}
