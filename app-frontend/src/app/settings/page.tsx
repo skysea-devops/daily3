@@ -253,6 +253,16 @@ function SettingsContent() {
     }
   }, [refreshSession]);
 
+  // Kayıt akışından gelen Pro niyeti: /settings?upgrade=monthly|yearly → otomatik checkout
+  useEffect(() => {
+    const upgrade = new URLSearchParams(window.location.search).get("upgrade");
+    if (upgrade !== "monthly" && upgrade !== "yearly") return;
+    if (!user || plan !== "free" || !CHECKOUT_CONFIGURED) return;
+    window.history.replaceState({}, "", "/settings");
+    handleUpgrade(upgrade);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, plan]);
+
   function handleUpgrade(billing: "monthly" | "yearly") {
     if (!user || billingBusy) return;
     setBillingBusy(true); setBillingError("");
