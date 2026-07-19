@@ -40,6 +40,36 @@ export function signIn(email: string, password: string): Promise<string> {
   });
 }
 
+
+export interface CurrentSessionUser {
+  sub: string;
+  email: string;
+  accessToken: string;
+  idToken: string;
+}
+
+export function getCurrentSessionUser(): Promise<CurrentSessionUser> {
+  const cognitoUser = userPool.getCurrentUser();
+  if (!cognitoUser) return Promise.reject(new Error("Not signed in"));
+
+  return new Promise((resolve, reject) => {
+    cognitoUser.getSession((error: Error | null, session: any) => {
+      if (error || !session || !session.isValid()) {
+        reject(error || new Error("Session is not valid"));
+        return;
+      }
+
+      const claims = session.getIdToken().decodePayload();
+      resolve({
+        sub: claims["sub"] as string,
+        email: claims["email"] as string,
+        accessToken: session.getAccessToken().getJwtToken(),
+        idToken: session.getIdToken().getJwtToken(),
+      });
+    });
+  });
+}
+
 export function signUp(
   name: string,
   email: string,
