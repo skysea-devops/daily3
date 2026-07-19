@@ -31,14 +31,23 @@ var lambda = new import_client_lambda.LambdaClient({});
 var USERS_TABLE_NAME = process.env.USERS_TABLE_NAME;
 var ARTICLES_TABLE_NAME = process.env.ARTICLES_TABLE_NAME;
 var GENERATE_ARTICLES_FN = process.env.GENERATE_ARTICLES_FUNCTION_NAME;
-var CORS_ORIGIN = process.env.CORS_ORIGIN ?? "*";
 var DEVELOPER_USER_IDS = new Set(
   (process.env.DEVELOPER_USER_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean)
 );
-var headers = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": CORS_ORIGIN
-};
+var ALLOWED_ORIGINS = (process.env.CORS_ORIGIN ?? "*").split(",").map((o) => o.trim()).filter(Boolean);
+function resolveCorsOrigin(event) {
+  if (ALLOWED_ORIGINS.includes("*")) return "*";
+  const reqOrigin = event.headers?.origin ?? event.headers?.Origin ?? "";
+  if (reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin)) return reqOrigin;
+  return ALLOWED_ORIGINS[0] ?? "*";
+}
+function buildHeaders(event) {
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": resolveCorsOrigin(event),
+    "Vary": "Origin"
+  };
+}
 function todaySK() {
   return `DATE#${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}`;
 }
@@ -61,6 +70,7 @@ async function articlesExistToday(userId) {
   }
 }
 var handler = async (event) => {
+  const headers = buildHeaders(event);
   try {
     const claims = event.requestContext.authorizer.jwt.claims;
     const userId = claims["sub"];
@@ -73,38 +83,68 @@ var handler = async (event) => {
     const subTopics = body.subTopics && typeof body.subTopics === "object" ? body.subTopics : {};
     const ALLOWED_REGIONS = ["EU", "US_EAST", "US_WEST", "ASIA"];
     const region = typeof body.region === "string" && ALLOWED_REGIONS.includes(body.region) ? body.region : "EU";
-    if (!Array.isArray(interests) || interests.length !== 3 || !interests.every((i) => typeof i === "string" && i.trim().length > 0)) {
+    if (!Array.isArray(interests) || !interests.every((i) => typeof i === "string" && i.trim().length > 0)) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ message: "Exactly 3 non-empty interest strings are required." })
+        body: JSON.stringify({ message: "interests must be an array of non-empty strings." })
+      };
+    }
+    const isDeveloper = DEVELOPER_USER_IDS.has(userId);
+    let plan = "free";
+    try {
+      const profileResult = await dynamo.send(
+        new import_lib_dynamodb.GetCommand({
+          TableName: USERS_TABLE_NAME,
+          Key: { PK: `USER#${userId}`, SK: "PROFILE" },
+          ProjectionExpression: "#plan",
+          ExpressionAttributeNames: { "#plan": "plan" }
+        })
+      );
+      const rawPlan = profileResult.Item?.plan;
+      plan = rawPlan?.toLowerCase() === "pro" ? "pro" : "free";
+    } catch (err) {
+      console.warn("Failed to read plan, defaulting to free:", err);
+    }
+    const requiredCount = plan === "pro" ? 3 : 1;
+    const countValid = isDeveloper ? interests.length >= 1 && interests.length <= 3 : interests.length === requiredCount;
+    if (!countValid) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          message: `Exactly ${requiredCount} interest${requiredCount > 1 ? "s are" : " is"} required on the ${plan} plan.`
+        })
       };
     }
     const now = (/* @__PURE__ */ new Date()).toISOString();
-    const isDeveloper = DEVELOPER_USER_IDS.has(userId);
     const alreadyGenerated = !isDeveloper && await articlesExistToday(userId);
-    const updateResult = await dynamo.send(
+    const resolvedEmail = emailFromBody ?? claims["email"] ?? null;
+    const setParts = ["interests = :interests", "updatedAt = :now", "subTopics = :subTopics", "#region = :region"];
+    const exprValues = {
+      ":interests": interests,
+      ":now": now,
+      ":subTopics": subTopics,
+      ":region": region
+    };
+    if (resolvedEmail) {
+      setParts.push("email = :email");
+      exprValues[":email"] = resolvedEmail;
+    }
+    await dynamo.send(
       new import_lib_dynamodb.UpdateCommand({
         TableName: USERS_TABLE_NAME,
         Key: { PK: `USER#${userId}`, SK: "PROFILE" },
-        UpdateExpression: "SET interests = :interests, updatedAt = :now, email = :email, subTopics = :subTopics, #region = :region",
+        UpdateExpression: `SET ${setParts.join(", ")}`,
         ExpressionAttributeNames: { "#region": "region" },
         // region rezerve kelime olabilir
-        ExpressionAttributeValues: {
-          ":interests": interests,
-          ":now": now,
-          ":email": emailFromBody ?? claims["email"] ?? null,
-          ":subTopics": subTopics,
-          ":region": region
-        },
+        ExpressionAttributeValues: exprValues,
         ReturnValues: "ALL_NEW"
       })
     );
-    const plan = updateResult.Attributes?.plan ?? "free";
     const email = emailFromBody ?? claims["email"] ?? void 0;
     if (alreadyGenerated) {
       console.log(`Articles already exist today for user=${userId}, skipping generate`);
-      ;
       return {
         statusCode: 200,
         headers,

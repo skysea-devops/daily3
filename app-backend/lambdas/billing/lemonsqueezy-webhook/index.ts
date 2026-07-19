@@ -80,6 +80,17 @@ async function userIdForSub(subscriptionId: string): Promise<string | undefined>
   return res.Item?.userId as string | undefined;
 }
 
+async function currentSubscriptionId(userId: string): Promise<string | undefined> {
+  const res = await dynamo.send(
+    new GetCommand({
+      TableName: USERS_TABLE_NAME,
+      Key: { PK: `USER#${userId}`, SK: "PROFILE" },
+      ProjectionExpression: "lsSubscriptionId",
+    })
+  );
+  return res.Item?.lsSubscriptionId ? String(res.Item.lsSubscriptionId) : undefined;
+}
+
 const ok  = (msg = "ok"): APIGatewayProxyResultV2 => ({ statusCode: 200, body: msg });
 const bad = (code: number, msg: string): APIGatewayProxyResultV2 => ({ statusCode: code, body: msg });
 
@@ -143,13 +154,28 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
     return bad(500, "user mapping unavailable");
   }
 
+  // Eski bir abonelik dönem sonunda expired olduğunda, kullanıcı bu sırada
+  // yeni bir abonelik başlatmış olabilir. Eski event yeni aktif aboneliği Free'ye
+  // düşürmemeli veya profil lsSubscriptionId değerini geriye çevirmemeli.
+  const currentSubId = await currentSubscriptionId(userId);
+  const isTerminalOrInactive = ["paused", "unpaid", "expired"].includes(status);
+  if (currentSubId && currentSubId !== subscriptionId && isTerminalOrInactive) {
+    console.log(`LS webhook: stale inactive event ignored (current=${currentSubId}, eventSub=${subscriptionId}, status=${status})`);
+    return ok("stale subscription ignored");
+  }
+
   // 5) Profildeki ekstra alanlar
   const extra: Record<string, string> = {
     lsSubscriptionId: subscriptionId,
   };
   if (attrs?.customer_id != null)         extra.lsCustomerId = String(attrs.customer_id);
   if (attrs?.variant_id != null)          extra.lsVariantId  = String(attrs.variant_id);
-  if (attrs?.urls?.customer_portal)       extra.lsPortalUrl  = String(attrs.urls.customer_portal);
+  if (attrs?.urls?.customer_portal)       extra.lsPortalUrl          = String(attrs.urls.customer_portal);
+  if (attrs?.urls?.update_payment_method) extra.lsUpdatePaymentUrl    = String(attrs.urls.update_payment_method);
+  if (attrs?.status)                      extra.lsSubscriptionStatus  = String(attrs.status);
+  if (attrs?.renews_at)                   extra.lsRenewsAt            = String(attrs.renews_at);
+  if (attrs?.ends_at)                     extra.lsEndsAt              = String(attrs.ends_at);
+  extra.lsCancelled = attrs?.cancelled ? "true" : "false";
 
   // Eşlemeyi profil güncellemesinden önce yaz. Böylece aynı aboneliğe ait hemen
   // arkasından gelen subscription_updated event'i custom_data içermese bile çözülür.
