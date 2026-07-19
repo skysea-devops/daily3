@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { signUp } from "@/lib/cognito";
-import { useAuth } from "@/lib/auth-context";
 import Navbar from "@/components/Navbar";
 
 function RegisterModal({ onClose }: { onClose: () => void }) {
@@ -137,7 +136,6 @@ function RegisterModal({ onClose }: { onClose: () => void }) {
 
 export default function HomePage() {
   const [showModal, setShowModal] = useState(false);
-  const { user, loading } = useAuth();
 
   return (
     <>
@@ -236,22 +234,9 @@ export default function HomePage() {
 
       <div className="lp-body">
 
-        {/* NAV — üye girişliyse uygulamanın ortak Navbar'ı (avatar menüsü,
-            Essays linki dahil); ziyaretçiye pazarlama nav'ı. Böylece üye hangi
-            sayfada olursa olsun aynı chrome'u görür. */}
-        {!loading && user ? (
-          <Navbar />
-        ) : (
-          <nav className="lp-nav">
-            <a href="/" className="lp-logo">Cogletta</a>
-            <div className="lp-nav-links">
-              <Link href="/login">Sign in</Link>
-              <Link href="/register" className="lp-btn-nav" style={{ background: "var(--ink)", color: "var(--white)", padding: "8px 18px", borderRadius: 6, fontWeight: 500, fontSize: "0.875rem", textDecoration: "none" }}>
-                Start reading
-              </Link>
-            </div>
-          </nav>
-        )}
+        {/* Ortak Navbar auth durumu yüklenirken yanlışlıkla misafir
+            menüsünü göstermez; kullanıcı durumu kesinleşince doğru menü açılır. */}
+        <Navbar />
 
         {/* HERO */}
         <section className="lp-hero">
