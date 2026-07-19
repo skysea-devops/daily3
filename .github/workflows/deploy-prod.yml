@@ -133,6 +133,7 @@ jobs:
           TF_VAR_google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           TF_VAR_lemonsqueezy_webhook_secret: ${{ secrets.LEMONSQUEEZY_WEBHOOK_SECRET }}
+          TF_VAR_lemonsqueezy_api_key: ${{ secrets.LEMONSQUEEZY_API_KEY }}
         run: terraform plan -var-file=prod.tfvars -out=tfplan
 
       - name: Terraform Apply
@@ -141,6 +142,7 @@ jobs:
           TF_VAR_google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           TF_VAR_lemonsqueezy_webhook_secret: ${{ secrets.LEMONSQUEEZY_WEBHOOK_SECRET }}
+          TF_VAR_lemonsqueezy_api_key: ${{ secrets.LEMONSQUEEZY_API_KEY }}
         run: terraform apply -auto-approve tfplan
 
   deploy-frontend:
