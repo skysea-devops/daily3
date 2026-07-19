@@ -143,7 +143,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
 
   "Health": [
-    { name: "Stat News",               url: "https://www.statnews.com/feed/" },
     { name: "Psyche (Aeon)",           url: "https://psyche.co/feed" },
     { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
     { name: "NPR Health (Shots)",      url: "https://feeds.npr.org/1128/rss.xml" },
@@ -406,12 +405,26 @@ function extractItems(xml: string, sourceName: string): RSSItem[] {
         .replace(/&quot;/g, '"').replace(/&#8217;/g, "'").replace(/&#8216;/g, "'")
         .replace(/&#8220;/g, '"').replace(/&#8221;/g, '"').replace(/&#8230;/g, "…")
         .replace(/&#\d+;/g, "").replace(/&[a-z]+;/g, "").replace(/<[^>]+>/g, "").trim();
+
+      
  
       const rawUrl = extractText(seg, "link") ||
         seg.match(/<link[^>]+href="([^"]+)"/)?.[1] || "";
       const url = canonicalizeUrl(rawUrl
         .replace(/&#038;/g, "&").replace(/&amp;/g, "&")
         .replace(/&#\d+;/g, "").trim());
+      // Bazı podcast feed'lerinde (ör. Simplecast/Hidden Brain) item <link>
+      // bölüm sayfası değil site köküdür; bu durumda dinleme linki olarak
+      // enclosure'daki ses dosyasına düşülür (2026-07-19 vakası).
+      const enclosureTag = seg.match(/<enclosure[^>]*>/i)?.[0] ?? "";
+      const enclosureUrl = enclosureTag.match(/url="([^"]+)"/i)?.[1] ?? "";
+      const enclosureIsAudio = /type="audio|\.(mp3|m4a|aac)(\?|")/i.test(enclosureTag);
+      let finalUrl = url;
+      try {
+        if (new URL(url).pathname === "/" && enclosureUrl && enclosureIsAudio) finalUrl = enclosureUrl;
+      } catch {
+        if (!url && enclosureUrl && enclosureIsAudio) finalUrl = enclosureUrl;
+      }
  
       const description =
         extractText(seg, "description") ||

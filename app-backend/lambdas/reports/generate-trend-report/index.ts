@@ -156,6 +156,7 @@ function buildEmail(report: WeeklyTrendReport): { html: string; text: string } {
       <tr><td style="padding:32px 36px 20px;border-bottom:1px solid #f3f4f6;">
         <span style="font-size:13px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#111827;">Cogletta</span>
         <p style="margin:4px 0 0;font-size:13px;color:#9ca3af;">Your week in review · ${report.weekLabel}</p>
+        <p style="margin:10px 0 0;font-size:13px;color:#9ca3af;line-height:1.5;">Key themes drawn from the articles and podcasts you received this week — with one standout read per topic.</p>
         <p style="margin:16px 0 0;font-size:22px;font-weight:700;color:#111827;line-height:1.3;">This week across your interests</p>
       </td></tr>
       <tr><td style="padding:0 36px;"><table width="100%" cellpadding="0" cellspacing="0">${blocks}</table></td></tr>
