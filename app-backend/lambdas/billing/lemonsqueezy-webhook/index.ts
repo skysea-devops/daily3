@@ -157,10 +157,18 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
   // Eski bir abonelik dönem sonunda expired olduğunda, kullanıcı bu sırada
   // yeni bir abonelik başlatmış olabilir. Eski event yeni aktif aboneliği Free'ye
   // düşürmemeli veya profil lsSubscriptionId değerini geriye çevirmemeli.
+  //
+  // "cancelled" ve "past_due" de bu listede: aylık↔yıllık switch, mevcut aboneliği
+  // önce iptal edip yeni bir abonelik başlatır. Eski aboneliğin cancelled event'i
+  // yeni aboneliğin subscription_created'ından SONRA gelirse (webhook'lar sıra
+  // garantisi vermez), bu guard olmadan profildeki lsSubscriptionId eski (iptal
+  // edilmiş) aboneliğe geri döner ve Manage/Cancel yanlış aboneliği hedefler.
+  // Not: aynı aboneliğe (currentSubId === subscriptionId) ait normal cancel bu
+  // guard'a takılmaz — koşul yalnızca FARKLI bir abonelik için devreye girer.
   const currentSubId = await currentSubscriptionId(userId);
-  const isTerminalOrInactive = ["paused", "unpaid", "expired"].includes(status);
-  if (currentSubId && currentSubId !== subscriptionId && isTerminalOrInactive) {
-    console.log(`LS webhook: stale inactive event ignored (current=${currentSubId}, eventSub=${subscriptionId}, status=${status})`);
+  const isNonActiveForOtherSub = ["paused", "unpaid", "expired", "cancelled", "past_due"].includes(status);
+  if (currentSubId && currentSubId !== subscriptionId && isNonActiveForOtherSub) {
+    console.log(`LS webhook: stale event for other subscription ignored (current=${currentSubId}, eventSub=${subscriptionId}, status=${status})`);
     return ok("stale subscription ignored");
   }
 
