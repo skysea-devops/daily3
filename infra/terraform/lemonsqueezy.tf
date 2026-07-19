@@ -100,3 +100,106 @@ resource "aws_apigatewayv2_route" "post_lemonsqueezy_webhook" {
 output "lemonsqueezy_webhook_url" {
   value = "${aws_apigatewayv2_api.backend.api_endpoint}/lemonsqueezy/webhook"
 }
+
+# ==============================================================================
+# Lemon Squeezy — authenticated subscription management
+# GET    /me/subscription  -> fresh subscription and signed customer portal URL
+# PATCH  /me/subscription  -> monthly/yearly variant change
+# DELETE /me/subscription  -> cancel renewal at the end of the billing period
+# ==============================================================================
+
+resource "aws_cloudwatch_log_group" "manage_subscription" {
+  name              = "/aws/lambda/${var.project_name}-${var.environment}-manage-subscription"
+  retention_in_days = var.environment == "prod" ? 30 : 14
+}
+
+resource "aws_iam_role" "manage_subscription_lambda_role" {
+  name = "${var.project_name}-${var.environment}-manage-subscription-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "manage_subscription_lambda_policy" {
+  name = "${var.project_name}-${var.environment}-manage-subscription-policy"
+  role = aws_iam_role.manage_subscription_lambda_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "${aws_cloudwatch_log_group.manage_subscription.arn}:*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem", "dynamodb:UpdateItem"]
+        Resource = aws_dynamodb_table.users.arn
+      }
+    ]
+  })
+}
+
+data "archive_file" "manage_subscription_lambda_zip" {
+  type        = "zip"
+  source_dir  = "${local.lambda_src_root}/billing/manage-subscription/dist"
+  output_path = "${path.module}/manage-subscription.zip"
+}
+
+resource "aws_lambda_function" "manage_subscription" {
+  function_name    = "${var.project_name}-${var.environment}-manage-subscription"
+  role             = aws_iam_role.manage_subscription_lambda_role.arn
+  runtime          = local.lambda_runtime
+  handler          = "index.handler"
+  filename         = data.archive_file.manage_subscription_lambda_zip.output_path
+  source_code_hash = data.archive_file.manage_subscription_lambda_zip.output_base64sha256
+  timeout          = local.lambda_timeout
+  memory_size      = local.lambda_memory_size
+
+  environment {
+    variables = {
+      USERS_TABLE_NAME                  = aws_dynamodb_table.users.name
+      LEMONSQUEEZY_API_KEY              = var.lemonsqueezy_api_key
+      CORS_ORIGIN                       = var.cors_origin
+      NODE_OPTIONS                      = "--enable-source-maps"
+    }
+  }
+
+  depends_on = [aws_cloudwatch_log_group.manage_subscription]
+}
+
+resource "aws_lambda_permission" "allow_api_gateway_manage_subscription" {
+  statement_id  = "AllowExecutionFromApiGatewayManageSubscription"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.manage_subscription.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.backend.execution_arn}/*/*"
+}
+
+resource "aws_apigatewayv2_integration" "manage_subscription" {
+  api_id                 = aws_apigatewayv2_api.backend.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.manage_subscription.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "get_me_subscription" {
+  api_id             = aws_apigatewayv2_api.backend.id
+  route_key          = "GET /me/subscription"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+  target             = "integrations/${aws_apigatewayv2_integration.manage_subscription.id}"
+}
+
+resource "aws_apigatewayv2_route" "delete_me_subscription" {
+  api_id             = aws_apigatewayv2_api.backend.id
+  route_key          = "DELETE /me/subscription"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+  target             = "integrations/${aws_apigatewayv2_integration.manage_subscription.id}"
+}
