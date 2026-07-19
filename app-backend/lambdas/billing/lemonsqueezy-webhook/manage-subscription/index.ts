@@ -48,7 +48,7 @@ async function lemonRequest(path: string, init: RequestInit = {}): Promise<any> 
     },
   });
 
-  const payload = await result.json().catch(() => null);
+  const payload: any = await result.json().catch(() => null);
   if (!result.ok) {
     const detail = payload?.errors?.[0]?.detail ?? payload?.errors?.[0]?.title ?? `HTTP ${result.status}`;
     throw new Error(`Lemon Squeezy request failed: ${detail}`);
