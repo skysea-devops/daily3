@@ -116,7 +116,6 @@ function LoginForm() {
         if (raw) {
           const p = JSON.parse(raw);
           if ((p?.billing === "monthly" || p?.billing === "yearly") && p.exp > Date.now()) intent = p.billing;
-          localStorage.removeItem("cogletta_plan_intent");
         }
       } catch {}
       if (intent) {

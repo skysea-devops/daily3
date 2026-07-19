@@ -253,11 +253,22 @@ function SettingsContent() {
     }
   }, [refreshSession]);
 
-  // Kayıt akışından gelen Pro niyeti: /settings?upgrade=monthly|yearly → otomatik checkout
+  // Kayıt akışından gelen Pro niyeti: ?upgrade=... veya localStorage → otomatik checkout.
+  // Niyeti tüketen (silen) TEK yer burası; login/onboarding yalnızca yönlendirir.
   useEffect(() => {
-    const upgrade = new URLSearchParams(window.location.search).get("upgrade");
+    let upgrade = new URLSearchParams(window.location.search).get("upgrade");
+    if (upgrade !== "monthly" && upgrade !== "yearly") {
+      try {
+        const raw = localStorage.getItem("cogletta_plan_intent");
+        if (raw) {
+          const p = JSON.parse(raw);
+          if ((p?.billing === "monthly" || p?.billing === "yearly") && p.exp > Date.now()) upgrade = p.billing;
+        }
+      } catch {}
+    }
     if (upgrade !== "monthly" && upgrade !== "yearly") return;
     if (!user || plan !== "free" || !CHECKOUT_CONFIGURED) return;
+    try { localStorage.removeItem("cogletta_plan_intent"); } catch {}
     window.history.replaceState({}, "", "/settings");
     handleUpgrade(upgrade);
     // eslint-disable-next-line react-hooks/exhaustive-deps
