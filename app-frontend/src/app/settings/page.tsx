@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import { updateDisplayName, changePassword } from "@/lib/cognito";
-import { buildLemonCheckoutUrl, getUserProfile } from "@/lib/api";
+import { buildLemonCheckoutUrl, cancelBillingSubscription, getBillingSubscription } from "@/lib/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
@@ -176,7 +176,7 @@ function DeleteModal({ onConfirm, onCancel, deleting }: { onConfirm: () => void;
       <div style={{ background: "var(--white)", borderRadius: 12, padding: "32px", maxWidth: 400, width: "100%", boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
         <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1.25rem", color: "var(--ink)", margin: "0 0 12px" }}>Delete your account?</h3>
         <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", margin: "0 0 24px", lineHeight: 1.6 }}>
-          This will permanently delete your account and all your data. This action cannot be undone.
+          This will cancel future subscription renewals first, then permanently delete your account and all your data. Your current payment will not be refunded, and access ends immediately because the account is removed.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
           <button onClick={onCancel} disabled={deleting} style={{ padding: "9px 20px", borderRadius: 6, border: "1px solid var(--rule)", background: "none", fontSize: "0.875rem", color: "var(--ink-soft)", cursor: "pointer" }}>Cancel</button>
@@ -195,12 +195,12 @@ function CancelProModal({ onConfirm, onCancel, busy }: { onConfirm: () => void; 
       <div style={{ background: "var(--white)", borderRadius: 12, padding: "32px", maxWidth: 400, width: "100%", boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
         <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1.25rem", color: "var(--ink)", margin: "0 0 12px" }}>Manage your subscription</h3>
         <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", margin: "0 0 24px", lineHeight: 1.6 }}>
-          You&apos;ll be taken to our secure billing portal, where you can cancel your plan, update your card, or download invoices. If you cancel, you&apos;ll keep Pro access until the end of your billing period.
+          Your subscription will stop renewing. You&apos;ll keep Pro access until the end of your current billing period, and no automatic refund will be issued.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
           <button onClick={onCancel} disabled={busy} style={{ padding: "9px 20px", borderRadius: 6, border: "1px solid var(--rule)", background: "none", fontSize: "0.875rem", color: "var(--ink-soft)", cursor: "pointer" }}>Keep Pro</button>
           <button onClick={onConfirm} disabled={busy} style={{ padding: "9px 20px", borderRadius: 6, border: "none", background: "var(--ink)", color: "white", fontSize: "0.875rem", fontWeight: 600, cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.7 : 1 }}>
-            {busy ? "Opening..." : "Open billing portal"}
+            {busy ? "Cancelling..." : "Cancel subscription"}
           </button>
         </div>
       </div>
@@ -221,17 +221,17 @@ function SettingsContent() {
   const [billingBusy, setBillingBusy]   = useState(false);
   const [billingError, setBillingError] = useState("");
   const [banner, setBanner]             = useState<"success" | "cancel" | null>(null);
-  const [portalUrl, setPortalUrl]       = useState<string | null>(null);
+  const [subscription, setSubscription] = useState<Awaited<ReturnType<typeof getBillingSubscription>> | null>(null);
 
   const displayName = user?.email?.split("@")[0] ?? "";
 
-  // Pro kullanıcı için Lemon Squeezy müşteri portalı linkini profilden çek
+  // Pro kullanıcının abonelik durumunu Lemon Squeezy API'den güncel olarak çek.
   useEffect(() => {
     if (!user?.accessToken || plan !== "pro") return;
     let cancelled = false;
-    getUserProfile(user.accessToken)
-      .then((p) => { if (!cancelled) setPortalUrl(p.lsPortalUrl ?? null); })
-      .catch(() => { /* sessiz geç */ });
+    getBillingSubscription(user.accessToken)
+      .then((value) => { if (!cancelled) setSubscription(value); })
+      .catch((error) => { if (!cancelled) setBillingError(error?.message || "Could not load billing details."); });
     return () => { cancelled = true; };
   }, [user, plan]);
 
@@ -283,14 +283,56 @@ function SettingsContent() {
     }
   }
 
-  // Lemon Squeezy müşteri portalı: iptal, kart güncelleme, faturalar.
-  // NOT: webhook'un sakladığı lsPortalUrl İMZALI ve ~24 saat geçerli — bir gün
-  // sonra "link expired" sayfasına düşer. Mağazanın kalıcı portalı (/billing)
-  // e-posta doğrulamalı ama süresiz; garanti çalışan yol budur.
-  function handleManageBilling() {
-    if (billingBusy) return;
-    setModal(null);
-    window.location.href = "https://cogletta.lemonsqueezy.com/billing";
+  async function handleManageBilling() {
+    if (!user?.accessToken || billingBusy) return;
+    setBillingBusy(true); setBillingError(""); setModal(null);
+    try {
+      const current = await getBillingSubscription(user.accessToken);
+      setSubscription(current);
+      if (!current.portalUrl) throw new Error("Billing portal is not available for this subscription.");
+      window.location.href = current.portalUrl;
+    } catch (error: any) {
+      setBillingError(error?.message || "Could not open billing portal.");
+      setBillingBusy(false);
+    }
+  }
+
+  async function handleCancelSubscription() {
+    if (!user?.accessToken || billingBusy) return;
+    setBillingBusy(true); setBillingError("");
+    try {
+      const result = await cancelBillingSubscription(user.accessToken);
+      setSubscription((current) => current ? { ...current, cancelled: true, status: result.status, endsAt: result.endsAt } : current);
+      setModal(null);
+    } catch (error: any) {
+      setBillingError(error?.message || "Could not cancel subscription.");
+    } finally {
+      setBillingBusy(false);
+    }
+  }
+
+  async function handleSwitchBillingCycle(billingCycle: "monthly" | "yearly") {
+    if (!user?.accessToken || billingBusy) return;
+
+    const confirmed = window.confirm(
+      `Your current subscription will be cancelled first. You will then continue to the ${billingCycle} checkout. ` +
+      "The current payment is not refunded. Continue?"
+    );
+    if (!confirmed) return;
+
+    setBillingBusy(true); setBillingError("");
+    try {
+      await cancelBillingSubscription(user.accessToken);
+      const url = buildLemonCheckoutUrl(billingCycle, {
+        userId: user.sub,
+        email: user.email,
+        redirectUrl: `${window.location.origin}/settings?checkout=success`,
+      });
+      window.location.href = url;
+    } catch (error: any) {
+      setBillingError(error?.message || "Could not switch billing cycle.");
+      setBillingBusy(false);
+    }
   }
 
   async function handleDeleteAccount() {
@@ -385,11 +427,17 @@ function SettingsContent() {
           )}
           {plan === "pro" && (
             <>
-              <Row topBorder label="Payment method" description="Update your card, view invoices, and manage billing in the secure Lemon Squeezy portal.">
+              <Row topBorder label="Billing cycle" description="Switching cancels the current renewal first, then opens checkout for the other plan. The current payment is not refunded.">
+                <div style={{ display: "flex", gap: 8 }}>
+                  {subscription?.billingCycle !== "monthly" && !subscription?.cancelled && <ActionBtn label="Switch to monthly" onClick={() => handleSwitchBillingCycle("monthly")} disabled={billingBusy} />}
+                  {subscription?.billingCycle !== "yearly" && !subscription?.cancelled && <ActionBtn label="Switch to yearly" onClick={() => handleSwitchBillingCycle("yearly")} disabled={billingBusy} style="accent" />}
+                </div>
+              </Row>
+              <Row topBorder label="Payment method & invoices" description="Open a fresh, secure Lemon Squeezy portal link for this subscription.">
                 <ActionBtn label={billingBusy ? "Opening…" : "Manage"} onClick={handleManageBilling} disabled={billingBusy} />
               </Row>
-              <Row topBorder label="Cancel subscription" description="You'll keep Pro until the end of your billing period.">
-                <ActionBtn label="Cancel Pro" onClick={() => setModal("cancelPro")} disabled={billingBusy} style="danger" />
+              <Row topBorder label={subscription?.cancelled ? "Subscription cancelled" : "Cancel subscription"} description={subscription?.cancelled ? `Pro remains active until ${subscription.endsAt ? new Date(subscription.endsAt).toLocaleDateString() : "the end of the billing period"}.` : "You'll keep Pro until the end of your billing period."}>
+                {!subscription?.cancelled && <ActionBtn label="Cancel Pro" onClick={() => setModal("cancelPro")} disabled={billingBusy} style="danger" />}
               </Row>
             </>
           )}
@@ -418,7 +466,7 @@ function SettingsContent() {
       </main>
 
       {modal === "delete" && <DeleteModal onConfirm={handleDeleteAccount} onCancel={() => setModal(null)} deleting={deleting} />}
-      {modal === "cancelPro" && <CancelProModal onConfirm={handleManageBilling} onCancel={() => setModal(null)} busy={billingBusy} />}
+      {modal === "cancelPro" && <CancelProModal onConfirm={handleCancelSubscription} onCancel={() => setModal(null)} busy={billingBusy} />}
     </div>
   );
 }

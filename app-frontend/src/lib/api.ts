@@ -158,3 +158,40 @@ export async function getTrendReport(
   if (!response.ok) throw new Error("Failed to fetch trend report");
   return response.json();
 }
+
+// ─── Lemon Squeezy subscription management ───────────────────────────────────
+export interface BillingSubscription {
+  status: string;
+  cancelled: boolean;
+  renewsAt: string | null;
+  endsAt: string | null;
+  productId: string;
+  variantId: string;
+  billingCycle: "monthly" | "yearly" | "unknown";
+  portalUrl: string | null;
+  updatePaymentUrl: string | null;
+}
+
+export async function getBillingSubscription(accessToken: string): Promise<BillingSubscription> {
+  if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+  const response = await fetch(`${API_BASE_URL}/me/subscription`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  if (response.status === 401) { handleUnauthorized(); throw new Error("Session expired"); }
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.message || "Failed to load subscription");
+  return body;
+}
+
+export async function cancelBillingSubscription(accessToken: string): Promise<{ status: string; endsAt: string | null }> {
+  if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+  const response = await fetch(`${API_BASE_URL}/me/subscription`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (response.status === 401) { handleUnauthorized(); throw new Error("Session expired"); }
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.message || "Failed to cancel subscription");
+  return body;
+}

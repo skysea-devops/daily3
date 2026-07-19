@@ -94,3 +94,15 @@ variable "lemonsqueezy_webhook_secret" {
   sensitive   = true
   default     = "" # ilk deploy icin bos birak; sonra GitHub secret'tan TF_VAR ile gelir
 }
+variable "lemonsqueezy_api_key" {
+  description = "Lemon Squeezy API key used for customer subscription management"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "lemonsqueezy_yearly_variant_id" {
+  description = "Lemon Squeezy variant ID for the yearly ProReader plan"
+  type        = string
+  default     = ""
+}
