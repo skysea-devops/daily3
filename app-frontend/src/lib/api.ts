@@ -58,7 +58,7 @@ export async function getUserProfile(accessToken: string): Promise<{
     cache: "no-store",
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      "Cache-Control": "no-cache",
+     
     },
   });
 
