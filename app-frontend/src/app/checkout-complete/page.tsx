@@ -48,6 +48,10 @@ function CheckoutCompleteContent() {
   }, []);
 
   const [opened, setOpened] = useState(false);   // bu (hub) sekmesinden checkout açıldı mı
+
+  // Seçilen plana göre açıklama metni (ürün İngilizce)
+  const planWord = intent === "yearly" ? "yearly" : "monthly";
+  const planPrice = intent === "yearly" ? "$58/year" : "$5.80/month";
   const [attempt, setAttempt] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
   const [error, setError] = useState("");
@@ -101,11 +105,19 @@ function CheckoutCompleteContent() {
       setError(e?.message || "Checkout is not configured.");
       return;
     }
-    const win = window.open(url, "_blank", "noopener,noreferrer");
+    // ÖNEMLİ: "noopener" verilirsek window.open spec gereği null döndürür (başarılı
+    // açsa bile) ve aşağıdaki fallback yanlışlıkla bu sekmeyi de LS'e götürür.
+    // Bu yüzden noopener'ı KALDIRIYORUZ; başarı/başarısızlığı gerçek dönüş değeriyle
+    // ölçüp, reverse-tabnabbing'e karşı opener'ı elle koparıyoruz.
+    const win = window.open(url, "_blank");
+    if (!win) {
+      // Popup gerçekten engellendi → aynı sekmede aç (fallback). Bu sekme LS'e gider.
+      window.location.href = url;
+      return;
+    }
+    try { (win as unknown as { opener: unknown }).opener = null; } catch {}
     localStorage.removeItem("cogletta_plan_intent"); // tek seferlik tüket
     setOpened(true);
-    // Popup engellendiyse yine de ödeyebilmesi için aynı sekmede aç (fallback).
-    if (!win) window.location.href = url;
   }
 
   // ── Görünüm durumları ──────────────────────────────────────────────────────
@@ -152,19 +164,38 @@ function CheckoutCompleteContent() {
     );
   }
 
-  // Hub sekmesi + checkout henüz açılmadı: butonla yeni sekmede aç.
+  // Hub sekmesi + plan yok (nadiren): kullanıcıyı plan seçmeye yönlendir.
+  if (!opened && !intent) {
+    return (
+      <Shell>
+        <div style={{ ...card }}>
+          <h1 style={{ fontFamily: "'Lora', serif", fontSize: "1.8rem", color: "var(--ink)", margin: "0 0 12px" }}>
+            Choose your plan
+          </h1>
+          <p style={{ color: "var(--ink-soft)", lineHeight: 1.7, marginBottom: 28 }}>
+            Pick a Cogletta Pro plan to continue.
+          </p>
+          <button onClick={() => router.push("/register#pro")} style={{ ...primaryBtn, width: "100%" }}>
+            See Pro plans →
+          </button>
+        </div>
+      </Shell>
+    );
+  }
+
+  // Hub sekmesi + checkout henüz açılmadı: seçilen plana göre açıklama + butonla yeni sekmede aç.
   if (!opened) {
     return (
       <Shell>
         <div style={{ ...card }}>
           <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)" }}>
-            Cogletta Pro
+            Cogletta Pro · {planWord}
           </span>
           <h1 style={{ fontFamily: "'Lora', serif", fontSize: "1.8rem", color: "var(--ink)", margin: "10px 0 12px" }}>
             One step left
           </h1>
           <p style={{ color: "var(--ink-soft)", lineHeight: 1.7, marginBottom: 28 }}>
-            Checkout opens securely in a new tab so you don&apos;t lose your place. This tab will confirm your membership once payment completes.
+            We&apos;ll take you to the <strong>{planWord}</strong> Cogletta Pro checkout ({planPrice}). It opens securely in a new tab so you keep your place here — this tab confirms your membership once payment completes.
           </p>
           {error && <p style={{ background: "#fef2f2", color: "#991b1b", padding: "12px 16px", borderRadius: 10, fontSize: "0.875rem", marginBottom: 16 }}>{error}</p>}
           <button onClick={openCheckout} style={{ ...primaryBtn, width: "100%" }}>
