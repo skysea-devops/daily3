@@ -7,45 +7,70 @@ import { RequireAuth } from "@/components/Guards";
 import { useAuth } from "@/lib/auth-context";
 import { buildLemonCheckoutUrl } from "@/lib/api";
 
-function readPlanIntent(): "monthly" | "yearly" | null {
+// Çevrimi önce URL (?plan=) üzerinden oku; login/onboarding/settings niyeti buraya
+// ?plan ile taşıyor. localStorage yalnızca yedek.
+function readIntent(): "monthly" | "yearly" | null {
+  try {
+    const q = new URLSearchParams(window.location.search).get("plan");
+    if (q === "monthly" || q === "yearly") return q;
+  } catch {}
   try {
     const raw = localStorage.getItem("cogletta_plan_intent");
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if ((parsed?.billing === "monthly" || parsed?.billing === "yearly") && parsed.exp > Date.now()) {
-      return parsed.billing;
+    if (raw) {
+      const p = JSON.parse(raw);
+      if ((p?.billing === "monthly" || p?.billing === "yearly") && p.exp > Date.now()) return p.billing;
     }
-    localStorage.removeItem("cogletta_plan_intent");
-  } catch {
-    localStorage.removeItem("cogletta_plan_intent");
-  }
+  } catch {}
   return null;
 }
+
+const card: React.CSSProperties = {
+  background: "var(--white)", border: "1px solid var(--rule)",
+  borderRadius: 18, padding: "48px 36px", textAlign: "center",
+};
+const primaryBtn: React.CSSProperties = {
+  border: "none", borderRadius: 10, padding: "13px 20px",
+  background: "var(--accent)", color: "var(--white)", fontWeight: 600, cursor: "pointer",
+};
+const ghostBtn: React.CSSProperties = {
+  border: "1px solid var(--rule)", borderRadius: 10, padding: "12px 20px",
+  background: "var(--white)", color: "var(--ink)", fontWeight: 600, cursor: "pointer",
+};
 
 function CheckoutCompleteContent() {
   const router = useRouter();
   const { user, plan, hasInterests, refreshSession } = useAuth();
-  const [attempt, setAttempt] = useState(0);
-  const [timedOut, setTimedOut] = useState(false);
-  // Retry için çevrimi önce URL (?plan=) üzerinden oku; login/onboarding niyeti
-  // tek seferlik tükettiği için localStorage boş olabilir. localStorage yalnızca yedek.
-  const intent = useMemo<"monthly" | "yearly" | null>(() => {
-    try {
-      const q = new URLSearchParams(window.location.search).get("plan");
-      if (q === "monthly" || q === "yearly") return q;
-    } catch {}
-    return readPlanIntent();
+
+  const intent = useMemo(readIntent, []);
+  // paid=1 → bu sekme LS ödemesinden GERİ dönen (yeni) sekme.
+  const paid = useMemo(() => {
+    try { return new URLSearchParams(window.location.search).get("paid") === "1"; } catch { return false; }
   }, []);
 
+  const [opened, setOpened] = useState(false);   // bu (hub) sekmesinden checkout açıldı mı
+  const [attempt, setAttempt] = useState(0);
+  const [timedOut, setTimedOut] = useState(false);
+  const [error, setError] = useState("");
+
+  function goNext() {
+    localStorage.removeItem("cogletta_plan_intent");
+    router.replace(hasInterests ? "/dashboard" : "/onboarding");
+  }
+
+  // Pro onaylandığında: hub sekmesi kullanıcıyı otomatik ilerletir. paid sekmesi
+  // (LS dönüşü) otomatik ilerlemez — kullanıcı "Continue" ile ya da orijinal
+  // cogletta sekmesine dönerek devam eder. Böylece iki sekme aynı anda onboarding'e atmaz.
   useEffect(() => {
     if (plan !== "pro") return;
     localStorage.removeItem("cogletta_plan_intent");
-    router.replace(hasInterests ? "/dashboard" : "/onboarding");
-  }, [hasInterests, plan, router]);
+    if (!paid) router.replace(hasInterests ? "/dashboard" : "/onboarding");
+  }, [plan, paid, hasInterests, router]);
 
+  // Webhook onayını bekle: ödeme yapıldıysa (paid) ya da bu sekmeden checkout
+  // açıldıysa (opened), plan pro olana kadar profili artan aralıklarla yenile.
   useEffect(() => {
     if (plan === "pro") return;
-
+    if (!paid && !opened) return;
     const delays = [0, 1500, 3000, 5000, 8000, 12000, 18000, 25000];
     const timers = delays.map((delay, index) =>
       window.setTimeout(async () => {
@@ -54,66 +79,153 @@ function CheckoutCompleteContent() {
         if (index === delays.length - 1) setTimedOut(true);
       }, delay)
     );
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [plan, paid, opened, refreshSession]);
 
-    return () => timers.forEach((timer) => window.clearTimeout(timer));
-  }, [plan, refreshSession]);
-
-  function retryCheckout() {
-    if (!user || !intent) return;
-    const url = buildLemonCheckoutUrl(intent, {
-      userId: user.sub,
-      email: user.email,
-      redirectUrl: `${window.location.origin}/checkout-complete`,
-    });
-    window.location.href = url;
+  // Doğrudan bir tıklama içinden çağrılır → tarayıcı yeni sekmeyi engellemez.
+  function openCheckout() {
+    setError("");
+    if (!user || !intent) {
+      setError("Checkout is not available here. Please start again from Settings.");
+      return;
+    }
+    let url: string;
+    try {
+      url = buildLemonCheckoutUrl(intent, {
+        userId: user.sub,
+        email: user.email,
+        // Ödeme sonrası LS bu (yeni) sekmeyi buraya paid=1 ile geri getirir.
+        redirectUrl: `${window.location.origin}/checkout-complete?plan=${intent}&paid=1`,
+      });
+    } catch (e: any) {
+      setError(e?.message || "Checkout is not configured.");
+      return;
+    }
+    const win = window.open(url, "_blank", "noopener,noreferrer");
+    localStorage.removeItem("cogletta_plan_intent"); // tek seferlik tüket
+    setOpened(true);
+    // Popup engellendiyse yine de ödeyebilmesi için aynı sekmede aç (fallback).
+    if (!win) window.location.href = url;
   }
 
-  function continueFree() {
-    localStorage.removeItem("cogletta_plan_intent");
-    router.replace(hasInterests ? "/dashboard" : "/onboarding");
+  // ── Görünüm durumları ──────────────────────────────────────────────────────
+
+  // paid sekmesi + Pro onaylandı: manuel devam (orijinal sekme zaten ilerledi).
+  if (paid && plan === "pro") {
+    return (
+      <Shell>
+        <div style={{ ...card }}>
+          <h1 style={{ fontFamily: "'Lora', serif", fontSize: "1.8rem", color: "var(--ink)", marginBottom: 12 }}>
+            You&apos;re Pro — welcome aboard
+          </h1>
+          <p style={{ color: "var(--ink-soft)", lineHeight: 1.7, marginBottom: 24 }}>
+            Your payment is confirmed. You can continue here, or return to your original Cogletta tab.
+          </p>
+          <button onClick={goNext} style={{ ...primaryBtn, width: "100%" }}>Continue →</button>
+        </div>
+      </Shell>
+    );
   }
 
+  // paid sekmesi + henüz onay yok: bekleme.
+  if (paid) {
+    return (
+      <Shell>
+        <div style={{ ...card }}>
+          <Spinner />
+          <h1 style={{ fontFamily: "'Lora', serif", fontSize: "1.8rem", color: "var(--ink)", margin: "0 0 12px" }}>
+            Payment received
+          </h1>
+          <p style={{ color: "var(--ink-soft)", lineHeight: 1.7 }}>
+            We&apos;re confirming your Pro membership with Cogletta. You can also return to your original tab.
+          </p>
+          {attempt > 0 && !timedOut && (
+            <p style={{ marginTop: 20, color: "var(--ink-muted)", fontSize: "0.8125rem" }}>Confirmation check {attempt}…</p>
+          )}
+          {timedOut && (
+            <button onClick={() => void refreshSession()} style={{ ...ghostBtn, width: "100%", marginTop: 24 }}>
+              Check again
+            </button>
+          )}
+        </div>
+      </Shell>
+    );
+  }
+
+  // Hub sekmesi + checkout henüz açılmadı: butonla yeni sekmede aç.
+  if (!opened) {
+    return (
+      <Shell>
+        <div style={{ ...card }}>
+          <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)" }}>
+            Cogletta Pro
+          </span>
+          <h1 style={{ fontFamily: "'Lora', serif", fontSize: "1.8rem", color: "var(--ink)", margin: "10px 0 12px" }}>
+            One step left
+          </h1>
+          <p style={{ color: "var(--ink-soft)", lineHeight: 1.7, marginBottom: 28 }}>
+            Checkout opens securely in a new tab so you don&apos;t lose your place. This tab will confirm your membership once payment completes.
+          </p>
+          {error && <p style={{ background: "#fef2f2", color: "#991b1b", padding: "12px 16px", borderRadius: 10, fontSize: "0.875rem", marginBottom: 16 }}>{error}</p>}
+          <button onClick={openCheckout} style={{ ...primaryBtn, width: "100%" }}>
+            Continue to secure checkout →
+          </button>
+          <button onClick={goNext} style={{ ...ghostBtn, width: "100%", marginTop: 10, border: "none", background: "none", color: "var(--ink-muted)", textDecoration: "underline" }}>
+            Maybe later — continue with Free
+          </button>
+        </div>
+      </Shell>
+    );
+  }
+
+  // Hub sekmesi + checkout yeni sekmede açıldı: onay bekleniyor.
+  return (
+    <Shell>
+      <div style={{ ...card }}>
+        <Spinner />
+        <h1 style={{ fontFamily: "'Lora', serif", fontSize: "1.8rem", color: "var(--ink)", margin: "0 0 12px" }}>
+          Complete your payment in the new tab
+        </h1>
+        <p style={{ color: "var(--ink-soft)", lineHeight: 1.7 }}>
+          We&apos;re waiting for your payment to be confirmed. This can take a few seconds after you finish checkout.
+        </p>
+        {attempt > 0 && !timedOut && (
+          <p style={{ marginTop: 20, color: "var(--ink-muted)", fontSize: "0.8125rem" }}>Confirmation check {attempt}…</p>
+        )}
+        {timedOut && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 24 }}>
+            <p style={{ color: "var(--ink-muted)", fontSize: "0.875rem", lineHeight: 1.6 }}>
+              Taking longer than usual. You can reopen checkout or check again.
+            </p>
+            <button onClick={openCheckout} style={{ ...primaryBtn, width: "100%" }}>Reopen checkout</button>
+            <button onClick={() => void refreshSession()} style={{ ...ghostBtn, width: "100%" }}>Check again</button>
+            <button onClick={goNext} style={{ ...ghostBtn, width: "100%", border: "none", background: "none", color: "var(--ink-muted)", textDecoration: "underline" }}>
+              Continue with Free instead
+            </button>
+          </div>
+        )}
+      </div>
+    </Shell>
+  );
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ minHeight: "100vh", background: "var(--paper)" }}>
       <Navbar />
-      <main style={{ maxWidth: 560, margin: "0 auto", padding: "96px 24px", textAlign: "center" }}>
-        <div style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: 18, padding: "48px 36px" }}>
-          <div style={{ width: 34, height: 34, margin: "0 auto 24px", border: "3px solid var(--rule)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 0.9s linear infinite" }} />
-          <h1 style={{ fontFamily: "'Lora', serif", fontSize: "1.8rem", color: "var(--ink)", marginBottom: 12 }}>
-            Confirming your Pro membership
-          </h1>
-          <p style={{ color: "var(--ink-soft)", lineHeight: 1.7, marginBottom: timedOut ? 28 : 0 }}>
-            Your payment was received. We’re waiting for Lemon Squeezy to confirm it with Cogletta.
-          </p>
-
-          {timedOut && (
-            <>
-              <p style={{ color: "var(--ink-muted)", fontSize: "0.875rem", lineHeight: 1.6, marginBottom: 24 }}>
-                Confirmation is taking longer than usual. You can retry checkout or continue with the Free plan instead.
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {intent && (
-                  <button onClick={retryCheckout} style={{ border: "none", borderRadius: 10, padding: "13px 20px", background: "var(--accent)", color: "var(--white)", fontWeight: 600, cursor: "pointer" }}>
-                    Return to checkout
-                  </button>
-                )}
-                <button onClick={() => void refreshSession()} style={{ border: "1px solid var(--rule)", borderRadius: 10, padding: "12px 20px", background: "var(--white)", color: "var(--ink)", fontWeight: 600, cursor: "pointer" }}>
-                  Check again
-                </button>
-                <button onClick={continueFree} style={{ border: "none", background: "none", color: "var(--ink-muted)", padding: 10, cursor: "pointer", textDecoration: "underline" }}>
-                  Continue with Free instead
-                </button>
-              </div>
-            </>
-          )}
-
-          {!timedOut && attempt > 0 && (
-            <p style={{ marginTop: 20, color: "var(--ink-muted)", fontSize: "0.8125rem" }}>Confirmation check {attempt}…</p>
-          )}
-        </div>
-      </main>
+      <main style={{ maxWidth: 560, margin: "0 auto", padding: "96px 24px" }}>{children}</main>
       <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <div style={{
+      width: 34, height: 34, margin: "0 auto 24px",
+      border: "3px solid var(--rule)", borderTopColor: "var(--accent)",
+      borderRadius: "50%", animation: "spin 0.9s linear infinite",
+    }} />
   );
 }
 
