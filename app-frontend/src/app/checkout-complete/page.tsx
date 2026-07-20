@@ -75,7 +75,13 @@ function CheckoutCompleteContent() {
   useEffect(() => {
     if (plan === "pro") return;
     if (!paid && !opened) return;
-    const delays = [0, 1500, 3000, 5000, 8000, 12000, 18000, 25000];
+    // Ödeme LS sekmesinde dakikalarca sürebildiği için onay yoklamasını 5 dakikaya
+    // kadar uzatıyoruz (mount anından itibaren mutlak gecikmeler, ms). Son adım (300000ms
+    // = 5 dk) "timed out" durumunu tetikler; kullanıcı yine de Check again ile yoklayabilir.
+    const delays = [
+      0, 1500, 3000, 5000, 8000, 12000, 18000, 25000,
+      35000, 50000, 70000, 95000, 125000, 160000, 200000, 245000, 300000,
+    ];
     const timers = delays.map((delay, index) =>
       window.setTimeout(async () => {
         setAttempt(index + 1);
