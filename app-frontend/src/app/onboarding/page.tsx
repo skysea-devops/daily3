@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { buildLemonCheckoutUrl, updateUserInterests } from "@/lib/api";
+import { updateUserInterests } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireOnboarding } from "@/components/Guards";
 import { CATEGORIES } from "@/lib/constants";
@@ -17,43 +17,27 @@ function OnboardingForm() {
 
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [redirectingToCheckout, setRedirectingToCheckout] = useState(false);
 
+  // Register'dan Pro niyetiyle gelen ve henüz Pro olmayan kullanıcı, Free onboarding'i
+  // görmeden cogletta içindeki checkout hub'ına yönlensin. isPro ise (ödeme tamamlanmış)
+  // bu effect devre dışı kalır ve kullanıcı 3 interest seçer.
   useEffect(() => {
     if (!user || isPro) return;
-
     let intent: "monthly" | "yearly" | null = null;
     try {
       const raw = localStorage.getItem("cogletta_plan_intent");
       if (raw) {
-        const parsed = JSON.parse(raw);
-        if ((parsed?.billing === "monthly" || parsed?.billing === "yearly") && parsed.exp > Date.now()) {
-          intent = parsed.billing;
-        } else {
-          localStorage.removeItem("cogletta_plan_intent");
-        }
+        const p = JSON.parse(raw);
+        if ((p?.billing === "monthly" || p?.billing === "yearly") && p.exp > Date.now()) intent = p.billing;
+        else localStorage.removeItem("cogletta_plan_intent");
       }
     } catch {
       localStorage.removeItem("cogletta_plan_intent");
     }
-
     if (!intent) return;
-
-    try {
-      const checkoutUrl = buildLemonCheckoutUrl(intent, {
-        userId: user.sub,
-        email: user.email,
-        redirectUrl: `${window.location.origin}/checkout-complete?plan=${intent}`,
-      });
-      // URL kuruldu → niyeti tek seferlik tüket ve yönlendir.
-      localStorage.removeItem("cogletta_plan_intent");
-      setRedirectingToCheckout(true);
-      window.location.href = checkoutUrl;
-    } catch (error) {
-      console.error("Failed to continue to checkout:", error);
-      setRedirectingToCheckout(false);
-    }
-  }, [isPro, user]);
+    localStorage.removeItem("cogletta_plan_intent"); // tek seferlik
+    router.replace(`/checkout-complete?plan=${intent}`);
+  }, [isPro, user, router]);
 
   function toggleCategory(id: string) {
     if (selected.includes(id)) { setSelected(selected.filter(c => c !== id)); return; }
@@ -71,6 +55,8 @@ function OnboardingForm() {
       await updateUserInterests(selected, user.accessToken, user.email);
       localStorage.setItem("cogletta-categories", JSON.stringify(selected));
       markInterestsSaved();
+      // Pro niyeti onboarding'e girerken yukarıdaki effect'te tüketilip checkout'a
+      // yönlendiriliyor; buraya ulaşan kullanıcı interest'ini kaydetmiş demektir.
       router.push("/dashboard");
     } catch (error) {
       console.error("Failed to save interests:", error);
@@ -78,14 +64,6 @@ function OnboardingForm() {
     } finally {
       setLoading(false);
     }
-  }
-
-  if (redirectingToCheckout) {
-    return (
-      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ color: "var(--ink-soft)", fontSize: "0.9375rem" }}>Continuing to secure checkout…</p>
-      </div>
-    );
   }
 
   return (

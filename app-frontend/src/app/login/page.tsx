@@ -3,11 +3,10 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn, forgotPassword, confirmForgotPassword, getCurrentSessionUser } from "@/lib/cognito";
+import { signIn, forgotPassword, confirmForgotPassword } from "@/lib/cognito";
 import { useAuth } from "@/lib/auth-context";
 import { RequireGuest } from "@/components/Guards";
 import Navbar from "@/components/Navbar";
-import { buildLemonCheckoutUrl } from "@/lib/api";
 
 type View = "login" | "forgot" | "reset";
 
@@ -109,13 +108,14 @@ function LoginForm() {
     setLoading(true);
     try {
       await signIn(email, password);
-      const sessionUser = await getCurrentSessionUser();
 
-      // Register sayfasında Pro seçildiyse, Free onboarding'e hiç uğramadan
-      // doğrudan seçilen Lemon Squeezy checkout'una gönder.
-      // NOT: bu yönlendirmeyi refreshSession'DAN ÖNCE yapıyoruz. Aksi halde
-      // auth-context user set olur ve login'i saran RequireGuest bizi
-      // /onboarding'e replace'leyerek checkout yönlendirmesiyle yarışır.
+      // Register'da Pro seçildiyse: kullanıcıyı Free onboarding'e hiç uğratmadan,
+      // cogletta İÇİNDEKİ checkout hub'ına (/checkout-complete) götür. Oradaki
+      // butonla LS yeni sekmede açılır; bu sekme cogletta'da kalır.
+      // NOT: Bunu refreshSession'DAN ÖNCE ve window.location ile (hard-nav) yapıyoruz.
+      // - refreshSession'dan önce: auth-context user set olmaz, RequireGuest tetiklenmez.
+      // - hard-nav: hub taze yüklenip user'ı Cognito session'dan çözer; client push'un
+      //   RequireGuest ile yarışıp /onboarding'e sapması riski ortadan kalkar.
       let intent: "monthly" | "yearly" | null = null;
       try {
         const raw = localStorage.getItem("cogletta_plan_intent");
@@ -129,18 +129,8 @@ function LoginForm() {
       }
 
       if (intent) {
-        // URL'i önce kur (env yoksa fırlatır, aşağıdaki catch yakalar ve niyet korunur).
-        const checkoutUrl = buildLemonCheckoutUrl(intent, {
-          userId: sessionUser.sub,
-          email: sessionUser.email,
-          // Çevrimi retry için taşı; success dönüşü /checkout-complete'e gelir.
-          redirectUrl: `${window.location.origin}/checkout-complete?plan=${intent}`,
-        });
-        // Niyeti TEK SEFERLİK tüket: temizlemezsek, ödeme sonrası Pro olmuş kullanıcı
-        // 1 saat içinde tekrar giriş yaparsa checkout'a ikinci kez yönlenip yeniden
-        // ödeme yapabilir. (checkout-complete zaten Pro onaylanınca da temizler.)
-        localStorage.removeItem("cogletta_plan_intent");
-        window.location.href = checkoutUrl;
+        localStorage.removeItem("cogletta_plan_intent"); // tek seferlik; çevrim ?plan ile taşınıyor
+        window.location.href = `/checkout-complete?plan=${intent}`;
         return;
       }
 

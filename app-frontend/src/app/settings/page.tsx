@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import { updateDisplayName, changePassword } from "@/lib/cognito";
-import { buildLemonCheckoutUrl, cancelBillingSubscription, getBillingSubscription } from "@/lib/api";
+import { cancelBillingSubscription, getBillingSubscription } from "@/lib/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
@@ -269,18 +269,9 @@ function SettingsContent() {
 
   function handleUpgrade(billing: "monthly" | "yearly") {
     if (!user || billingBusy) return;
-    setBillingBusy(true); setBillingError("");
-    try {
-      const url = buildLemonCheckoutUrl(billing, {
-        userId: user.sub,
-        email: user.email,
-        redirectUrl: `${window.location.origin}/settings?checkout=success`,
-      });
-      window.location.href = url;
-    } catch (e: any) {
-      setBillingError(e?.message || "Checkout is not configured. Please try again.");
-      setBillingBusy(false);
-    }
+    // Checkout'u cogletta içindeki hub'a taşı: hub, LS'i yeni sekmede açar ve
+    // bu (settings) sekmesi cogletta'da kalır. Popup engeli hub'daki tıklamayla aşılır.
+    router.push(`/checkout-complete?plan=${billing}`);
   }
 
   async function handleManageBilling() {
@@ -323,12 +314,8 @@ function SettingsContent() {
     setBillingBusy(true); setBillingError("");
     try {
       await cancelBillingSubscription(user.accessToken);
-      const url = buildLemonCheckoutUrl(billingCycle, {
-        userId: user.sub,
-        email: user.email,
-        redirectUrl: `${window.location.origin}/settings?checkout=success`,
-      });
-      window.location.href = url;
+      // Yeni çevrimin ödemesi için cogletta içindeki checkout hub'ına git (yeni sekmede LS).
+      router.push(`/checkout-complete?plan=${billingCycle}`);
     } catch (error: any) {
       setBillingError(error?.message || "Could not switch billing cycle.");
       setBillingBusy(false);

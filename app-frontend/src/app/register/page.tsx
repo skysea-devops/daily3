@@ -167,7 +167,7 @@ function ProNotifyButton({ onStart }: { onStart: (billing: "monthly" | "yearly")
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <button
           onClick={() => {
-            if (user) { setPlanIntent("yearly"); router.push("/settings?upgrade=yearly"); }
+            if (user) { router.push("/checkout-complete?plan=yearly"); }
             else onStart("yearly");
           }}
           style={{
@@ -180,7 +180,7 @@ function ProNotifyButton({ onStart }: { onStart: (billing: "monthly" | "yearly")
         </button>
         <button
           onClick={() => {
-            if (user) { setPlanIntent("monthly"); router.push("/settings?upgrade=monthly"); }
+            if (user) { router.push("/checkout-complete?plan=monthly"); }
             else onStart("monthly");
           }}
           style={{
