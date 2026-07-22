@@ -42,40 +42,43 @@ function CheckoutCompleteContent() {
   const { user, plan, hasInterests, refreshSession } = useAuth();
 
   const intent = useMemo(readIntent, []);
-  // paid=1 → bu sekme LS ödemesinden GERİ dönen (yeni) sekme.
+  // paid=1 â Ã¶deme sonrasÄ± LS dÃ¶nÃ¼ÅÃ¼. Checkout artÄ±k AYNI sekmede aÃ§Ä±lÄ±yor (yeni
+  // sekme/hub yok): kullanÄ±cÄ± Ã¶deyip aynÄ± sekmeye paid=1 ile geri dÃ¶ner.
   const paid = useMemo(() => {
     try { return new URLSearchParams(window.location.search).get("paid") === "1"; } catch { return false; }
   }, []);
 
-  const [opened, setOpened] = useState(false);   // bu (hub) sekmesinden checkout açıldı mı
-
-  // Seçilen plana göre açıklama metni (ürün İngilizce)
   const planWord = intent === "yearly" ? "yearly" : "monthly";
   const planPrice = intent === "yearly" ? "$58/year" : "$5.80/month";
   const [attempt, setAttempt] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
   const [error, setError] = useState("");
+  const [redirecting, setRedirecting] = useState(false);
 
-  function goNext() {
+  // "Maybe later" / Free ile devam
+  function goFree() {
     localStorage.removeItem("cogletta_plan_intent");
     router.replace(hasInterests ? "/dashboard" : "/onboarding");
   }
 
-  // Pro onaylandığında: hub sekmesi kullanıcıyı otomatik ilerletir. paid sekmesi
-  // (LS dönüşü) otomatik ilerlemez — kullanıcı "Continue" ile ya da orijinal
-  // cogletta sekmesine dönerek devam eder. Böylece iki sekme aynı anda onboarding'e atmaz.
+  // Ãdeme onaylandÄ±ktan sonra: 3 topic seÃ§mek iÃ§in interests sayfasÄ±na
+  function goToInterests() {
+    localStorage.removeItem("cogletta_plan_intent");
+    router.replace("/interests");
+  }
+
+  // Zaten Pro olup paid dÃ¶nÃ¼ÅÃ¼ olmadan bu sayfaya gelmiÅse ilerlet
   useEffect(() => {
     if (plan !== "pro") return;
     localStorage.removeItem("cogletta_plan_intent");
-    if (!paid) router.replace(hasInterests ? "/dashboard" : "/onboarding");
+    if (!paid) router.replace(hasInterests ? "/dashboard" : "/interests");
   }, [plan, paid, hasInterests, router]);
 
-  // Webhook onayını bekle: ödeme yapıldıysa (paid) ya da bu sekmeden checkout
-  // açıldıysa (opened), plan pro olana kadar profili artan aralıklarla yenile.
+  // Ãdeme dÃ¶nÃ¼ÅÃ¼nde (paid) webhook onayÄ±nÄ± bekle: plan pro olana kadar profili yenile.
   useEffect(() => {
     if (plan === "pro") return;
-    if (!paid && !opened) return;
-    const delays = [0, 1500, 3000, 5000, 8000, 12000, 18000, 25000];
+    if (!paid) return;
+    const delays = [0, 1500, 3000, 5000, 8000, 12000, 18000, 25000, 40000, 60000];
     const timers = delays.map((delay, index) =>
       window.setTimeout(async () => {
         setAttempt(index + 1);
@@ -84,37 +87,23 @@ function CheckoutCompleteContent() {
       }, delay)
     );
     return () => timers.forEach((t) => window.clearTimeout(t));
-  }, [plan, paid, opened, refreshSession]);
+  }, [plan, paid, refreshSession]);
 
-  // Doğrudan bir tıklama içinden çağrılır. Checkout URL'i artık backend'den ASENKRON
-  // gelir; ama popup engelini aşmak için boş sekmeyi SENKRON (jest içinde) açıyoruz,
-  // url gelince o sekmeyi yönlendiriyoruz. (Async fetch'ten SONRA window.open çağırmak
-  // jesti kaybeder ve tarayıcı engeller.)
+  // Checkout'u AYNI sekmede aÃ§. window.location.href jest gerektirmez â popup sorunu
+  // yok. Ãdeme sonrasÄ± LS bizi buraya paid=1 ile geri getirir.
   async function openCheckout() {
     setError("");
     if (!user || !intent) {
       setError("Checkout is not available here. Please start again from Settings.");
       return;
     }
-
-    // Boş sekmeyi hemen aç (tıklama jesti hâlâ geçerliyken). Reverse-tabnabbing'e
-    // karşı opener'ı koparıyoruz. win null ise popup engellenmiş demektir → fallback.
-    const win = window.open("", "_blank");
-    if (win) { try { (win as unknown as { opener: unknown }).opener = null; } catch {} }
-
-    setOpened(true);
+    setRedirecting(true);
     try {
       const { url } = await createCheckout(intent, user.accessToken);
-      if (win && !win.closed) {
-        win.location.href = url;
-      } else {
-        // Popup engellendi → aynı sekmede aç (bu sekme LS'e gider).
-        window.location.href = url;
-      }
-      localStorage.removeItem("cogletta_plan_intent"); // tek seferlik tüket
+      localStorage.removeItem("cogletta_plan_intent");
+      window.location.href = url;
     } catch (e: any) {
-      if (win && !win.closed) { try { win.close(); } catch {} }
-      setOpened(false);
+      setRedirecting(false);
       if (e?.code === "already_subscribed") {
         setError("You already have an active Cogletta Pro subscription. You can manage it from Settings.");
       } else {
@@ -123,26 +112,26 @@ function CheckoutCompleteContent() {
     }
   }
 
-  // ── Görünüm durumları ──────────────────────────────────────────────────────
+  // ââ GÃ¶rÃ¼nÃ¼m durumlarÄ± ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
-  // paid sekmesi + Pro onaylandı: manuel devam (orijinal sekme zaten ilerledi).
+  // Ãdeme onaylandÄ± â Pro
   if (paid && plan === "pro") {
     return (
       <Shell>
         <div style={{ ...card }}>
           <h1 style={{ fontFamily: "'Lora', serif", fontSize: "1.8rem", color: "var(--ink)", marginBottom: 12 }}>
-            You&apos;re Pro — welcome aboard
+            You&apos;re Pro â welcome aboard
           </h1>
           <p style={{ color: "var(--ink-soft)", lineHeight: 1.7, marginBottom: 24 }}>
-            Your payment is confirmed. You can continue here, or return to your original Cogletta tab.
+            Your payment is confirmed. You can continue to the interests page to select your 3 topics.
           </p>
-          <button onClick={goNext} style={{ ...primaryBtn, width: "100%" }}>Continue →</button>
+          <button onClick={goToInterests} style={{ ...primaryBtn, width: "100%" }}>Continue →</button>
         </div>
       </Shell>
     );
   }
 
-  // paid sekmesi + henüz onay yok: bekleme.
+  // Ãdeme dÃ¶nÃ¼ÅÃ¼, onay bekleniyor
   if (paid) {
     return (
       <Shell>
@@ -152,7 +141,7 @@ function CheckoutCompleteContent() {
             Confirming your payment
           </h1>
           <p style={{ color: "var(--ink-soft)", lineHeight: 1.7 }}>
-            We&apos;re checking your payment status. This can take a few seconds — you can also return to your original tab.
+            We&apos;re checking your payment status. This can take a few seconds.
           </p>
           {attempt > 0 && !timedOut && (
             <p style={{ marginTop: 20, color: "var(--ink-muted)", fontSize: "0.8125rem" }}>Confirmation check {attempt}…</p>
@@ -167,8 +156,8 @@ function CheckoutCompleteContent() {
     );
   }
 
-  // Hub sekmesi + plan yok (nadiren): kullanıcıyı plan seçmeye yönlendir.
-  if (!opened && !intent) {
+  // Plan yok
+  if (!intent) {
     return (
       <Shell>
         <div style={{ ...card }}>
@@ -186,58 +175,26 @@ function CheckoutCompleteContent() {
     );
   }
 
-  // Hub sekmesi + checkout henüz açılmadı: seçilen plana göre açıklama + butonla yeni sekmede aç.
-  if (!opened) {
-    return (
-      <Shell>
-        <div style={{ ...card }}>
-          <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)" }}>
-            Cogletta Pro · {planWord}
-          </span>
-          <h1 style={{ fontFamily: "'Lora', serif", fontSize: "1.8rem", color: "var(--ink)", margin: "10px 0 12px" }}>
-            One step left
-          </h1>
-          <p style={{ color: "var(--ink-soft)", lineHeight: 1.7, marginBottom: 28 }}>
-            We&apos;ll take you to the <strong>{planWord}</strong> Cogletta Pro checkout ({planPrice}). It opens securely in a new tab so you keep your place here — this tab confirms your membership once payment completes.
-          </p>
-          {error && <p style={{ background: "#fef2f2", color: "#991b1b", padding: "12px 16px", borderRadius: 10, fontSize: "0.875rem", marginBottom: 16 }}>{error}</p>}
-          <button onClick={openCheckout} style={{ ...primaryBtn, width: "100%" }}>
-            Continue to secure checkout →
-          </button>
-          <button onClick={goNext} style={{ ...ghostBtn, width: "100%", marginTop: 10, border: "none", background: "none", color: "var(--ink-muted)", textDecoration: "underline" }}>
-            Maybe later — continue with Free
-          </button>
-        </div>
-      </Shell>
-    );
-  }
-
-  // Hub sekmesi + checkout yeni sekmede açıldı: onay bekleniyor.
+  // Checkout'a gitmeden Ã¶nceki adÄ±m â aynÄ± sekmede aÃ§Ä±lÄ±r
   return (
     <Shell>
       <div style={{ ...card }}>
-        <Spinner />
-        <h1 style={{ fontFamily: "'Lora', serif", fontSize: "1.8rem", color: "var(--ink)", margin: "0 0 12px" }}>
-          Complete your payment in the new tab
+        <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)" }}>
+          Cogletta Pro · {planWord}
+        </span>
+        <h1 style={{ fontFamily: "'Lora', serif", fontSize: "1.8rem", color: "var(--ink)", margin: "10px 0 12px" }}>
+          One step left
         </h1>
-        <p style={{ color: "var(--ink-soft)", lineHeight: 1.7 }}>
-          We&apos;re waiting for your payment to be confirmed. This can take a few seconds after you finish checkout.
+        <p style={{ color: "var(--ink-soft)", lineHeight: 1.7, marginBottom: 28 }}>
+          We&apos;ll take you to the secure <strong>{planWord}</strong> Cogletta Pro checkout ({planPrice}). You&apos;ll come right back here once your payment completes.
         </p>
-        {attempt > 0 && !timedOut && (
-          <p style={{ marginTop: 20, color: "var(--ink-muted)", fontSize: "0.8125rem" }}>Confirmation check {attempt}…</p>
-        )}
-        {timedOut && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 24 }}>
-            <p style={{ color: "var(--ink-muted)", fontSize: "0.875rem", lineHeight: 1.6 }}>
-              Taking longer than usual. You can reopen checkout or check again.
-            </p>
-            <button onClick={openCheckout} style={{ ...primaryBtn, width: "100%" }}>Reopen checkout</button>
-            <button onClick={() => void refreshSession()} style={{ ...ghostBtn, width: "100%" }}>Check again</button>
-            <button onClick={goNext} style={{ ...ghostBtn, width: "100%", border: "none", background: "none", color: "var(--ink-muted)", textDecoration: "underline" }}>
-              Continue with Free instead
-            </button>
-          </div>
-        )}
+        {error && <p style={{ background: "#fef2f2", color: "#991b1b", padding: "12px 16px", borderRadius: 10, fontSize: "0.875rem", marginBottom: 16 }}>{error}</p>}
+        <button onClick={openCheckout} disabled={redirecting} style={{ ...primaryBtn, width: "100%", opacity: redirecting ? 0.7 : 1 }}>
+          {redirecting ? "Redirecting…" : "Continue to secure checkout →"}
+        </button>
+        <button onClick={goFree} style={{ ...ghostBtn, width: "100%", marginTop: 10, border: "none", background: "none", color: "var(--ink-muted)", textDecoration: "underline" }}>
+          Maybe later â continue with Free
+        </button>
       </div>
     </Shell>
   );
