@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { RequireAuth } from "@/components/Guards";
 import { useAuth } from "@/lib/auth-context";
-import { buildLemonCheckoutUrl } from "@/lib/api";
+import { createCheckout } from "@/lib/api";
 
 // Çevrimi önce URL (?plan=) üzerinden oku; login/onboarding/settings niyeti buraya
 // ?plan ile taşıyor. localStorage yalnızca yedek.
@@ -75,13 +75,7 @@ function CheckoutCompleteContent() {
   useEffect(() => {
     if (plan === "pro") return;
     if (!paid && !opened) return;
-    // Ödeme LS sekmesinde dakikalarca sürebildiği için onay yoklamasını 5 dakikaya
-    // kadar uzatıyoruz (mount anından itibaren mutlak gecikmeler, ms). Son adım (300000ms
-    // = 5 dk) "timed out" durumunu tetikler; kullanıcı yine de Check again ile yoklayabilir.
-    const delays = [
-      0, 1500, 3000, 5000, 8000, 12000, 18000, 25000,
-      35000, 50000, 70000, 95000, 125000, 160000, 200000, 245000, 300000,
-    ];
+    const delays = [0, 1500, 3000, 5000, 8000, 12000, 18000, 25000];
     const timers = delays.map((delay, index) =>
       window.setTimeout(async () => {
         setAttempt(index + 1);
@@ -92,38 +86,41 @@ function CheckoutCompleteContent() {
     return () => timers.forEach((t) => window.clearTimeout(t));
   }, [plan, paid, opened, refreshSession]);
 
-  // Doğrudan bir tıklama içinden çağrılır → tarayıcı yeni sekmeyi engellemez.
-  function openCheckout() {
+  // Doğrudan bir tıklama içinden çağrılır. Checkout URL'i artık backend'den ASENKRON
+  // gelir; ama popup engelini aşmak için boş sekmeyi SENKRON (jest içinde) açıyoruz,
+  // url gelince o sekmeyi yönlendiriyoruz. (Async fetch'ten SONRA window.open çağırmak
+  // jesti kaybeder ve tarayıcı engeller.)
+  async function openCheckout() {
     setError("");
     if (!user || !intent) {
       setError("Checkout is not available here. Please start again from Settings.");
       return;
     }
-    let url: string;
-    try {
-      url = buildLemonCheckoutUrl(intent, {
-        userId: user.sub,
-        email: user.email,
-        // Ödeme sonrası LS bu (yeni) sekmeyi buraya paid=1 ile geri getirir.
-        redirectUrl: `${window.location.origin}/checkout-complete?plan=${intent}&paid=1`,
-      });
-    } catch (e: any) {
-      setError(e?.message || "Checkout is not configured.");
-      return;
-    }
-    // ÖNEMLİ: "noopener" verilirsek window.open spec gereği null döndürür (başarılı
-    // açsa bile) ve aşağıdaki fallback yanlışlıkla bu sekmeyi de LS'e götürür.
-    // Bu yüzden noopener'ı KALDIRIYORUZ; başarı/başarısızlığı gerçek dönüş değeriyle
-    // ölçüp, reverse-tabnabbing'e karşı opener'ı elle koparıyoruz.
-    const win = window.open(url, "_blank");
-    if (!win) {
-      // Popup gerçekten engellendi → aynı sekmede aç (fallback). Bu sekme LS'e gider.
-      window.location.href = url;
-      return;
-    }
-    try { (win as unknown as { opener: unknown }).opener = null; } catch {}
-    localStorage.removeItem("cogletta_plan_intent"); // tek seferlik tüket
+
+    // Boş sekmeyi hemen aç (tıklama jesti hâlâ geçerliyken). Reverse-tabnabbing'e
+    // karşı opener'ı koparıyoruz. win null ise popup engellenmiş demektir → fallback.
+    const win = window.open("", "_blank");
+    if (win) { try { (win as unknown as { opener: unknown }).opener = null; } catch {} }
+
     setOpened(true);
+    try {
+      const { url } = await createCheckout(intent, user.accessToken);
+      if (win && !win.closed) {
+        win.location.href = url;
+      } else {
+        // Popup engellendi → aynı sekmede aç (bu sekme LS'e gider).
+        window.location.href = url;
+      }
+      localStorage.removeItem("cogletta_plan_intent"); // tek seferlik tüket
+    } catch (e: any) {
+      if (win && !win.closed) { try { win.close(); } catch {} }
+      setOpened(false);
+      if (e?.code === "already_subscribed") {
+        setError("You already have an active Cogletta Pro subscription. You can manage it from Settings.");
+      } else {
+        setError(e?.message || "Could not start checkout. Please try again.");
+      }
+    }
   }
 
   // ── Görünüm durumları ──────────────────────────────────────────────────────

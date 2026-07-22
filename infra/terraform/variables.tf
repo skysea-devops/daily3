@@ -106,3 +106,15 @@ variable "lemonsqueezy_yearly_variant_id" {
   type        = string
   default     = ""
 }
+
+variable "lemonsqueezy_monthly_variant_id" {
+  description = "Lemon Squeezy variant ID for the monthly ProReader plan"
+  type        = string
+  default     = ""
+}
+
+variable "lemonsqueezy_store_id" {
+  description = "Lemon Squeezy store ID (used by the Checkouts API)"
+  type        = string
+  default     = ""
+}

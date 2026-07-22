@@ -302,25 +302,11 @@ function SettingsContent() {
     }
   }
 
-  async function handleSwitchBillingCycle(billingCycle: "monthly" | "yearly") {
-    if (!user?.accessToken || billingBusy) return;
-
-    const confirmed = window.confirm(
-      `Your current subscription will be cancelled first. You will then continue to the ${billingCycle} checkout. ` +
-      "The current payment is not refunded. Continue?"
-    );
-    if (!confirmed) return;
-
-    setBillingBusy(true); setBillingError("");
-    try {
-      await cancelBillingSubscription(user.accessToken);
-      // Yeni çevrimin ödemesi için cogletta içindeki checkout hub'ına git (yeni sekmede LS).
-      router.push(`/checkout-complete?plan=${billingCycle}`);
-    } catch (error: any) {
-      setBillingError(error?.message || "Could not switch billing cycle.");
-      setBillingBusy(false);
-    }
-  }
+  // NOTE: monthly<->yearly switch geçici olarak kaldırıldı. Eski akış (aboneliği
+  // iptal edip yeni checkout açma) finansal olarak riskliydi ve yeni mükerrer
+  // abonelik guard'ıyla "iptal edildi ama checkout bloklandı" durumuna yol
+  // açardı. Doğru akış (LS variant-swap PATCH + proration, aynı abonelik ID)
+  // Chunk 3'te PATCH /me/subscription ile gelecek.
 
   async function handleDeleteAccount() {
     if (!user?.accessToken) return;
@@ -414,11 +400,14 @@ function SettingsContent() {
           )}
           {plan === "pro" && (
             <>
-              <Row topBorder label="Billing cycle" description="Switching cancels the current renewal first, then opens checkout for the other plan. The current payment is not refunded.">
-                <div style={{ display: "flex", gap: 8 }}>
-                  {subscription?.billingCycle !== "monthly" && !subscription?.cancelled && <ActionBtn label="Switch to monthly" onClick={() => handleSwitchBillingCycle("monthly")} disabled={billingBusy} />}
-                  {subscription?.billingCycle !== "yearly" && !subscription?.cancelled && <ActionBtn label="Switch to yearly" onClick={() => handleSwitchBillingCycle("yearly")} disabled={billingBusy} style="accent" />}
-                </div>
+              <Row topBorder label="Billing cycle" description="Switching between monthly and yearly is being upgraded and will be available here shortly.">
+                <span style={{
+                  flexShrink: 0, padding: "7px 14px", borderRadius: 999,
+                  border: "1px solid var(--rule)", background: "var(--paper)",
+                  fontSize: "0.8125rem", fontWeight: 600, color: "var(--ink-muted)",
+                }}>
+                  Coming soon
+                </span>
               </Row>
               <Row topBorder label="Payment method & invoices" description="Open a fresh, secure Lemon Squeezy portal link for this subscription.">
                 <ActionBtn label={billingBusy ? "Opening…" : "Manage"} onClick={handleManageBilling} disabled={billingBusy} />
