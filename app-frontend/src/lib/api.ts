@@ -106,39 +106,43 @@ export async function getDailyArticles(
 }
 
 
-// ─── Lemon Squeezy checkout ───────────────────────────────────────────────────
-// MoR modelinde backend'e gerek yok: kullanıcıyı LS'nin hosted checkout linkine
-// yönlendiriyoruz. userId'yi custom_data ile geçiyoruz; webhook bunu meta.custom_data
-// üzerinden okuyup DynamoDB'de plan'ı günceller.
-//
-// Env değişkenleri (LS panelindeki "Share → Buy link" tam URL'leri):
-//   NEXT_PUBLIC_LS_CHECKOUT_MONTHLY = https://<store>.lemonsqueezy.com/buy/<uuid>
-//   NEXT_PUBLIC_LS_CHECKOUT_YEARLY  = https://<store>.lemonsqueezy.com/buy/<uuid>
+// ─── Lemon Squeezy checkout (backend Checkouts API) ──────────────────────────
+// Checkout URL'ini artık BACKEND üretir (POST /me/checkout). Backend seçilen
+// variant'a özel (enabled_variants → tek periyot), kullanıcıya bağlı
+// (custom.user_id + email), kısa ömürlü bir checkout açar ve mükerrer abonelik
+// guard'ından geçirir. Frontend yalnızca interval yollar, dönen url'i açar.
+export interface CreateCheckoutResult {
+  url: string;
+  interval: "monthly" | "yearly";
+}
 
-export function buildLemonCheckoutUrl(
-  billing: "monthly" | "yearly",
-  opts: { userId: string; email?: string; redirectUrl?: string }
-): string {
-  const base =
-    billing === "yearly"
-      ? process.env.NEXT_PUBLIC_LS_CHECKOUT_YEARLY
-      : process.env.NEXT_PUBLIC_LS_CHECKOUT_MONTHLY;
+export type CheckoutError = Error & { code?: string; status?: number };
 
-  if (!base) {
-    throw new Error(
-      `Checkout link is not configured (NEXT_PUBLIC_LS_CHECKOUT_${billing.toUpperCase()})`
-    );
+export async function createCheckout(
+  interval: "monthly" | "yearly",
+  accessToken: string
+): Promise<CreateCheckoutResult> {
+  if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+
+  const response = await fetch(`${API_BASE_URL}/me/checkout`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ interval }),
+  });
+
+  if (response.status === 401) { handleUnauthorized(); throw new Error("Session expired"); }
+
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const err = new Error(body?.message || "Could not start checkout") as CheckoutError;
+    err.code = body?.code;
+    err.status = response.status;
+    throw err;
   }
-
-  const params = new URLSearchParams();
-  if (opts.email) params.set("checkout[email]", opts.email);
-  params.set("checkout[custom][user_id]", opts.userId);
-  if (opts.redirectUrl) params.set("checkout[success_url]", opts.redirectUrl);
-  // LS checkout'u ayrı sekmede/overlay yerine doğrudan aç
-  params.set("embed", "0");
-
-  const sep = base.includes("?") ? "&" : "?";
-  return `${base}${sep}${params.toString()}`;
+  return body as CreateCheckoutResult;
 }
 
 // ─── Weekly trend report (Pro) ────────────────────────────────────────────────
