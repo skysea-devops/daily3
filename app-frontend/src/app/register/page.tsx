@@ -7,12 +7,6 @@ import { signUp } from "@/lib/cognito";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
 
-// Checkout linkleri build-time inline edilir; yoksa Pro kartı "Coming soon" modunda kalır.
-const CHECKOUT_CONFIGURED = Boolean(
-  process.env.NEXT_PUBLIC_LS_CHECKOUT_MONTHLY &&
-  process.env.NEXT_PUBLIC_LS_CHECKOUT_YEARLY
-);
-
 // Kayıt→doğrulama→giriş zinciri boyunca Pro niyetini taşır (yeni sekmede
 // açılan doğrulama linkine dayanıklı olması için localStorage; 1 saat geçerli).
 function setPlanIntent(billing: "monthly" | "yearly") {
@@ -156,85 +150,38 @@ function RegisterModal({ plan, onClose }: { plan: "free" | "pro"; onClose: () =>
 function ProNotifyButton({ onStart }: { onStart: (billing: "monthly" | "yearly") => void }) {
   const { user } = useAuth();
   const router = useRouter();
-  const [notified, setNotified] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("cogletta-pro-notify") === "true";
-  });
 
-  // Checkout hazır: hem ziyaretçi hem üye için canlı satın alma yolu
-  if (CHECKOUT_CONFIGURED) {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <button
-          onClick={() => {
-            if (user) { router.push("/checkout-complete?plan=yearly"); }
-            else onStart("yearly");
-          }}
-          style={{
-            width: "100%", background: "var(--accent)", color: "var(--white)",
-            border: "none", borderRadius: 10, padding: "13px 24px",
-            fontSize: "0.9375rem", fontWeight: 600, cursor: "pointer",
-          }}
-        >
-          Start with Pro — $58/year →
-        </button>
-        <button
-          onClick={() => {
-            if (user) { router.push("/checkout-complete?plan=monthly"); }
-            else onStart("monthly");
-          }}
-          style={{
-            width: "100%", background: "none", color: "var(--ink-soft)",
-            border: "1px solid var(--rule)", borderRadius: 10, padding: "11px 24px",
-            fontSize: "0.875rem", fontWeight: 600, cursor: "pointer",
-          }}
-        >
-          or monthly · $5.80
-        </button>
-      </div>
-    );
-  }
-
-  // Checkout henüz yapılandırılmadı: eski "notify" davranışı
-  if (!user) {
-    return (
-      <button disabled style={{
-        width: "100%", background: "var(--paper-warm)", color: "var(--ink-muted)",
-        border: "none", borderRadius: 10, padding: "13px 24px",
-        fontSize: "0.9375rem", fontWeight: 600, cursor: "not-allowed",
-      }}>
-        Notify me when Pro launches
-      </button>
-    );
-  }
-
-  if (notified) {
-    return (
-      <div style={{
-        width: "100%", background: "#f0fdf4", border: "1px solid #bbf7d0",
-        borderRadius: 10, padding: "13px 24px", textAlign: "center",
-        fontSize: "0.9375rem", fontWeight: 600, color: "#166534",
-        boxSizing: "border-box",
-      }}>
-        ✓ We'll let you know when Pro launches
-      </div>
-    );
-  }
-
+  // Checkout is always available (created by the backend). Visitors go through the
+  // register modal; logged-in users go straight to the checkout hub.
   return (
-    <button
-      onClick={() => {
-        localStorage.setItem("cogletta-pro-notify", "true");
-        setNotified(true);
-      }}
-      style={{
-        width: "100%", background: "var(--accent)", color: "var(--white)",
-        border: "none", borderRadius: 10, padding: "13px 24px",
-        fontSize: "0.9375rem", fontWeight: 600, cursor: "pointer",
-      }}
-    >
-      Notify me when Pro launches →
-    </button>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <button
+        onClick={() => {
+          if (user) { router.push("/checkout-complete?plan=yearly"); }
+          else onStart("yearly");
+        }}
+        style={{
+          width: "100%", background: "var(--accent)", color: "var(--white)",
+          border: "none", borderRadius: 10, padding: "13px 24px",
+          fontSize: "0.9375rem", fontWeight: 600, cursor: "pointer",
+        }}
+      >
+        Start with Pro &mdash; $58/year &rarr;
+      </button>
+      <button
+        onClick={() => {
+          if (user) { router.push("/checkout-complete?plan=monthly"); }
+          else onStart("monthly");
+        }}
+        style={{
+          width: "100%", background: "none", color: "var(--ink-soft)",
+          border: "1px solid var(--rule)", borderRadius: 10, padding: "11px 24px",
+          fontSize: "0.875rem", fontWeight: 600, cursor: "pointer",
+        }}
+      >
+        or monthly &middot; $5.80
+      </button>
+    </div>
   );
 }
 
@@ -297,7 +244,7 @@ export default function RegisterPage() {
               fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em",
               textTransform: "uppercase", padding: "4px 12px", borderRadius: 20,
             }}>
-              {CHECKOUT_CONFIGURED ? "Two months free yearly" : "Coming soon"}
+              Two months free yearly
             </div>
             <div style={{ marginBottom: 24 }}>
               <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)" }}>Pro</span>

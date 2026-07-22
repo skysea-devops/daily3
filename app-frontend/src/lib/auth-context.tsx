@@ -101,10 +101,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setHasInterests(false);
             }
             setPlan(profile.plan === "pro" ? "pro" : "free");
-          } catch {
+          } catch (err) {
+            // Profil gecici olarak yuklenemedi: kullaniciyi DEMOTE ETME. Son bilinen
+            // plani koru (Pro kullaniciyi gecici hatada Free'ye dusurme). Free yalnizca
+            // backend gercekten Free dondurdugunde (try blogunda) set edilir.
+            console.warn("auth: profile load failed; keeping last-known plan", err);
             const saved = localStorage.getItem("cogletta-categories");
-            setHasInterests(!!saved);
-            setPlan("free");
+            if (saved) setHasInterests(true);
           }
 
           setLoading(false);
