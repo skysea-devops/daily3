@@ -6,6 +6,8 @@ const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 const USERS_TABLE_NAME = process.env.USERS_TABLE_NAME!;
 const LEMONSQUEEZY_API_KEY = process.env.LEMONSQUEEZY_API_KEY!;
+const LS_MONTHLY_VARIANT_ID = process.env.LS_MONTHLY_VARIANT_ID ?? "";
+const LS_YEARLY_VARIANT_ID = process.env.LS_YEARLY_VARIANT_ID ?? "";
 
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN ?? "*")
   .split(",")
@@ -92,14 +94,17 @@ async function syncSubscription(userId: string, subscription: any): Promise<void
   }));
 }
 
-function billingCycleForSubscription(attrs: any): "monthly" | "yearly" | "unknown" {
-  const productName = String(attrs?.product_name ?? "").toLowerCase();
-  const variantName = String(attrs?.variant_name ?? "").toLowerCase();
-  const label = `${productName} ${variantName}`;
-
-  if (/year|annual/.test(label)) return "yearly";
-  if (/month/.test(label) || productName === "cogletta proreader") return "monthly";
+// Billing cycle artık ÜRÜN/VARIANT ADINA göre TAHMİN edilmiyor. Explicit variant ID
+// eşlemesiyle belirleniyor (env: LS_MONTHLY_VARIANT_ID / LS_YEARLY_VARIANT_ID).
+// Bilinmeyen ID → "unknown"; UI yanlış buton göstermektense hiç göstermez.
+function billingCycleForVariant(variantId: string): "monthly" | "yearly" | "unknown" {
+  if (variantId && variantId === LS_YEARLY_VARIANT_ID) return "yearly";
+  if (variantId && variantId === LS_MONTHLY_VARIANT_ID) return "monthly";
   return "unknown";
+}
+
+function variantIdForInterval(interval: "monthly" | "yearly"): string {
+  return interval === "yearly" ? LS_YEARLY_VARIANT_ID : LS_MONTHLY_VARIANT_ID;
 }
 
 export const handler = async (
@@ -128,9 +133,75 @@ export const handler = async (
         endsAt: attrs.ends_at ?? null,
         productId: String(attrs.product_id ?? ""),
         variantId: String(attrs.variant_id ?? ""),
-        billingCycle: billingCycleForSubscription(attrs),
+        billingCycle: billingCycleForVariant(String(attrs.variant_id ?? "")),
         portalUrl: attrs.urls?.customer_portal ?? null,
         updatePaymentUrl: attrs.urls?.update_payment_method ?? null,
+      });
+    }
+
+    // ── Aylık↔Yıllık geçiş: variant-swap (aynı abonelik ID, proration LS'te otomatik) ──
+    if (method === "PATCH") {
+      if (!LS_MONTHLY_VARIANT_ID || !LS_YEARLY_VARIANT_ID) {
+        return response(event, 500, { message: "Billing variants are not configured" });
+      }
+
+      const rawBody = event.isBase64Encoded && event.body
+        ? Buffer.from(event.body, "base64").toString("utf8")
+        : (event.body ?? "");
+      let parsed: any = {};
+      try { parsed = rawBody ? JSON.parse(rawBody) : {}; }
+      catch { return response(event, 400, { message: "Invalid request body" }); }
+
+      const interval = String(parsed?.interval ?? "").toLowerCase();
+      if (interval !== "monthly" && interval !== "yearly") {
+        return response(event, 400, { message: "interval must be 'monthly' or 'yearly'" });
+      }
+      const targetVariant = variantIdForInterval(interval);
+
+      // Mevcut aboneliği doğrula
+      const current = await lemonRequest(`/subscriptions/${subscriptionId}`);
+      const curAttrs = current.data.attributes;
+      const curVariant = String(curAttrs.variant_id ?? "");
+      const curStatus = String(curAttrs.status ?? "").toLowerCase();
+
+      // İptal/expired aboneliğin planı değiştirilemez → önce yeniden aboneliğe yönlendir
+      if (["expired", "cancelled"].includes(curStatus) || Boolean(curAttrs.cancelled)) {
+        return response(event, 409, {
+          message: "Your subscription is set to cancel, so its plan can't be changed. Please resume or start a new subscription first.",
+          code: "not_switchable",
+        });
+      }
+
+      // Zaten hedef plandaysa no-op
+      if (curVariant === targetVariant) {
+        return response(event, 200, {
+          message: "Already on this plan",
+          status: curAttrs.status,
+          billingCycle: interval,
+          renewsAt: curAttrs.renews_at ?? null,
+          endsAt: curAttrs.ends_at ?? null,
+        });
+      }
+
+      // Variant-swap: proration LS varsayılanı olarak uygulanır.
+      const updated = await lemonRequest(`/subscriptions/${subscriptionId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          data: {
+            type: "subscriptions",
+            id: subscriptionId,
+            attributes: { variant_id: Number(targetVariant) },
+          },
+        }),
+      });
+      await syncSubscription(userId, updated);
+      const upAttrs = updated.data.attributes;
+      return response(event, 200, {
+        message: "Billing cycle updated",
+        status: upAttrs.status,
+        billingCycle: billingCycleForVariant(String(upAttrs.variant_id ?? "")),
+        renewsAt: upAttrs.renews_at ?? null,
+        endsAt: upAttrs.ends_at ?? null,
       });
     }
 
