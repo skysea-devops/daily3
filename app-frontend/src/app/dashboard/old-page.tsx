@@ -244,6 +244,12 @@ function ProNudge() {
   );
 }
 
+// Haftalık "Your week in review" kartı yalnızca PAZAR günü görünür
+// (kullanıcının yerel saatiyle; JS'te getDay() === 0 pazar demektir).
+function isWeeklyReviewDay(): boolean {
+  return new Date().getDay() === 0;
+}
+
 function TrendCard({ report }: { report: WeeklyTrendReport }) {
   return (
     <div style={{
@@ -299,7 +305,8 @@ function DashboardContent() {
 
   // Haftalık trend raporu (sadece Pro) — dashboard'un üstünde "This week" kartı
   useEffect(() => {
-    if (!user?.accessToken || plan !== "pro") { setTrend(null); return; }
+    // Haftalık özet yalnızca pazar günü gösterildiği için diğer günlerde çekmiyoruz.
+    if (!user?.accessToken || plan !== "pro" || !isWeeklyReviewDay()) { setTrend(null); return; }
     let cancelled = false;
     getTrendReport(user.accessToken)
       .then((r) => { if (!cancelled) setTrend(r.report); })
@@ -388,7 +395,7 @@ function DashboardContent() {
         {/* Ready */}
         {status === "ready" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {plan === "pro" && trend && <TrendCard report={trend} />}
+            {plan === "pro" && isWeeklyReviewDay() && trend && <TrendCard report={trend} />}
             {articles.map((a, i) => <ArticleCard key={`a-${i}`} article={a} />)}
             {plan !== "pro" && <ProNudge />}
             {podcasts.map((p, i) => <PodcastCard key={`p-${i}`} podcast={p} />)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import ShareCard from "@/components/ShareCard";
 import { getDailyArticles, getTrendReport } from "@/lib/api";
@@ -296,7 +297,10 @@ function TrendCard({ report }: { report: WeeklyTrendReport }) {
 }
 
 function DashboardContent() {
-  const { user, plan } = useAuth();
+  const { user, plan, hasInterests, loading: authLoading } = useAuth();
+  const router = useRouter();
+  // Interest seçmemiş kullanıcı: makale durumları yerine seçim CTA'sı göster (boş dashboard olmasın)
+  const noInterests = !authLoading && !hasInterests;
   const [articles, setArticles]       = useState<Article[]>([]);
   const [podcasts, setPodcasts]       = useState<Podcast[]>([]);
   const [status, setStatus]           = useState<"loading" | "ready" | "pending" | "error">("loading");
@@ -362,6 +366,23 @@ function DashboardContent() {
           <ShareCard compact />
         </div>
 
+        {noInterests && (
+          <div style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: 16, padding: 28, textAlign: "center" }}>
+            <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.25rem", fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}>
+              You haven&apos;t selected any topics yet
+            </h2>
+            <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", lineHeight: 1.6, marginBottom: 20 }}>
+              {plan === "pro"
+                ? "Choose up to 3 topics and we'll start curating your daily reading each morning."
+                : "Choose a topic and we'll start curating your daily reading each morning."}
+            </p>
+            <button onClick={() => router.push("/interests")} style={{ border: "none", borderRadius: 10, padding: "12px 22px", background: "var(--accent)", color: "var(--white)", fontWeight: 600, cursor: "pointer" }}>
+              Choose your topics →
+            </button>
+          </div>
+        )}
+
+        {!noInterests && (<>
         {/* Loading */}
         {status === "loading" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -416,6 +437,7 @@ function DashboardContent() {
             </button>
           </div>
         )}
+        </>)}
 
         <div style={{ marginTop: 40 }}>
           <ShareCard />
