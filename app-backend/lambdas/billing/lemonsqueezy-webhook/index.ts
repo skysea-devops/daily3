@@ -82,28 +82,34 @@ async function saveSubMap(subscriptionId: string, userId: string): Promise<void>
   );
 }
 
-async function userIdForSub(subscriptionId: string): Promise<string | undefined> {
+// Eşleme kaydını getir: hem userId hem de tombstone (deleted) bilgisini döndürür.
+async function getSubMapping(subscriptionId: string): Promise<{ userId?: string; deleted: boolean } | null> {
   const res = await dynamo.send(
     new GetCommand({
       TableName: USERS_TABLE_NAME,
       Key: { PK: `LSSUB#${subscriptionId}`, SK: "MAP" },
     })
   );
-  return res.Item?.userId as string | undefined;
+  if (!res.Item) return null;
+  return {
+    userId: res.Item.userId ? String(res.Item.userId) : undefined,
+    deleted: res.Item.deleted === true,
+  };
 }
 
 // Profilden mevcut abonelik ID'si ve en son işlenen event'in updated_at'ı
-async function readSubState(userId: string): Promise<{ currentSubId?: string; lastEventAt?: string }> {
+async function readSubState(userId: string): Promise<{ currentSubId?: string; lastEventAt?: string; createdAt?: string }> {
   const res = await dynamo.send(
     new GetCommand({
       TableName: USERS_TABLE_NAME,
       Key: { PK: `USER#${userId}`, SK: "PROFILE" },
-      ProjectionExpression: "lsSubscriptionId, lsLastEventAt",
+      ProjectionExpression: "lsSubscriptionId, lsLastEventAt, lsSubscriptionCreatedAt",
     })
   );
   return {
     currentSubId: res.Item?.lsSubscriptionId ? String(res.Item.lsSubscriptionId) : undefined,
     lastEventAt: res.Item?.lsLastEventAt ? String(res.Item.lsLastEventAt) : undefined,
+    createdAt: res.Item?.lsSubscriptionCreatedAt ? String(res.Item.lsSubscriptionCreatedAt) : undefined,
   };
 }
 
@@ -155,14 +161,24 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
   const eventUpdatedAt: string = String(attrs?.updated_at ?? new Date().toISOString());
 
   // 4) userId'yi bul: önce checkout custom_data.user_id, yoksa eşleme tablosundan
+  // Aboneliğin oluşturulma zamanı (#4 cross-sub sıralama için)
+  const eventCreatedAt: string = attrs?.created_at ? String(attrs.created_at) : "";
+
   const rawUserId =
     payload?.meta?.custom_data?.user_id ??
     payload?.meta?.custom_data?.userId;
 
-  let userId = rawUserId == null ? undefined : String(rawUserId).trim();
-  if (!userId && subscriptionId) {
-    userId = await userIdForSub(subscriptionId);
+  // Tombstone kontrolü (#6): bu aboneliğin eşlemesi "deleted" işaretliyse hesap
+  // silinmiş demektir → 200/ignore (silinen kullanıcıya gelen webhook 500 dönüp LS
+  // retry storm'u yaratmasın; hayalet diriltme de olmasın).
+  const mapping = subscriptionId ? await getSubMapping(subscriptionId) : null;
+  if (mapping?.deleted) {
+    console.log(`LS webhook: subscription ${subscriptionId} belongs to a deleted account, ignoring (event=${eventName})`);
+    return ok("deleted user, ignored");
   }
+
+  let userId = rawUserId == null ? undefined : String(rawUserId).trim();
+  if (!userId) userId = mapping?.userId;
   if (!userId) {
     // Bu event'i 200 ile yutmak ödeme alınmış kullanıcıyı kalıcı olarak Free'de
     // bırakır. 500 dönerek Lemon Squeezy'nin webhook retry mekanizmasını çalıştır.
@@ -185,7 +201,7 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
   //        - active/on_trial: yeni/geçerli bir abonelik devralıyor → uygula,
   //          profil bu yeni subscription'a geçer (lsLastEventAt sıfırlanır).
   //  currentSubId yoksa (ilk abonelik) → uygula.
-  const { currentSubId, lastEventAt } = await readSubState(userId);
+  const { currentSubId, lastEventAt, createdAt } = await readSubState(userId);
 
   if (currentSubId && currentSubId === subscriptionId) {
     if (lastEventAt && !isStrictlyNewer(eventUpdatedAt, lastEventAt)) {
@@ -197,7 +213,14 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
       console.log(`LS webhook: stale event for other subscription ignored (current=${currentSubId}, eventSub=${subscriptionId}, status=${status})`);
       return ok("stale subscription ignored");
     }
-    // active/on_trial → yeni abonelik devralıyor, uygula
+    // active/on_trial → FARKLI abonelik. Yalnızca bu abonelik mevcut olandan daha YENİ
+    // oluşturulmuşsa devral. Aksi halde bu, eski bir abonelikten GECİKMİŞ bir active
+    // event'idir → yeni aboneliği ezmesin, yoksay. (#4)
+    if (createdAt && eventCreatedAt && !isStrictlyNewer(eventCreatedAt, createdAt)) {
+      console.log(`LS webhook: delayed active from older subscription ignored (current=${currentSubId}@${createdAt}, eventSub=${subscriptionId}@${eventCreatedAt})`);
+      return ok("older subscription ignored");
+    }
+    // else: eventCreatedAt daha yeni (veya karşılaştırılamıyor) → devral
   }
 
   // 6) Profildeki ekstra alanlar
@@ -205,6 +228,7 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
     lsSubscriptionId: subscriptionId,
     lsLastEventAt: eventUpdatedAt,
   };
+  if (eventCreatedAt)                     extra.lsSubscriptionCreatedAt = eventCreatedAt;
   if (attrs?.customer_id != null)         extra.lsCustomerId = String(attrs.customer_id);
   if (attrs?.variant_id != null)          extra.lsVariantId  = String(attrs.variant_id);
   if (attrs?.urls?.customer_portal)       extra.lsPortalUrl          = String(attrs.urls.customer_portal);
