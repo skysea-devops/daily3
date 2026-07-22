@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import { updateDisplayName, changePassword } from "@/lib/cognito";
-import { cancelBillingSubscription, getBillingSubscription, switchBillingCycle } from "@/lib/api";
+import { cancelBillingSubscription, getBillingSubscription, switchBillingCycle, resumeSubscription } from "@/lib/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
@@ -228,18 +228,32 @@ function SettingsContent() {
   const [billingError, setBillingError] = useState("");
   const [banner, setBanner]             = useState<"success" | "cancel" | null>(null);
   const [subscription, setSubscription] = useState<Awaited<ReturnType<typeof getBillingSubscription>> | null>(null);
+  const [billingStatus, setBillingStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [billingNotice, setBillingNotice] = useState("");
 
   const displayName = user?.email?.split("@")[0] ?? "";
 
-  // Pro kullanıcının abonelik durumunu Lemon Squeezy API'den güncel olarak çek.
+  // Pro kullanıcının abonelik durumunu güncel olarak çek. loadBilling ayrıca
+  // "Retry" için de kullanılır. billingStatus: loading|ready|error → butonlar
+  // yalnızca "ready"de render edilir (flicker yok, hata durumunda aksiyon yok).
+  const loadBilling = useCallback(async () => {
+    if (!user?.accessToken) return;
+    setBillingStatus("loading");
+    setBillingError("");
+    try {
+      const value = await getBillingSubscription(user.accessToken);
+      setSubscription(value);
+      setBillingStatus("ready");
+    } catch (error: any) {
+      setBillingError(error?.message || "Couldn't load your billing details.");
+      setBillingStatus("error");
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!user?.accessToken || plan !== "pro") return;
-    let cancelled = false;
-    getBillingSubscription(user.accessToken)
-      .then((value) => { if (!cancelled) setSubscription(value); })
-      .catch((error) => { if (!cancelled) setBillingError(error?.message || "Could not load billing details."); });
-    return () => { cancelled = true; };
-  }, [user, plan]);
+    void loadBilling();
+  }, [user, plan, loadBilling]);
 
   // Lemon Squeezy Checkout dönüşü: ?checkout=success | ?checkout=cancel
   useEffect(() => {
@@ -315,12 +329,12 @@ function SettingsContent() {
     if (!user?.accessToken || billingBusy) return;
     const priceLine = target === "yearly" ? "$58/year" : "$5.80/month";
     const confirmed = window.confirm(
-      `Switch to ${target} billing (${priceLine})? Your plan changes right away and Lemon Squeezy ` +
-      "automatically prorates the difference — no second subscription is created."
+      `Switch to ${target} billing (${priceLine})? Your plan changes right away and the difference ` +
+      "is prorated automatically — no second subscription is created."
     );
     if (!confirmed) return;
 
-    setBillingBusy(true); setBillingError("");
+    setBillingBusy(true); setBillingError(""); setBillingNotice("");
     try {
       const updated = await switchBillingCycle(target, user.accessToken);
       setSubscription((cur) => cur ? {
@@ -330,12 +344,51 @@ function SettingsContent() {
         renewsAt: updated.renewsAt ?? cur.renewsAt,
         endsAt: updated.endsAt ?? cur.endsAt,
       } : cur);
+      setBillingNotice(`You're now on ${target} billing.`);
       await refreshSession();
     } catch (error: any) {
-      setBillingError(error?.message || "Could not switch billing cycle.");
+      setBillingError(error?.message || "Could not switch billing cycle. Please try again.");
     } finally {
       setBillingBusy(false);
     }
+  }
+
+  // Resume: iptal edilmiş (ama henüz expired olmamış) aboneliği geri al.
+  async function handleResumeSubscription() {
+    if (!user?.accessToken || billingBusy) return;
+    setBillingBusy(true); setBillingError(""); setBillingNotice("");
+    try {
+      const updated = await resumeSubscription(user.accessToken);
+      setSubscription((cur) => cur ? {
+        ...cur,
+        cancelled: false,
+        status: updated.status,
+        renewsAt: updated.renewsAt ?? cur.renewsAt,
+        endsAt: updated.endsAt ?? cur.endsAt,
+      } : cur);
+      setBillingNotice("Your subscription has been resumed — it will renew as normal.");
+      await refreshSession();
+    } catch (error: any) {
+      setBillingError(error?.message || "Could not resume subscription. Please try again.");
+    } finally {
+      setBillingBusy(false);
+    }
+  }
+
+  // "Current plan" satır metni: duruma göre cycle + fiyat / cancels-on / past due.
+  function currentPlanText(): string {
+    if (plan !== "pro") return "Free";
+    if (billingStatus !== "ready" || !subscription) return "Cogletta Pro";
+    const cycleLabel = subscription.billingCycle === "yearly" ? "Yearly"
+      : subscription.billingCycle === "monthly" ? "Monthly" : "";
+    const price = subscription.billingCycle === "yearly" ? "$58/year"
+      : subscription.billingCycle === "monthly" ? "$5.80/month" : "";
+    if (String(subscription.status).toLowerCase() === "past_due") return "Cogletta Pro — Payment past due";
+    if (subscription.cancelled) {
+      const d = subscription.endsAt ? new Date(subscription.endsAt).toLocaleDateString() : "the end of the period";
+      return cycleLabel ? `Cogletta Pro — ${cycleLabel} · Cancels on ${d}` : `Cogletta Pro — Cancels on ${d}`;
+    }
+    return cycleLabel ? `Cogletta Pro — ${cycleLabel} · ${price}` : "Cogletta Pro";
   }
 
   async function handleDeleteAccount() {
@@ -408,7 +461,7 @@ function SettingsContent() {
 
         {/* Plan & Billing */}
         <Section title="Plan & Billing">
-          <Row label="Current plan" value={plan === "pro" ? "Cogletta Pro — $5.80/month" : "Free"} />
+          <Row label="Current plan" value={currentPlanText()} />
           {plan === "free" && CHECKOUT_CONFIGURED && (
             <Row topBorder label="Upgrade to Pro" description="3 articles per interest, sub-topics, weekly trend reports. Yearly saves two months.">
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -428,10 +481,15 @@ function SettingsContent() {
               </span>
             </Row>
           )}
-          {plan === "pro" && (
+          {plan === "pro" && billingStatus === "error" && (
+            <Row topBorder label="Billing" description="Couldn't load your billing details.">
+              <ActionBtn label={billingBusy ? "Retrying…" : "Retry"} onClick={() => void loadBilling()} disabled={billingBusy} />
+            </Row>
+          )}
+          {plan === "pro" && billingStatus !== "error" && (
             <>
-              <Row topBorder label="Billing cycle" description="Change between monthly and yearly anytime. The switch applies immediately and Lemon Squeezy prorates the difference automatically.">
-                {subscription == null ? (
+              <Row topBorder label="Billing cycle" description="Change between monthly and yearly anytime. The switch applies immediately.">
+                {billingStatus !== "ready" || !subscription ? (
                   <span style={mutedPill}>Loading…</span>
                 ) : subscription.cancelled ? (
                   <span style={mutedPill}>Unavailable while cancelled</span>
@@ -443,15 +501,28 @@ function SettingsContent() {
                   <span style={mutedPill}>—</span>
                 )}
               </Row>
-              <Row topBorder label="Payment method & invoices" description="Open a fresh, secure Lemon Squeezy portal link for this subscription.">
-                <ActionBtn label={billingBusy ? "Opening…" : "Manage"} onClick={handleManageBilling} disabled={billingBusy} />
+              <Row topBorder label="Payment method & invoices" description="Open a secure link to update your payment method and view invoices.">
+                <ActionBtn label={billingBusy ? "Opening…" : "Manage"} onClick={handleManageBilling} disabled={billingBusy || billingStatus !== "ready"} />
               </Row>
-              <Row topBorder label={subscription?.cancelled ? "Subscription cancelled" : "Cancel subscription"} description={subscription?.cancelled ? `Pro remains active until ${subscription.endsAt ? new Date(subscription.endsAt).toLocaleDateString() : "the end of the billing period"}.` : "You'll keep Pro until the end of your billing period."}>
-                {!subscription?.cancelled && <ActionBtn label="Cancel Pro" onClick={() => setModal("cancelPro")} disabled={billingBusy} style="danger" />}
+              <Row topBorder
+                label={billingStatus === "ready" && subscription?.cancelled ? "Subscription cancelled" : "Cancel subscription"}
+                description={
+                  billingStatus === "ready" && subscription?.cancelled
+                    ? `Pro stays active until ${subscription.endsAt ? new Date(subscription.endsAt).toLocaleDateString() : "the end of the billing period"}. Resume anytime before then to keep your subscription — you won't be charged again until it renews.`
+                    : "You'll keep Pro until the end of your billing period."
+                }>
+                {billingStatus === "ready" && (subscription?.cancelled
+                  ? <ActionBtn label={billingBusy ? "Resuming…" : "Resume subscription"} onClick={handleResumeSubscription} disabled={billingBusy} style="accent" />
+                  : <ActionBtn label="Cancel Pro" onClick={() => setModal("cancelPro")} disabled={billingBusy} style="danger" />)}
               </Row>
             </>
           )}
-          {billingError && (
+          {plan === "pro" && billingStatus === "ready" && billingNotice && (
+            <div style={{ padding: "0 20px 16px" }}>
+              <p style={{ fontSize: "0.8125rem", color: "#166534", margin: 0 }}>{billingNotice}</p>
+            </div>
+          )}
+          {billingError && billingStatus !== "error" && (
             <div style={{ padding: "0 20px 16px" }}>
               <p style={{ fontSize: "0.8125rem", color: "#c0392b", margin: 0 }}>{billingError}</p>
             </div>

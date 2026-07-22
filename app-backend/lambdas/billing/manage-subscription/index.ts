@@ -140,17 +140,60 @@ export const handler = async (
     }
 
     // ── Aylık↔Yıllık geçiş: variant-swap (aynı abonelik ID, proration LS'te otomatik) ──
+    // ── VE Resume (uncancel): iptal edilmiş ama henüz expired olmamış aboneliği geri al ──
     if (method === "PATCH") {
-      if (!LS_MONTHLY_VARIANT_ID || !LS_YEARLY_VARIANT_ID) {
-        return response(event, 500, { message: "Billing variants are not configured" });
-      }
-
       const rawBody = event.isBase64Encoded && event.body
         ? Buffer.from(event.body, "base64").toString("utf8")
         : (event.body ?? "");
       let parsed: any = {};
       try { parsed = rawBody ? JSON.parse(rawBody) : {}; }
       catch { return response(event, 400, { message: "Invalid request body" }); }
+
+      const action = String(parsed?.action ?? "").toLowerCase();
+
+      // Resume: cancelled → active. LS'te ends_at'a ulaşıp expired olduysa artık
+      // resume edilemez (kullanıcı yeniden abone olmalı).
+      if (action === "resume") {
+        const current = await lemonRequest(`/subscriptions/${subscriptionId}`);
+        const curAttrs = current.data.attributes;
+        const curStatus = String(curAttrs.status ?? "").toLowerCase();
+        if (curStatus === "expired") {
+          return response(event, 409, {
+            message: "This subscription has expired and can't be resumed. Please start a new subscription.",
+            code: "expired",
+          });
+        }
+        if (!curAttrs.cancelled) {
+          await syncSubscription(userId, current);
+          return response(event, 200, {
+            message: "Subscription is active",
+            status: curAttrs.status,
+            cancelled: false,
+            renewsAt: curAttrs.renews_at ?? null,
+            endsAt: curAttrs.ends_at ?? null,
+          });
+        }
+        const resumed = await lemonRequest(`/subscriptions/${subscriptionId}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            data: { type: "subscriptions", id: subscriptionId, attributes: { cancelled: false } },
+          }),
+        });
+        await syncSubscription(userId, resumed);
+        const rAttrs = resumed.data.attributes;
+        return response(event, 200, {
+          message: "Subscription resumed",
+          status: rAttrs.status,
+          cancelled: Boolean(rAttrs.cancelled),
+          renewsAt: rAttrs.renews_at ?? null,
+          endsAt: rAttrs.ends_at ?? null,
+        });
+      }
+
+      // Switch (variant-swap)
+      if (!LS_MONTHLY_VARIANT_ID || !LS_YEARLY_VARIANT_ID) {
+        return response(event, 500, { message: "Billing variants are not configured" });
+      }
 
       const interval = String(parsed?.interval ?? "").toLowerCase();
       if (interval !== "monthly" && interval !== "yearly") {
@@ -167,7 +210,7 @@ export const handler = async (
       // İptal/expired aboneliğin planı değiştirilemez → önce yeniden aboneliğe yönlendir
       if (["expired", "cancelled"].includes(curStatus) || Boolean(curAttrs.cancelled)) {
         return response(event, 409, {
-          message: "Your subscription is set to cancel, so its plan can't be changed. Please resume or start a new subscription first.",
+          message: "Your subscription is set to cancel, so its plan can't be changed. Resume it first, then switch.",
           code: "not_switchable",
         });
       }

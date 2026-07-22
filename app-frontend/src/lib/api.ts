@@ -223,3 +223,26 @@ export async function switchBillingCycle(
   }
   return body;
 }
+
+export async function resumeSubscription(
+  accessToken: string
+): Promise<{ status: string; cancelled: boolean; renewsAt: string | null; endsAt: string | null; message?: string }> {
+  if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+  const response = await fetch(`${API_BASE_URL}/me/subscription`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ action: "resume" }),
+  });
+  if (response.status === 401) { handleUnauthorized(); throw new Error("Session expired"); }
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const err = new Error(body?.message || "Could not resume subscription") as Error & { code?: string; status?: number };
+    err.code = body?.code;
+    err.status = response.status;
+    throw err;
+  }
+  return body;
+}
