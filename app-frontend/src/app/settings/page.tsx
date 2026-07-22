@@ -329,8 +329,8 @@ function SettingsContent() {
     if (!user?.accessToken || billingBusy) return;
     const priceLine = target === "yearly" ? "$58/year" : "$5.80/month";
     const confirmed = window.confirm(
-      `Switch to ${target} billing (${priceLine})? Your plan changes right away and the difference ` +
-      "is prorated automatically — no second subscription is created."
+      `Switch to ${target} billing (${priceLine})? Your plan changes right away and the price ` +
+      "difference is prorated automatically."
     );
     if (!confirmed) return;
 
@@ -496,7 +496,7 @@ function SettingsContent() {
                 ) : subscription.billingCycle === "monthly" ? (
                   <ActionBtn label={billingBusy ? "Switching…" : "Switch to yearly"} onClick={() => handleSwitchBillingCycle("yearly")} disabled={billingBusy} style="accent" />
                 ) : subscription.billingCycle === "yearly" ? (
-                  <ActionBtn label={billingBusy ? "Switching…" : "Switch to monthly"} onClick={() => handleSwitchBillingCycle("monthly")} disabled={billingBusy} />
+                  <span style={mutedPill}>You&apos;re on the yearly plan</span>
                 ) : (
                   <span style={mutedPill}>—</span>
                 )}
