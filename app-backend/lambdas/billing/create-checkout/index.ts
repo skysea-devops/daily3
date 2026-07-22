@@ -12,6 +12,7 @@ const LS_YEARLY_VARIANT_ID = process.env.LS_YEARLY_VARIANT_ID!;
 // Ödeme sonrası dönüş adresinin kökü (ör. https://cogletta.com). CORS listesinin
 // ilk origin'inden türetilir; terraform env olarak geçer.
 const APP_BASE_URL = (process.env.APP_BASE_URL ?? "").replace(/\/+$/, "");
+const LS_TIMEOUT_MS = 8000; // LS asILIrsa Lambda kilitlenmesin (#15)
 
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN ?? "*")
   .split(",")
@@ -74,6 +75,7 @@ async function checkExistingSubscription(subscriptionId: string): Promise<GuardR
     res = await fetch(`https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`, {
       method: "GET",
       headers: lemonHeaders(),
+      signal: AbortSignal.timeout(LS_TIMEOUT_MS),
     });
   } catch {
     return "unverifiable";
@@ -182,6 +184,7 @@ export const handler = async (
         method: "POST",
         headers: lemonHeaders(),
         body: JSON.stringify(checkoutBody),
+        signal: AbortSignal.timeout(LS_TIMEOUT_MS),
       });
     } catch (e: any) {
       console.error("create-checkout: LS network error", e);

@@ -3,6 +3,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
   DeleteCommand,
+  PutCommand,
   GetCommand,
   QueryCommand,
   BatchWriteCommand,
@@ -16,6 +17,7 @@ const USERS_TABLE_NAME = process.env.USERS_TABLE_NAME!;
 const ARTICLES_TABLE_NAME = process.env.ARTICLES_TABLE_NAME!;
 const USER_POOL_ID = process.env.USER_POOL_ID!;
 const LEMONSQUEEZY_API_KEY = process.env.LEMONSQUEEZY_API_KEY ?? "";
+const LS_TIMEOUT_MS = 8000; // LS asILIrsa Lambda kilitlenmesin (#15)
 
 // CORS_ORIGIN virgülle ayrılmış birden çok origin içerebilir
 // (ör. "https://cogletta.com,https://www.cogletta.com").
@@ -64,6 +66,7 @@ async function cancelLemonSubscription(subscriptionId: string): Promise<CancelRe
       "Content-Type": "application/vnd.api+json",
       Authorization: `Bearer ${LEMONSQUEEZY_API_KEY}`,
     },
+    signal: AbortSignal.timeout(LS_TIMEOUT_MS),
   });
 
   if (res.ok) return "cancelled";
@@ -145,15 +148,13 @@ export const handler = async (
     // 1. Profili oku (silmeden ÖNCE — lsSubscriptionId'ye ihtiyacımız var)
     const profile = await getProfile(userId);
     const subscriptionId = profile?.lsSubscriptionId ? String(profile.lsSubscriptionId) : "";
-    const subStatus = profile?.lsSubscriptionStatus ? String(profile.lsSubscriptionStatus) : "";
 
-    // 2. Aktif/yenilenebilir bir abonelik varsa ÖNCE LS'te iptal et.
-    //    expired/cancelled ise zaten yenilenmeyecek → LS çağrısını atla.
-    //    İptal gerçekten başarısız olursa (auth/5xx/ağ) hesabı SİLME; hata dön.
-    const needsCancel =
-      !!subscriptionId && !["expired", "cancelled"].includes(subStatus.toLowerCase());
-
-    if (needsCancel) {
+    // 2. Abonelik ID'si varsa HER ZAMAN LS'te iptal etmeyi dene. Yerel status
+    //    (lsSubscriptionStatus) webhook gecikmesi yüzünden BAYAT olabilir; ona güvenip
+    //    iptali atlarsak "silindi ama LS'te aktif → tekrar ücretlendirildi" riski doğar.
+    //    cancelLemonSubscription zaten idempotent: zaten iptal/expired → 200, yok → 404.
+    //    Gerçek hata (auth/5xx/ağ/timeout) → hesabı SİLME, 502 dön.
+    if (subscriptionId) {
       try {
         await cancelLemonSubscription(subscriptionId);
       } catch (cancelErr: any) {
@@ -169,15 +170,24 @@ export const handler = async (
       }
     }
 
-    // 3. subscriptionId → userId eşleme kaydını sil.
-    //    Bu temizlenmezse, gecikmeli bir webhook silinmiş kullanıcıyı eşleme üzerinden
-    //    yeniden Pro olarak DİRİLTEBİLİR (hayalet kullanıcı). Sıralama önemli: profili
-    //    silmeden önce eşlemeyi kaldır.
+    // 3. subscriptionId → userId eşlemesini TOMBSTONE'a çevir (tamamen silme).
+    //    Tamamen silersek, silinen kullanıcıya gelen gecikmeli bir webhook userId'yi
+    //    çözemeyip 500 döner → LS aynı webhook'u tekrar tekrar dener (retry storm).
+    //    Tombstone ile webhook "silinmiş kullanıcı" olduğunu görüp 200/ignore döner;
+    //    ayrıca hayalet kullanıcı diriltmesi de engellenir. Kayıt ~90 gün sonra TTL
+    //    ile temizlenir.
     if (subscriptionId) {
+      const TTL_90_DAYS = 90 * 24 * 60 * 60;
       await dynamo.send(
-        new DeleteCommand({
+        new PutCommand({
           TableName: USERS_TABLE_NAME,
-          Key: { PK: `LSSUB#${subscriptionId}`, SK: "MAP" },
+          Item: {
+            PK: `LSSUB#${subscriptionId}`,
+            SK: "MAP",
+            deleted: true,
+            deletedAt: new Date().toISOString(),
+            ttl: Math.floor(Date.now() / 1000) + TTL_90_DAYS,
+          },
         })
       );
     }
@@ -203,7 +213,7 @@ export const handler = async (
     );
 
     console.log(
-      `delete-account: user=${userId} sub=${subscriptionId || "none"} cancelled=${needsCancel} articles=${deletedArticles}`
+      `delete-account: user=${userId} sub=${subscriptionId || "none"} cancelled=${!!subscriptionId} articles=${deletedArticles}`
     );
 
     return {

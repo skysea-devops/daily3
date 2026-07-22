@@ -8,6 +8,7 @@ const USERS_TABLE_NAME = process.env.USERS_TABLE_NAME!;
 const LEMONSQUEEZY_API_KEY = process.env.LEMONSQUEEZY_API_KEY!;
 const LS_MONTHLY_VARIANT_ID = process.env.LS_MONTHLY_VARIANT_ID ?? "";
 const LS_YEARLY_VARIANT_ID = process.env.LS_YEARLY_VARIANT_ID ?? "";
+const LS_TIMEOUT_MS = 8000; // LS asILIrsa Lambda kilitlenmesin (#15)
 
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN ?? "*")
   .split(",")
@@ -48,6 +49,7 @@ async function lemonRequest(path: string, init: RequestInit = {}): Promise<any> 
       Authorization: `Bearer ${LEMONSQUEEZY_API_KEY}`,
       ...(init.headers ?? {}),
     },
+    signal: AbortSignal.timeout(LS_TIMEOUT_MS),
   });
 
   const payload: any = await result.json().catch(() => null);
