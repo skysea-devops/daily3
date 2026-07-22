@@ -140,6 +140,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Breaking Defense",        url: "https://breakingdefense.com/feed/" },
     { name: "War History Online",      url: "https://www.warhistoryonline.com/feed/" },
     { name: "The Diplomat",            url: "https://thediplomat.com/feed/" },
+    { name: "Small Wars Journal",      url: "https://smallwarsjournal.com/feed/" },
   ],
 
   "Health": [
@@ -235,6 +236,8 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
     { name: "From Our Own Correspondent",  url: "https://podcasts.files.bbci.co.uk/b006qjlq.rss" },
     { name: "The Foreign Affairs Interview", url: "https://feed.podbean.com/foreignaffairsmagazine/feed.xml" },
+    { name: "The President's Inbox",       url: "https://feed.podbean.com/thepresidentsinbox/feed.xml" },   // World Politics
+    
   ],
 
   "Business": [
@@ -283,6 +286,7 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Fresh Air (Arts)",            url: "https://feeds.npr.org/381444908/podcast.xml" },
     { name: "Friday Night Comedy (BBC)",   url: "https://podcasts.files.bbci.co.uk/p02pc9pj.rss" },
     { name: "The Week in Art",             url: "https://feeds.acast.com/public/shows/5e29a2ef7644ff6b3f984cff" },
+    { name: "Articles of Interest",    url: "https://feed.articlesofinterest.club/" },                  // Arts & Culture
   ],
 
   "Military": [
@@ -290,6 +294,7 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Modern War Institute",        url: "https://mwi.westpoint.edu/category/podcasts/feed/" },
     { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
     { name: "Throughline",                 url: "https://feeds.npr.org/510333/podcast.xml" },
+   
   ],
 
   "Health": [
@@ -305,6 +310,7 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Outside/In",                  url: "https://rss.introcast.io/1061222770/feeds.megaphone.fm/TPG9719828981" },
     { name: "Emergence Magazine",          url: "https://feeds.captivate.fm/emergence-magazine/" },
     { name: "The Climate Question (BBC)",  url: "https://podcasts.files.bbci.co.uk/w13xtvb6.rss" },
+   
   ],
 
   "Philosophy & Ethics": [
@@ -313,6 +319,8 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "The Partially Examined Life", url: "https://partiallyexaminedlife.com/feed/podcast/" },
     { name: "Hidden Brain",                url: "https://feeds.npr.org/510308/podcast.xml" },
     { name: "Philosophy Bites",            url: "https://philosophybites.libsyn.com/rss" },
+    { name: "Mindscape",               url: "https://rss.art19.com/sean-carrolls-mindscape" },          // Philosophy & Ethics
+    { name: "The Gray Area",           url: "https://feeds.megaphone.fm/VMP5705694065" },               // Philosophy & Ethics
   ],
 
   "Fashion & Style": [
@@ -329,6 +337,7 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Where Should We Begin?",      url: "https://feeds.megaphone.fm/ep-wswb" },
     { name: "The Happiness Lab",           url: "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/96c5c41e-0bc8-4661-b184-ae32006cd726/d623ef0b-3fee-4c26-b815-ae32006cd739/podcast.rss" },
     { name: "The Science of Happiness",    url: "http://feeds.feedburner.com/TheScienceOfHappiness" },
+  
   ],
 };
 
@@ -1340,7 +1349,7 @@ async function selectPoolWithBedrock(
       ? `\n\nAudience balance rule (Fashion & Style): the pool MUST mix menswear and womenswear items every day — neither may exceed roughly two-thirds of the pool. Tag every item with "Menswear" or "Womenswear" in its subTopics (both for unisex/industry pieces), even when those tags are not in the active sub-topic list. Vary the audience of the TOP-RANKED items from day to day: if recently-shown markers indicate one audience dominated recent days, rank the other audience first today.`
       : "";
 
-  const prompt = `Create today's shared Cogletta ${category} pool from the candidates below.\n\nSelect up to ${desiredSize} high-quality ${contentType}. Rank best first. Never repeat an index. Include at most two items from any single source. Cogletta NEVER recommends news reporting. REJECT incident reports, casualty reports, battlefield updates, attack reports and all other current-events coverage. Also REJECT government or company announcements, product or tool releases, calls for papers, event listings and meta/professional-news posts. Every selected item must itself be a substantive essay, explainer, research piece, historical analysis or long-form feature with durable educational value. Apply this evergreen test: it should still be worth reading at least one month from now. A current event may appear only as context for broader lasting analysis, never as the main subject. Reject off-topic, roundup, transcript, video, breaking-news or liveblog content. Prefer depth, then freshness and source diversity.\n\nActive sub-topics selected by users:\n${subTopicText}${fashionNote}\n\nCoverage rule: when a clearly relevant quality candidate exists, include at least one item for every active sub-topic. Never force weak or unrelated content merely to fill coverage. Tag each selected item only with exact sub-topic names from the list. General ${category} pieces may have an empty subTopics array.\n\nCandidates:\n${candidateList}\n\nReturn only valid JSON:\n{\n  "items": [\n    {\n      "selectedIndex": <candidate index>,\n      "subTopics": ["<exact active sub-topic>"],\n      "qualityScore": <0-100>,\n      "summary": "<specific ${isPodcast ? "2-3" : "3-4"} sentence summary>",\n      "reason": "<max 18 words; concrete hook>",\n      \"imageQuery\": \"<3-4 concrete VISUAL stock-photo keywords capturing the item THEME; never reuse ambiguous or figurative title words>\",\n      ${extraFields}\n    }\n  ],\n  "unrepresentedSubTopics": ["<exact active sub-topic with no suitable selected item>"]\n}`;
+  const prompt = `Create today's shared Cogletta ${category} pool from the candidates below.\n\nSelect up to ${desiredSize} high-quality ${contentType}. Rank best first. Never repeat an index. Include at most two items from any single source. Cogletta NEVER recommends news reporting. REJECT incident reports, casualty reports, battlefield updates, attack reports and all other current-events coverage. Also REJECT government or company announcements, product or tool releases, calls for papers, event listings and meta/professional-news posts. Every selected item must itself be a substantive essay, explainer, research piece, historical analysis or long-form feature with durable educational value. Apply this evergreen test: it should still be worth reading at least one month from now. A current event may appear only as context for broader lasting analysis, never as the main subject. Reject off-topic, roundup, transcript, video, breaking-news or liveblog content. Prefer depth, then freshness and source diversity. Also REJECT items whose body is mostly a pointer to an external piece (link-posts, "read more here" redirects, roundups) rather than a complete standalone read.\n\nActive sub-topics selected by users:\n${subTopicText}${fashionNote}\n\nCoverage rule: when a clearly relevant quality candidate exists, include at least one item for every active sub-topic. Never force weak or unrelated content merely to fill coverage. Tag each selected item only with exact sub-topic names from the list. General ${category} pieces may have an empty subTopics array.\n\nCandidates:\n${candidateList}\n\nReturn only valid JSON:\n{\n  "items": [\n    {\n      "selectedIndex": <candidate index>,\n      "subTopics": ["<exact active sub-topic>"],\n      "qualityScore": <0-100>,\n      "summary": "<specific ${isPodcast ? "2-3" : "3-4"} sentence summary>",\n      "reason": "<max 18 words; concrete hook>",\n      \"imageQuery\": \"<3-4 concrete VISUAL stock-photo keywords capturing the item THEME; never reuse ambiguous or figurative title words>\",\n      ${extraFields}\n    }\n  ],\n  "unrepresentedSubTopics": ["<exact active sub-topic with no suitable selected item>"]\n}`;
   const command = new InvokeModelCommand({
     modelId: "eu.anthropic.claude-haiku-4-5-20251001-v1:0",
     contentType: "application/json",

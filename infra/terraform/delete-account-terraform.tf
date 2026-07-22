@@ -34,9 +34,18 @@ resource "aws_iam_role_policy" "delete_account_lambda_policy" {
         Resource = "${aws_cloudwatch_log_group.delete_account.arn}:*"
       },
       {
+        # GetItem       → profili (lsSubscriptionId) silmeden önce oku
+        # Query         → makaleleri sayfalı çek (LastEvaluatedKey ile pagination)
+        # BatchWriteItem → makaleleri 25'lik gruplar halinde sil
+        # DeleteItem    → profil + LSSUB# eşleme kaydını sil
         Sid    = "DynamoDeleteUser"
         Effect = "Allow"
-        Action = ["dynamodb:DeleteItem", "dynamodb:Query"]
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:Query",
+          "dynamodb:DeleteItem",
+          "dynamodb:BatchWriteItem",
+        ]
         Resource = [
           aws_dynamodb_table.users.arn,
           aws_dynamodb_table.articles.arn,
@@ -70,11 +79,12 @@ resource "aws_lambda_function" "delete_account" {
 
   environment {
     variables = {
-      USERS_TABLE_NAME    = aws_dynamodb_table.users.name
-      ARTICLES_TABLE_NAME = aws_dynamodb_table.articles.name
-      USER_POOL_ID        = aws_cognito_user_pool.main.id
-      CORS_ORIGIN         = var.cors_origin
-      NODE_OPTIONS        = "--enable-source-maps"
+      USERS_TABLE_NAME     = aws_dynamodb_table.users.name
+      ARTICLES_TABLE_NAME  = aws_dynamodb_table.articles.name
+      USER_POOL_ID         = aws_cognito_user_pool.main.id
+      CORS_ORIGIN          = var.cors_origin
+      LEMONSQUEEZY_API_KEY = var.lemonsqueezy_api_key
+      NODE_OPTIONS         = "--enable-source-maps"
     }
   }
 }
