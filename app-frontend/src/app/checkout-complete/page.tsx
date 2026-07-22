@@ -149,10 +149,10 @@ function CheckoutCompleteContent() {
         <div style={{ ...card }}>
           <Spinner />
           <h1 style={{ fontFamily: "'Lora', serif", fontSize: "1.8rem", color: "var(--ink)", margin: "0 0 12px" }}>
-            Payment received
+            Confirming your payment
           </h1>
           <p style={{ color: "var(--ink-soft)", lineHeight: 1.7 }}>
-            We&apos;re confirming your Pro membership with Cogletta. You can also return to your original tab.
+            We&apos;re checking your payment status. This can take a few seconds — you can also return to your original tab.
           </p>
           {attempt > 0 && !timedOut && (
             <p style={{ marginTop: 20, color: "var(--ink-muted)", fontSize: "0.8125rem" }}>Confirmation check {attempt}…</p>
