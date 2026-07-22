@@ -165,6 +165,8 @@ resource "aws_lambda_function" "manage_subscription" {
     variables = {
       USERS_TABLE_NAME                  = aws_dynamodb_table.users.name
       LEMONSQUEEZY_API_KEY              = var.lemonsqueezy_api_key
+      LS_MONTHLY_VARIANT_ID             = var.lemonsqueezy_monthly_variant_id
+      LS_YEARLY_VARIANT_ID              = var.lemonsqueezy_yearly_variant_id
       CORS_ORIGIN                       = var.cors_origin
       NODE_OPTIONS                      = "--enable-source-maps"
     }
@@ -191,6 +193,14 @@ resource "aws_apigatewayv2_integration" "manage_subscription" {
 resource "aws_apigatewayv2_route" "get_me_subscription" {
   api_id             = aws_apigatewayv2_api.backend.id
   route_key          = "GET /me/subscription"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+  target             = "integrations/${aws_apigatewayv2_integration.manage_subscription.id}"
+}
+
+resource "aws_apigatewayv2_route" "patch_me_subscription" {
+  api_id             = aws_apigatewayv2_api.backend.id
+  route_key          = "PATCH /me/subscription"
   authorization_type = "JWT"
   authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
   target             = "integrations/${aws_apigatewayv2_integration.manage_subscription.id}"
