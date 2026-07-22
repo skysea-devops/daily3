@@ -6,9 +6,15 @@ import Navbar from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import { updateDisplayName, changePassword } from "@/lib/cognito";
-import { cancelBillingSubscription, getBillingSubscription } from "@/lib/api";
+import { cancelBillingSubscription, getBillingSubscription, switchBillingCycle } from "@/lib/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
+
+const mutedPill: React.CSSProperties = {
+  flexShrink: 0, padding: "7px 14px", borderRadius: 999,
+  border: "1px solid var(--rule)", background: "var(--paper)",
+  fontSize: "0.8125rem", fontWeight: 600, color: "var(--ink-muted)",
+};
 
 // Lemon Squeezy checkout linkleri build sırasında inline edilir. Prod'da bu
 // değişkenler henüz tanımlı olmadığından upgrade butonları yerine "Coming soon"
@@ -302,11 +308,35 @@ function SettingsContent() {
     }
   }
 
-  // NOTE: monthly<->yearly switch geçici olarak kaldırıldı. Eski akış (aboneliği
-  // iptal edip yeni checkout açma) finansal olarak riskliydi ve yeni mükerrer
-  // abonelik guard'ıyla "iptal edildi ama checkout bloklandı" durumuna yol
-  // açardı. Doğru akış (LS variant-swap PATCH + proration, aynı abonelik ID)
-  // Chunk 3'te PATCH /me/subscription ile gelecek.
+  // Aylık↔Yıllık geçiş: LS variant-swap (PATCH /me/subscription). Aynı abonelik ID
+  // korunur, proration LS'te otomatik. Eski "önce iptal et, yeni checkout aç" akışı
+  // yok — çift abonelik / iade riski ortadan kalktı.
+  async function handleSwitchBillingCycle(target: "monthly" | "yearly") {
+    if (!user?.accessToken || billingBusy) return;
+    const priceLine = target === "yearly" ? "$58/year" : "$5.80/month";
+    const confirmed = window.confirm(
+      `Switch to ${target} billing (${priceLine})? Your plan changes right away and Lemon Squeezy ` +
+      "automatically prorates the difference — no second subscription is created."
+    );
+    if (!confirmed) return;
+
+    setBillingBusy(true); setBillingError("");
+    try {
+      const updated = await switchBillingCycle(target, user.accessToken);
+      setSubscription((cur) => cur ? {
+        ...cur,
+        billingCycle: updated.billingCycle,
+        status: updated.status,
+        renewsAt: updated.renewsAt ?? cur.renewsAt,
+        endsAt: updated.endsAt ?? cur.endsAt,
+      } : cur);
+      await refreshSession();
+    } catch (error: any) {
+      setBillingError(error?.message || "Could not switch billing cycle.");
+    } finally {
+      setBillingBusy(false);
+    }
+  }
 
   async function handleDeleteAccount() {
     if (!user?.accessToken) return;
@@ -400,14 +430,18 @@ function SettingsContent() {
           )}
           {plan === "pro" && (
             <>
-              <Row topBorder label="Billing cycle" description="Switching between monthly and yearly is being upgraded and will be available here shortly.">
-                <span style={{
-                  flexShrink: 0, padding: "7px 14px", borderRadius: 999,
-                  border: "1px solid var(--rule)", background: "var(--paper)",
-                  fontSize: "0.8125rem", fontWeight: 600, color: "var(--ink-muted)",
-                }}>
-                  Coming soon
-                </span>
+              <Row topBorder label="Billing cycle" description="Change between monthly and yearly anytime. The switch applies immediately and Lemon Squeezy prorates the difference automatically.">
+                {subscription == null ? (
+                  <span style={mutedPill}>Loading…</span>
+                ) : subscription.cancelled ? (
+                  <span style={mutedPill}>Unavailable while cancelled</span>
+                ) : subscription.billingCycle === "monthly" ? (
+                  <ActionBtn label={billingBusy ? "Switching…" : "Switch to yearly"} onClick={() => handleSwitchBillingCycle("yearly")} disabled={billingBusy} style="accent" />
+                ) : subscription.billingCycle === "yearly" ? (
+                  <ActionBtn label={billingBusy ? "Switching…" : "Switch to monthly"} onClick={() => handleSwitchBillingCycle("monthly")} disabled={billingBusy} />
+                ) : (
+                  <span style={mutedPill}>—</span>
+                )}
               </Row>
               <Row topBorder label="Payment method & invoices" description="Open a fresh, secure Lemon Squeezy portal link for this subscription.">
                 <ActionBtn label={billingBusy ? "Opening…" : "Manage"} onClick={handleManageBilling} disabled={billingBusy} />

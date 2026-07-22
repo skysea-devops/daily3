@@ -33,6 +33,18 @@ function planForStatus(status: string): "free" | "pro" {
   }
 }
 
+const NON_ACTIVE_STATUSES = ["paused", "unpaid", "expired", "cancelled", "past_due"];
+
+// updated_at karşılaştırması: candidate, baseline'dan KESİN daha yeni mi?
+// (eşit → yeni değil → tekrar/idempotency: işleme). LS timestamp'leri tek formatta
+// UTC geldiği için önce Date.parse, olmazsa leksikografik string karşılaştırması.
+function isStrictlyNewer(candidate: string, baseline: string): boolean {
+  const c = Date.parse(candidate);
+  const b = Date.parse(baseline);
+  if (!isNaN(c) && !isNaN(b)) return c > b;
+  return candidate > baseline;
+}
+
 // "plan" DynamoDB reserved word → ExpressionAttributeNames şart
 async function setPlan(
   userId: string,
@@ -80,15 +92,19 @@ async function userIdForSub(subscriptionId: string): Promise<string | undefined>
   return res.Item?.userId as string | undefined;
 }
 
-async function currentSubscriptionId(userId: string): Promise<string | undefined> {
+// Profilden mevcut abonelik ID'si ve en son işlenen event'in updated_at'ı
+async function readSubState(userId: string): Promise<{ currentSubId?: string; lastEventAt?: string }> {
   const res = await dynamo.send(
     new GetCommand({
       TableName: USERS_TABLE_NAME,
       Key: { PK: `USER#${userId}`, SK: "PROFILE" },
-      ProjectionExpression: "lsSubscriptionId",
+      ProjectionExpression: "lsSubscriptionId, lsLastEventAt",
     })
   );
-  return res.Item?.lsSubscriptionId ? String(res.Item.lsSubscriptionId) : undefined;
+  return {
+    currentSubId: res.Item?.lsSubscriptionId ? String(res.Item.lsSubscriptionId) : undefined,
+    lastEventAt: res.Item?.lsLastEventAt ? String(res.Item.lsLastEventAt) : undefined,
+  };
 }
 
 const ok  = (msg = "ok"): APIGatewayProxyResultV2 => ({ statusCode: 200, body: msg });
@@ -135,6 +151,8 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
   const subscriptionId: string = String(payload?.data?.id ?? "");
   const status: string = attrs?.status ?? "";
   const plan = planForStatus(status);
+  // Event'in "yaşı": aboneliğin updated_at'i. Sıralama + idempotency bunun üstünden.
+  const eventUpdatedAt: string = String(attrs?.updated_at ?? new Date().toISOString());
 
   // 4) userId'yi bul: önce checkout custom_data.user_id, yoksa eşleme tablosundan
   const rawUserId =
@@ -154,27 +172,38 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
     return bad(500, "user mapping unavailable");
   }
 
-  // Eski bir abonelik dönem sonunda expired olduğunda, kullanıcı bu sırada
-  // yeni bir abonelik başlatmış olabilir. Eski event yeni aktif aboneliği Free'ye
-  // düşürmemeli veya profil lsSubscriptionId değerini geriye çevirmemeli.
+  // 5) Sıralama + idempotency guard'ı
   //
-  // "cancelled" ve "past_due" de bu listede: aylık↔yıllık switch, mevcut aboneliği
-  // önce iptal edip yeni bir abonelik başlatır. Eski aboneliğin cancelled event'i
-  // yeni aboneliğin subscription_created'ından SONRA gelirse (webhook'lar sıra
-  // garantisi vermez), bu guard olmadan profildeki lsSubscriptionId eski (iptal
-  // edilmiş) aboneliğe geri döner ve Manage/Cancel yanlış aboneliği hedefler.
-  // Not: aynı aboneliğe (currentSubId === subscriptionId) ait normal cancel bu
-  // guard'a takılmaz — koşul yalnızca FARKLI bir abonelik için devreye girer.
-  const currentSubId = await currentSubscriptionId(userId);
-  const isNonActiveForOtherSub = ["paused", "unpaid", "expired", "cancelled", "past_due"].includes(status);
-  if (currentSubId && currentSubId !== subscriptionId && isNonActiveForOtherSub) {
-    console.log(`LS webhook: stale event for other subscription ignored (current=${currentSubId}, eventSub=${subscriptionId}, status=${status})`);
-    return ok("stale subscription ignored");
+  // İki senaryo:
+  //  (a) Event MEVCUT aboneliğe ait → yalnızca event daha YENİYSE uygula.
+  //      Aynı event tekrar gelirse (redelivery) updated_at eşittir → atlanır
+  //      (idempotency). Gecikmiş/eski bir event daha küçük updated_at taşır → atlanır
+  //      (out-of-order koruması). Böylece ayrı bir event tablosuna gerek kalmıyor.
+  //  (b) Event FARKLI bir aboneliğe ait →
+  //        - non-active (cancelled/expired/paused/unpaid/past_due): eski abonelik
+  //          kapanıyor demektir, mevcut aboneliği EZMESİN → yoksay.
+  //        - active/on_trial: yeni/geçerli bir abonelik devralıyor → uygula,
+  //          profil bu yeni subscription'a geçer (lsLastEventAt sıfırlanır).
+  //  currentSubId yoksa (ilk abonelik) → uygula.
+  const { currentSubId, lastEventAt } = await readSubState(userId);
+
+  if (currentSubId && currentSubId === subscriptionId) {
+    if (lastEventAt && !isStrictlyNewer(eventUpdatedAt, lastEventAt)) {
+      console.log(`LS webhook: stale/duplicate event ignored (sub=${subscriptionId}, eventAt=${eventUpdatedAt}, lastAt=${lastEventAt})`);
+      return ok("stale or duplicate event ignored");
+    }
+  } else if (currentSubId && currentSubId !== subscriptionId) {
+    if (NON_ACTIVE_STATUSES.includes(status)) {
+      console.log(`LS webhook: stale event for other subscription ignored (current=${currentSubId}, eventSub=${subscriptionId}, status=${status})`);
+      return ok("stale subscription ignored");
+    }
+    // active/on_trial → yeni abonelik devralıyor, uygula
   }
 
-  // 5) Profildeki ekstra alanlar
+  // 6) Profildeki ekstra alanlar
   const extra: Record<string, string> = {
     lsSubscriptionId: subscriptionId,
+    lsLastEventAt: eventUpdatedAt,
   };
   if (attrs?.customer_id != null)         extra.lsCustomerId = String(attrs.customer_id);
   if (attrs?.variant_id != null)          extra.lsVariantId  = String(attrs.variant_id);
@@ -193,6 +222,6 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
 
   await setPlan(userId, plan, extra);
 
-  console.log(`LS webhook: user=${userId} status=${status} → plan=${plan}`);
+  console.log(`LS webhook: user=${userId} sub=${subscriptionId} status=${status} → plan=${plan} (eventAt=${eventUpdatedAt})`);
   return ok();
 };

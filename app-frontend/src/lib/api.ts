@@ -199,3 +199,27 @@ export async function cancelBillingSubscription(accessToken: string): Promise<{ 
   if (!response.ok) throw new Error(body?.message || "Failed to cancel subscription");
   return body;
 }
+
+export async function switchBillingCycle(
+  interval: "monthly" | "yearly",
+  accessToken: string
+): Promise<{ status: string; billingCycle: "monthly" | "yearly" | "unknown"; renewsAt: string | null; endsAt: string | null; message?: string }> {
+  if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+  const response = await fetch(`${API_BASE_URL}/me/subscription`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ interval }),
+  });
+  if (response.status === 401) { handleUnauthorized(); throw new Error("Session expired"); }
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const err = new Error(body?.message || "Could not switch billing cycle") as Error & { code?: string; status?: number };
+    err.code = body?.code;
+    err.status = response.status;
+    throw err;
+  }
+  return body;
+}
