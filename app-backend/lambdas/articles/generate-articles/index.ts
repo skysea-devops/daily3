@@ -42,7 +42,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
 
   "World Politics": [
-    { name: "Foreign Affairs",         url: "https://www.foreignaffairs.com/rss.xml" },
     { name: "War on the Rocks",        url: "https://warontherocks.com/feed/" },
     { name: "Atlantic Council",        url: "https://www.atlanticcouncil.org/feed/" },
     { name: "Le Monde Diplomatique",   url: "https://mondediplo.com/spip.php?page=backend" },
@@ -56,7 +55,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "MIT Sloan Review",        url: "https://sloanreview.mit.edu/feed/" },
     { name: "Noema Magazine",          url: "https://www.noemamag.com/feed/" },
     { name: "Knowledge at Wharton",    url: "https://knowledge.wharton.upenn.edu/feed/" },
-    { name: "Longreads",               url: "https://longreads.com/feed/" },
     { name: "Fast Company",            url: "https://www.fastcompany.com/latest/rss" },
     { name: "Stratechery",             url: "https://stratechery.com/feed/" },
     { name: "Not Boring",              url: "https://www.notboring.co/feed" },
@@ -94,7 +92,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Ness Labs",               url: "https://nesslabs.com/feed" },
     { name: "Psyche (Aeon)",           url: "https://psyche.co/feed" },
     { name: "LessWrong",               url: "https://www.lesswrong.com/feed.xml" },
-    { name: "Longreads",               url: "https://longreads.com/feed/" },
     { name: "Cal Newport",             url: "https://calnewport.com/feed/" },
     { name: "Scott H. Young",          url: "https://www.scotthyoung.com/blog/feed/" },
     { name: "Raptitude",               url: "https://www.raptitude.com/feed/" },
@@ -123,7 +120,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Public Books",            url: "https://www.publicbooks.org/feed/" },
     { name: "JSTOR Daily",             url: "https://daily.jstor.org/feed/" },
     { name: "Eurozine",                url: "https://www.eurozine.com/feed/" },
-    { name: "Longreads",               url: "https://longreads.com/feed/" },
     { name: "Hyperallergic",           url: "https://hyperallergic.com/feed/" },
     { name: "Arts & Letters Daily",   url: "https://www.aldaily.com/feed/" },        
     { name: "Kottke",                 url: "https://feeds.kottke.org/main" },        
@@ -389,6 +385,7 @@ export function canonicalizeUrl(raw: string): string {
       "ref",
       "referrer",
       "source",
+      "src",
     ]);
     for (const key of [...url.searchParams.keys()]) {
       if (
@@ -412,6 +409,24 @@ export function canonicalizeUrl(raw: string): string {
     return url.toString();
   } catch {
     return value.replace(/#.*$/, "").replace(/\/$/, "");
+  }
+}
+
+// Son SEÇİLEN makalenin URL'sini takip et: bazı kaynaklar (ör. Longreads) kendi
+// sayfalarına link verip HTTP ile asIl makaleye yönlendirir. HEAD ile yönlendirmeleri
+// izleyip nihai URL'i döndür; hata/timeout olursa orijinali koru. Sadece final pick'e
+// uygulanIr (tüm adaylara değil), o yüzden tek HTTP çağrIsI. (#3)
+async function resolveFinalUrl(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, {
+      method: "HEAD",
+      redirect: "follow",
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.url && res.url !== url) return canonicalizeUrl(res.url);
+    return url;
+  } catch {
+    return url;
   }
 }
 
@@ -450,14 +465,31 @@ function extractItems(xml: string, sourceName: string): RSSItem[] {
       // Bazı podcast feed'lerinde (ör. Simplecast/Hidden Brain) item <link>
       // bölüm sayfası değil site köküdür; bu durumda dinleme linki olarak
       // enclosure'daki ses dosyasına düşülür (2026-07-19 vakası).
-      const enclosureTag = seg.match(/<enclosure[^>]*>/i)?.[0] ?? "";
-      const enclosureUrl = enclosureTag.match(/url="([^"]+)"/i)?.[1] ?? "";
-      const enclosureIsAudio = /type="audio|\.(mp3|m4a|aac)(\?|")/i.test(
-        enclosureTag,
-      );
+      const enclosureTag = seg.match(/<enclosure\b[^>]*\/?>/i)?.[0] ?? "";
+      const enclosureUrl =
+        enclosureTag.match(/\burl\s*=\s*["']([^"']+)["']/i)?.[1] ?? "";
+      const enclosureType =
+        enclosureTag.match(/\btype\s*=\s*["']([^"']+)["']/i)?.[1] ?? "";
+      // Ses tespiti sağlam: type'ta "audio", VEYA URL uzantısı (sorgu/hash öncesi),
+      // VEYA bilinen podcast host'ları (NPR/Megaphone/Podtrac/Simplecast/chrt.fm gibi
+      // izleme sarmalayıcılarında uzantı gizlenebilir — Hidden Brain vakası).
+      const enclosureIsAudio =
+        /audio/i.test(enclosureType) ||
+        /\.(mp3|m4a|aac|ogg|wav|mp4)(\?|#|$)/i.test(enclosureUrl) ||
+        /(podtrac|megaphone|simplecast|chrt\.fm|pdst\.fm|dts\.podtrac|npr\.org|libsyn|acast|buzzsprout|omny\.fm)/i.test(
+          enclosureUrl,
+        );
+      // Bazı podcast feed'lerinde item <link> bölüm sayfası DEĞİL, sitenin köküdür
+      // (pathname "/") VEYA showun genel sayfasıdır (ör. NYT Hard Fork → her bölümde
+      // aynı nytimes.com/column/hard-fork). Böyle durumda bölüm-özel link olarak
+      // enclosure (ses) kullanılır. (#4)
+      const SHOW_PAGE_PATTERN =
+        /\/(column|columns|show|shows|podcast|podcasts)\/[^/]+\/?$/i;
       let finalUrl = url;
       try {
-        if (new URL(url).pathname === "/" && enclosureUrl && enclosureIsAudio)
+        const p = new URL(url).pathname;
+        const looksLikeShowPage = p === "/" || SHOW_PAGE_PATTERN.test(p);
+        if (looksLikeShowPage && enclosureUrl && enclosureIsAudio)
           finalUrl = enclosureUrl;
       } catch {
         if (!url && enclosureUrl && enclosureIsAudio) finalUrl = enclosureUrl;
@@ -803,6 +835,23 @@ const ROUNDUP_PATTERNS =
   /\b(weekly|roundup|link list|best of|this week in|top \d+)\b/i;
 const PODCAST_PATTERNS =
   /\b(podcast|transcript|episode|listen now|audio|ep\.|ep \d+)\b/i;
+// Makale havuzundan podcast bölümlerini URL YOLUNDAN da ele: başlıkta "podcast"
+// geçmeyen ama URL'i podcast bölümüne işaret eden feed item'ları için (ör. fs.blog
+// ana feed'indeki Knowledge Project bölümleri makale sanılıyordu). (#1)
+const PODCAST_URL_PATTERN = /\/[^/]*podcast[^/]*(\/|$)/i;
+
+// Sert paywall'lI kaynaklar: makale okunamIyor → makale havuzundan ele. (#2)
+const PAYWALLED_DOMAINS = new Set([
+  "foreignaffairs.com",
+  "www.foreignaffairs.com",
+]);
+function isPaywalledUrl(u: string): boolean {
+  try {
+    return PAYWALLED_DOMAINS.has(new URL(u).hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
 const VIDEO_PATTERNS = /\b(video|watch|newsfeed|news feed)\b/i;
 const VIDEO_URL_PATTERN = /\/(video|videos|watch)\//i;
 const BREAKING_PATTERNS =
@@ -915,6 +964,8 @@ function scoreAndFilter(
     .filter((item) => !LIVEBLOG_URL_PATTERN.test(item.url))
     .filter((item) => isPodcast || !isLikelyNewsReport(item))
     .filter((item) => isPodcast || !PODCAST_PATTERNS.test(item.title))
+    .filter((item) => isPodcast || !PODCAST_URL_PATTERN.test(item.url))
+    .filter((item) => isPodcast || !isPaywalledUrl(item.url))
     .sort((a, b) => {
       const freshnessScore = (f: string) =>
         f === "today" ? 2 : f === "recent" ? 1 : 0;
@@ -1463,6 +1514,7 @@ export async function pickArticlePool(
           : undefined,
     } as Article;
   });
+
   return {
     articles: articles.length ? articles : [fallbackArticle(category)],
     unrepresentedSubTopics: selection.unrepresentedSubTopics ?? [],
@@ -1597,6 +1649,10 @@ export async function pickArticle(
     );
     const category = modelCat ?? sourceCat ?? scope[0];
 
+    // Yalnızca final seçime redirect çözümü uygula (Longreads vb. yönlendirmeleri
+    // asıl makaleye çevirir). (#3)
+    const resolvedUrl = await resolveFinalUrl(chosen.url);
+
     return {
       category,
       title: chosen.title,
@@ -1605,7 +1661,7 @@ export async function pickArticle(
         chosen.description ||
         "Click to read the full article.",
       reason: selection.reason,
-      url: chosen.url,
+      url: resolvedUrl,
       source: chosen.sourceName,
       readingTime: selection.readingTime || "~5 min read",
       publishedAt: chosen.pubDate || new Date().toISOString(),
