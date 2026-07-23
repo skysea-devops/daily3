@@ -136,7 +136,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Breaking Defense",        url: "https://breakingdefense.com/feed/" },
     { name: "War History Online",      url: "https://www.warhistoryonline.com/feed/" },
     { name: "The Diplomat",            url: "https://thediplomat.com/feed/" },
-    { name: "Small Wars Journal",      url: "https://smallwarsjournal.com/feed/" },
+    
   ],
 
   "Health": [
@@ -147,7 +147,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Undark",                  url: "https://undark.org/feed/" },
     { name: "Nautilus",                url: "https://nautil.us/feed/" },
     { name: "Fight Aging",             url: "https://www.fightaging.org/feed" },
-    { name: "Peter Attia (Articles)",  url: "https://peterattiamd.com/feed" },
+    
   ],
 
   "Environment": [
