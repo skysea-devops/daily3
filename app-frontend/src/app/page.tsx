@@ -248,6 +248,11 @@ export default function HomePage() {
           <button onClick={() => setShowModal(true)} className="lp-cta">
             Start reading for free →
           </button>
+          <div style={{ marginTop: 14 }}>
+            <Link href="/demo" style={{ color: "var(--ink-soft)", fontSize: "0.9375rem", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
+              or see a demo →
+            </Link>
+          </div>
           <span className="lp-note">Subscribe to get a curated article and podcast every morning.</span>
         </section>
          <div className="lp-divider" />
