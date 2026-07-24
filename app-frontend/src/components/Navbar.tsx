@@ -8,8 +8,10 @@ import { useState, useRef, useEffect } from "react";
 export default function Navbar() {
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false); // user dropdown (Settings / Sign out)
+  const [navOpen, setNavOpen] = useState(false);   // mobile hamburger (nav links)
   const menuRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
 
   function handleSignOut() {
     signOut();
@@ -18,9 +20,9 @@ export default function Navbar() {
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
+      const t = e.target as Node;
+      if (menuRef.current && !menuRef.current.contains(t)) setMenuOpen(false);
+      if (navRef.current && !navRef.current.contains(t)) setNavOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -34,6 +36,15 @@ export default function Navbar() {
       top: 0,
       zIndex: 100,
     }}>
+      {/* Mobil: nav linklerini gizle, hamburger'i goster, uzun kullanici adini kis. */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 640px) {
+          .cg-navlinks { display: none !important; }
+          .cg-hamburger { display: block !important; }
+          .cg-username { display: none !important; }
+        }
+      ` }} />
+
       <div style={{
         maxWidth: 1100,
         margin: "0 auto",
@@ -60,7 +71,7 @@ export default function Navbar() {
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-end",
-            gap: 20,
+            gap: 12,
             minWidth: "min(390px, 60vw)",
             minHeight: 36,
           }}
@@ -68,17 +79,48 @@ export default function Navbar() {
           {loading ? (
             <div
               aria-hidden="true"
-              style={{
-                width: "100%",
-                height: 36,
-                visibility: "hidden",
-              }}
+              style={{ width: "100%", height: 36, visibility: "hidden" }}
             />
           ) : user ? (
             <>
-              <Link href="/dashboard" style={navLink}>Dashboard</Link>
-              <Link href="/essays" style={navLink}>Essays</Link>
-              <Link href="/interests" style={navLink}>Interests</Link>
+              {/* Desktop nav links (mobilde gizli) */}
+              <div className="cg-navlinks" style={{ display: "flex", alignItems: "center", gap: 20 }}>
+                <Link href="/dashboard" style={navLink}>Dashboard</Link>
+                <Link href="/essays" style={navLink}>Essays</Link>
+                <Link href="/interests" style={navLink}>Interests</Link>
+              </div>
+
+              {/* Hamburger (yalnizca mobilde gorunur) */}
+              <div ref={navRef} className="cg-hamburger" style={{ position: "relative", display: "none" }}>
+                <button
+                  onClick={() => setNavOpen(o => !o)}
+                  aria-label="Menu"
+                  aria-expanded={navOpen}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 38, height: 34,
+                    background: "var(--white)",
+                    border: "1px solid var(--rule)",
+                    borderRadius: 20,
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="2" strokeLinecap="round">
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="3" y1="18" x2="21" y2="18" />
+                  </svg>
+                </button>
+
+                {navOpen && (
+                  <div style={dropdownPanel}>
+                    <Link href="/dashboard" onClick={() => setNavOpen(false)} style={dropdownItem}>Dashboard</Link>
+                    <Link href="/essays" onClick={() => setNavOpen(false)} style={dropdownItem}>Essays</Link>
+                    <Link href="/interests" onClick={() => setNavOpen(false)} style={dropdownItem}>Interests</Link>
+                  </div>
+                )}
+              </div>
 
               {/* User dropdown */}
               <div ref={menuRef} style={{ position: "relative" }}>
@@ -106,7 +148,7 @@ export default function Navbar() {
                   }}>
                     {user.email[0].toUpperCase()}
                   </div>
-                  {user.email.split("@")[0]}
+                  <span className="cg-username">{user.email.split("@")[0]}</span>
                 </button>
 
                 {menuOpen && (
@@ -187,5 +229,26 @@ const navBtn: React.CSSProperties = {
   padding: "8px 18px",
   borderRadius: 6,
   textDecoration: "none",
+  fontFamily: "Inter, sans-serif",
+};
+
+const dropdownPanel: React.CSSProperties = {
+  position: "absolute", top: "calc(100% + 8px)", right: 0,
+  background: "var(--white)",
+  border: "1px solid var(--rule)",
+  borderRadius: 10,
+  minWidth: 170,
+  boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+  overflow: "hidden",
+  zIndex: 200,
+};
+
+const dropdownItem: React.CSSProperties = {
+  display: "block",
+  padding: "11px 16px",
+  fontSize: "0.9375rem",
+  color: "var(--ink-soft)",
+  textDecoration: "none",
+  borderBottom: "1px solid var(--rule)",
   fontFamily: "Inter, sans-serif",
 };

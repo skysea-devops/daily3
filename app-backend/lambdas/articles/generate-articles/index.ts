@@ -42,13 +42,19 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
 
   "World Politics": [
-    { name: "War on the Rocks",        url: "https://warontherocks.com/feed/" },
     { name: "Atlantic Council",        url: "https://www.atlanticcouncil.org/feed/" },
     { name: "Le Monde Diplomatique",   url: "https://mondediplo.com/spip.php?page=backend" },
     { name: "The Diplomat",            url: "https://thediplomat.com/feed/" },
     { name: "Foreign Policy",          url: "https://foreignpolicy.com/feed/" },
     { name: "Responsible Statecraft",  url: "https://responsiblestatecraft.org/feed/" },
     { name: "Just Security",           url: "https://www.justsecurity.org/feed/" },
+    // 4 think-tank kaynağı (nötr, ücretsiz, analiz-ağırlık). PUSH ÖNCESİ HER BİRİNİ
+    // TEST ET — feed URL'leri doğrulanamadı (özellikle Carnegie /rss/ bir index
+    // sayfası olabilir, Wilson URL'i tahmin). Çalışmayanı sil/düzelt.
+    { name: "ECFR",                    url: "https://ecfr.eu/feed/" },
+    { name: "Lowy Interpreter",        url: "https://www.lowyinstitute.org/the-interpreter/rss.xml" },
+    { name: "Carnegie Endowment",      url: "https://carnegieendowment.org/rss/" },
+    
   ],
 
   "Business": [
