@@ -276,7 +276,7 @@ export default function HomePage() {
                 },
                 {
                   stars: "★★★★★",
-                  text: "I could never finish long articles before. Getting dailly, picked for me, quietly rebuilt my reading habit.",
+                  text: "I could never finish long articles before. The content chosen for me every day quietly helped me regain my reading habit.",
                   name: "Andy",
                   role: "Daily reader",
                   initial: "D",
@@ -343,7 +343,7 @@ export default function HomePage() {
             I started thinking about how I used to read. I'd pick up a magazine or newspaper, discover thoughtful articles, and gradually build knowledge around  <strong>the topics that interested me.</strong> I wanted that feeling back.
           </p>
           <p className="lp-p">
-            That's why I built Cogletta. Every morning, Cogletta delivers a small collection of thoughtfully selected articles based on your interests. No algorithms competing for your attention. No endless feed to scroll through.If you think like me — you're in the right place.
+            That's why I built Cogletta. Every morning, Cogletta delivers a small collection of thoughtfully selected articles based on your interests. No algorithms competing for your attention. No endless feed to scroll through. If you think like me — you're in the right place.
           </p>
           <p className="lp-sig">— Ismail Gokdeniz - Founder, Cogletta</p>
         </section>
@@ -355,10 +355,10 @@ export default function HomePage() {
           <h2 className="lp-h2">Everything you need to build a reading habit.</h2>
           <div className="lp-features">
             {[
-              { icon: "📰", title: "3 curated articles daily (1 in free plan)" , body: "Substantive pieces from think-tanks, academic journals, and quality publications. Pro readers follow 3 interests and get an article for each." },
+              { icon: "📰", title: "3 curated articles daily (1 in the free plan)" , body: "Substantive pieces from think-tanks, academic journals, and quality publications. Pro readers follow 3 interests and get an article for each." },
               { icon: "✉️", title: "Daily email digest", body: "Your article and podcast delivered to your inbox every morning. Clean, readable." },
               { icon: "💡", title: "Why we picked this for you", body: "Each article comes with a short editorial note — why this piece, why today, why it's worth your time." },
-              { icon: "🎙", title: "2 podcast episode daily (1 in free plan)", body: "A carefully selected episode from top podcasts in your interest area — paired with your article every morning." },
+              { icon: "🎙", title: "2 podcast episodes daily (1 in the free plan)", body: "A carefully selected episode from top podcasts in your interest area — paired with your article every morning." },
             ].map(f => (
               <div key={f.title} className="lp-feature">
                 <div className="lp-feature-icon">{f.icon}</div>
@@ -440,7 +440,7 @@ export default function HomePage() {
 
         {/* FOOTER */}
         <footer className="lp-footer">
-          <p>© 2026 Cogletta · 3 articles + 2 podcasts, every morning</p>
+          <p>© 2026 Cogletta · 3 articles + 2 podcasts every morning</p>
           <p>
             <Link href="/login">Sign in</Link>
             {" · "}
