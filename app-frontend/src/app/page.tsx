@@ -241,13 +241,18 @@ export default function HomePage() {
         {/* HERO */}
         <section className="lp-hero">
           <span className="lp-eyebrow">Curated for you. Every morning.</span>
-          <h1 className="lp-h1">Read what<br /><em>matters to you.</em></h1>
+          <h1 className="lp-h1">Your morning reading<br /><em>three articles dailly</em></h1>
           <p className="lp-sub">
             Thoughtfully curated articles and podcast recommendations based on the interests you choose, delivered to your inbox every morning.
           </p>
           <button onClick={() => setShowModal(true)} className="lp-cta">
             Start reading for free →
           </button>
+          <div style={{ marginTop: 14 }}>
+            <Link href="/demo" style={{ color: "var(--ink-soft)", fontSize: "1.1575rem", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
+              or see a demo →
+            </Link>
+          </div>
           <span className="lp-note">Subscribe to get a curated article and podcast every morning.</span>
         </section>
          <div className="lp-divider" />
@@ -369,7 +374,11 @@ export default function HomePage() {
           <div className="lp-band-inner" style={{maxWidth: 640}}>
             <p className="lp-label lp-accent-label">A taste of what you'll read</p>
             <h2 className="lp-h2">This is what arrives in your inbox.</h2>
-
+          <div style={{ marginTop: 14, marginBottom: 32 }}>
+            <Link href="/demo" style={{ color: "var(--ink-soft)", fontSize: "1.1575rem", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
+              See full demo page →
+            </Link>
+          </div>
             <div className="lp-article">
               <p className="lp-art-meta">🎨 Arts</p>
               <h3 className="lp-art-title">Why We Can't Stop Looking at Vermeer</h3>
