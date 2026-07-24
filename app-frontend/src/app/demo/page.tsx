@@ -155,10 +155,10 @@ export default function DemoPage() {
 
         <div style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: 16, overflow: "hidden" }}>
           {[
-            ["Interests you can follow", "1", "Up to 3"],
+            ["Interests you can follow", "1", "3"],
             ["Sub-topics within each interest", "—", "Yes"],
             ["Daily curated article", "Yes", "Yes"],
-            ["Daily podcast pick", "—", "Yes"],
+            ["Daily podcast pick", "1", "2"],
             ["Weekly trend report", "—", "Yes"],
           ].map((row, i) => (
             <div key={i} style={{
