@@ -241,7 +241,7 @@ export default function HomePage() {
         {/* HERO */}
         <section className="lp-hero">
           <span className="lp-eyebrow">Curated for you. Every morning.</span>
-          <h1 className="lp-h1">Your morning reading<br /><em>three articles dailly</em></h1>
+          <h1 className="lp-h1">Your morning reading<br /><em>three articles daily</em></h1>
           <p className="lp-sub">
             Thoughtfully curated articles and podcast recommendations based on the interests you choose, delivered to your inbox every morning.
           </p>
