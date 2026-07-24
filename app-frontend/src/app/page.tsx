@@ -429,9 +429,7 @@ export default function HomePage() {
         {/* BOTTOM CTA */}
         <div className="lp-cta-bottom">
           <h2>Start your morning ritual.</h2>
-          <p>
-            We grow because readers share us with people they trust.
-          </p>
+          
           <button onClick={() => setShowModal(true)} className="lp-cta">
             Start reading for free →
           </button>
