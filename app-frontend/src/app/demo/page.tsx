@@ -26,15 +26,15 @@ const DEMO_CATEGORIES: { id: string; label: string; emoji: string; description: 
 // Statik, gerçekçi örnek kartlar. CANLI ÜRETİM DEĞİL — demo amaçlı sabit veri.
 const SAMPLE_ARTICLES = [
   {
-    emoji: "🌍",
-    category: "World Politics",
-    title: "How European Defense Is Being Rebuilt From the Ground Up",
-    source: "ECFR",
+    emoji: "💛",
+    category: "Life & Relationships",
+    title: "How Can We Feel Loved If We Don’t Feel Known?",
+    source: "Behavioral Scientist",
     readingTime: "8 min read",
     summary:
-      "A measured look at the institutional shifts reshaping European security policy, and the governance barriers that still stand in the way of genuine strategic autonomy.",
+      "Many of us have felt, at one point or another, that success, beauty, and status would make us feel more loved. It’s understandable—our culture constantly reinforces the idea that being admired will translate into feeling cherished. If you were wealthier, sexier, or had more renown, wouldn’t the people in your life appreciate you more?",
     reason:
-      "Substantive strategic analysis rather than daily headline noise — matches your focus on Europe and international institutions.",
+      "Explores decades of psychological research and argues that the deepest relationships begin with something surprisingly simple: feeling genuinely known by another person..",
   },
   {
     emoji: "🔬",
