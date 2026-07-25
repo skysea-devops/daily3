@@ -4,6 +4,7 @@ import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedroc
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { createHash } from "crypto";
 import { Article, Podcast, DailyArticles, Keys } from "../../../shared/types";
+import { name } from "assert/strict";
 
 const dynamo  = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const bedrock = new BedrockRuntimeClient({ region: process.env.AWS_REGION });
@@ -48,9 +49,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Foreign Policy",          url: "https://foreignpolicy.com/feed/" },
     { name: "Responsible Statecraft",  url: "https://responsiblestatecraft.org/feed/" },
     { name: "Just Security",           url: "https://www.justsecurity.org/feed/" },
-    // 4 think-tank kaynağı (nötr, ücretsiz, analiz-ağırlık). PUSH ÖNCESİ HER BİRİNİ
-    // TEST ET — feed URL'leri doğrulanamadı (özellikle Carnegie /rss/ bir index
-    // sayfası olabilir, Wilson URL'i tahmin). Çalışmayanı sil/düzelt.
     { name: "ECFR",                    url: "https://ecfr.eu/feed/" },
     { name: "Lowy Interpreter",        url: "https://www.lowyinstitute.org/the-interpreter/rss.xml" },
     { name: "Carnegie Endowment",      url: "https://carnegieendowment.org/rss/" },
@@ -116,7 +114,9 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "The Public Domain Review", url: "https://publicdomainreview.org/rss.xml" },
     { name: "Eurozine",                url: "https://www.eurozine.com/feed/" },
     { name: "Engelsberg Ideas",        url: "https://engelsbergideas.com/feed/" },
-    { name: "Smithsonian (History)",   url: "https://www.smithsonianmag.com/rss/history/" },
+    { name: "Smithsonian (History)",   url: "https://www.smithsonianmag.com/rss/history/" },  
+    { name: "History Extra",           url: "https://www.historyextra.com/feed/" },
+    { name: "History Workshop",        url: "https://www.historyworkshop.org.uk/feed/" },
   ],
 
   "Arts & Culture": [
@@ -131,6 +131,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Kottke",                 url: "https://feeds.kottke.org/main" },        
     { name: "The Sunday Long Read",   url: "https://sundaylongread.com/feed/" },
     { name: "The Stacks Reader",       url: "https://www.thestacksreader.com/feed/" }, 
+    { name: "Neal Stephenson",         url: "https://nealstephenson.substack.com/feed" },
+    { name: "N + 1 Mag",                 url: "https://www.nplusonemag.com/feed/" },
   ],
 
   "Military": [
@@ -151,8 +153,10 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "NPR Health (Shots)",      url: "https://feeds.npr.org/1128/rss.xml" },
     { name: "The Conversation (Health)", url: "https://theconversation.com/us/health/articles.atom" },
     { name: "Undark",                  url: "https://undark.org/feed/" },
-    { name: "Nautilus",                url: "https://nautil.us/feed/" },
     { name: "Fight Aging",             url: "https://www.fightaging.org/feed" },
+    { name: "STAT (First Opinion)",     url: "https://www.statnews.com/category/first-opinion/feed/" },
+    { name: "Harvard Public Health",    url: "https://harvardpublichealth.org/feed/" },
+    { name: "MIT News (Health)",        url: "https://news.mit.edu/rss/topic/health" },
     
   ],
 
@@ -182,6 +186,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "The Point Magazine",      url: "https://thepointmag.com/feed/" },
     { name: "Daily Jstor",             url: "https://daily.jstor.org/feed/" },
     { name: "Arts & Letters Daily",    url: "https://www.aldaily.com/feed/" },
+    { name: "New Humanist",    url: "https://newhumanist.org.uk/feed/" },
   ],
 
   "Fashion & Style": [
@@ -210,6 +215,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Gretchen Rubin",          url: "https://gretchenrubin.com/feed" },
     { name: "Child & Family Blog",     url: "https://childandfamilyblog.com/feed" },
     { name: "The Positivity Blog",     url: "https://positivityblog.com/feed" },
+    { name: "The Positivity Blog",     url: "https://www.ask-polly.com/feed" },
   ],
 };
 
@@ -280,6 +286,8 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Throughline",                 url: "https://feeds.npr.org/510333/podcast.xml" },
     { name: "American History Tellers",    url: "https://rss.art19.com/american-history-tellers" },
     { name: "Tides of History",            url: "https://rss.art19.com/tides-of-history" },
+    { name: "HistoryExtra Podcast",        url: "https://feeds.megaphone.fm/GLT5697813216"},
+    { name: "History Workshop Podcast",    url: "https://feeds.soundcloud.com/users/soundcloud:users:240847727/sounds.rss"},
   ],
 
   "Arts & Culture": [
