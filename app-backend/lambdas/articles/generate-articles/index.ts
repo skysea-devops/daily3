@@ -4,7 +4,7 @@ import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedroc
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { createHash } from "crypto";
 import { Article, Podcast, DailyArticles, Keys } from "../../../shared/types";
-import { name } from "assert/strict";
+
 
 const dynamo  = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const bedrock = new BedrockRuntimeClient({ region: process.env.AWS_REGION });
@@ -186,7 +186,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "The Point Magazine",      url: "https://thepointmag.com/feed/" },
     { name: "Daily Jstor",             url: "https://daily.jstor.org/feed/" },
     { name: "Arts & Letters Daily",    url: "https://www.aldaily.com/feed/" },
-    { name: "New Humanist",    url: "https://newhumanist.org.uk/feed/" },
+    { name: "New Humanist",            url: "https://newhumanist.org.uk/feed/" },
   ],
 
   "Fashion & Style": [
