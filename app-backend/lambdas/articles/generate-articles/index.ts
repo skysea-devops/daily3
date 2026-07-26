@@ -141,7 +141,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Defense One",             url: "https://www.defenseone.com/rss/all/" },
     { name: "Breaking Defense",        url: "https://breakingdefense.com/feed/" },
     { name: "War History Online",      url: "https://www.warhistoryonline.com/feed/" },
-    { name: "The Diplomat",            url: "https://thediplomat.com/feed/" },
     
   ],
 
