@@ -97,6 +97,7 @@ export interface TrendInterest {
   topTitle:  string;      // haftanın öne çıkan tek makalesi
   topUrl:    string;
   topSource: string;
+  topIsListen?: boolean;  // top pick audio/podcast ise true → "Listen of the week"
 }
 
 export interface WeeklyTrendReport {

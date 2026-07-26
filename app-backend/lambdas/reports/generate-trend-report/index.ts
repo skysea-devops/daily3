@@ -87,7 +87,7 @@ async function synthesize(
   const prompt = `You are the editor of Cogletta's weekly trend report. Below are this week's articles in the category "${interest}".
 
 Your job:
-1. Identify the 2-3 dominant THEMES or storylines of the week in this category — what a well-read person would say "mattered" this week. Each theme is ONE short sentence (max 16 words), specific and concrete (name the actual development, not "various discussions"). Positive/insightful tone; no hype words.
+1. Identify the 2-3 dominant THEMES or storylines of the week in this category — what a well-read person would say "mattered" this week. Write each theme as a short, magazine-style paragraph of 2-3 sentences: say what actually happened, then briefly why it is interesting or what it signals. Be specific and concrete (name the real development, not "various discussions"). Engaging, editorial, insightful tone; no hype words, no clickbait.
 2. Pick the single most important article of the week (topIndex).
 
 Articles:
@@ -106,7 +106,7 @@ Respond ONLY with valid JSON (no markdown):
       accept: "application/json",
       body: JSON.stringify({
         anthropic_version: "bedrock-2023-05-31",
-        max_tokens: 400,
+        max_tokens: 700,
         messages: [{ role: "user", content: prompt }],
       }),
     }));
@@ -140,8 +140,9 @@ function buildEmail(report: WeeklyTrendReport): { html: string; text: string } {
   const blocks = report.interests.map(t => {
     const themes = t.themes.map(th => `
       <li style="margin:0 0 8px 0;font-size:14px;line-height:1.6;color:#374151;">${th}</li>`).join("");
+    const topLabel = t.topIsListen ? "Listen of the week" : "Read of the week";
     const top = t.topUrl ? `
-      <p style="margin:12px 0 0 0;font-size:13px;color:#6b7280;">Read of the week — <a href="${t.topUrl}" style="color:#111827;font-weight:600;text-decoration:none;">${t.topTitle}</a> <span style="color:#9ca3af;">(${t.topSource})</span></p>` : "";
+      <p style="margin:12px 0 0 0;font-size:13px;color:#6b7280;">${topLabel} — <a href="${t.topUrl}" style="color:#111827;font-weight:600;text-decoration:none;">${t.topTitle}</a> <span style="color:#9ca3af;">(${t.topSource})</span></p>` : "";
     return `
       <tr><td style="padding:24px 0;border-top:1px solid #f3f4f6;">
         <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">${t.category}</span>
@@ -170,7 +171,7 @@ function buildEmail(report: WeeklyTrendReport): { html: string; text: string } {
   const text = `Cogletta — Your week in review (${report.weekLabel})\n\n` +
     report.interests.map(t =>
       `${t.category}\n` + t.themes.map(th => `  • ${th}`).join("\n") +
-      (t.topUrl ? `\n  Read of the week: ${t.topTitle} — ${t.topUrl}` : "")
+      (t.topUrl ? `\n  ${t.topIsListen ? "Listen" : "Read"} of the week: ${t.topTitle} — ${t.topUrl}` : "")
     ).join("\n\n") +
     `\n\nCogletta Pro · weekly, every Sunday.`;
 
@@ -199,6 +200,7 @@ export const handler = async (event: TrendEvent): Promise<void> => {
       topTitle:  top?.title ?? "",
       topUrl:    top?.url ?? "",
       topSource: top?.sourceName ?? "",
+      topIsListen: !!top?.duration,
     });
   }
 
