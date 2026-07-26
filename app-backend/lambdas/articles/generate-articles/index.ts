@@ -95,7 +95,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Farnam Street",           url: "https://fs.blog/feed/" },
     { name: "Ness Labs",               url: "https://nesslabs.com/feed" },
     { name: "Psyche (Aeon)",           url: "https://psyche.co/feed" },
-    { name: "LessWrong",               url: "https://www.lesswrong.com/feed.xml" },
     { name: "Cal Newport",             url: "https://calnewport.com/feed/" },
     { name: "Scott H. Young",          url: "https://www.scotthyoung.com/blog/feed/" },
     { name: "Raptitude",               url: "https://www.raptitude.com/feed/" },
@@ -214,7 +213,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Gretchen Rubin",          url: "https://gretchenrubin.com/feed" },
     { name: "Child & Family Blog",     url: "https://childandfamilyblog.com/feed" },
     { name: "The Positivity Blog",     url: "https://positivityblog.com/feed" },
-    { name: "The Positivity Blog",     url: "https://www.ask-polly.com/feed" },
+    { name: "Ask Polly",               url: "https://www.ask-polly.com/feed" },
   ],
 };
 

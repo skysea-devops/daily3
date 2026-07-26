@@ -87,7 +87,7 @@ async function synthesize(
   const prompt = `You are the editor of Cogletta's weekly trend report. Below are this week's articles in the category "${interest}".
 
 Your job:
-1. Identify the 2-3 dominant THEMES or storylines of the week in this category — what a well-read person would say "mattered" this week. Each theme is ONE short sentence (max 16 words), specific and concrete (name the actual development, not "various discussions"). Positive/insightful tone; no hype words.
+1. Identify the 2-3 dominant THEMES or storylines of the week in this category — what a well-read person would say "mattered" this week. Write each theme as a short, magazine-style paragraph of 2-3 sentences: say what actually happened, then briefly why it is interesting or what it signals. Be specific and concrete (name the real development, not "various discussions"). Engaging, editorial, insightful tone; no hype words, no clickbait.
 2. Pick the single most important article of the week (topIndex).
 
 Articles:
@@ -106,7 +106,7 @@ Respond ONLY with valid JSON (no markdown):
       accept: "application/json",
       body: JSON.stringify({
         anthropic_version: "bedrock-2023-05-31",
-        max_tokens: 400,
+        max_tokens: 700,
         messages: [{ role: "user", content: prompt }],
       }),
     }));
