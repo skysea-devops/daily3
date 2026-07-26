@@ -115,7 +115,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Eurozine",                url: "https://www.eurozine.com/feed/" },
     { name: "Engelsberg Ideas",        url: "https://engelsbergideas.com/feed/" },
     { name: "Smithsonian (History)",   url: "https://www.smithsonianmag.com/rss/history/" },  
-    { name: "History Extra",           url: "https://www.historyextra.com/feed/" },
     { name: "History Workshop",        url: "https://www.historyworkshop.org.uk/feed/" },
   ],
 
@@ -287,7 +286,7 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "American History Tellers",    url: "https://rss.art19.com/american-history-tellers" },
     { name: "Tides of History",            url: "https://rss.art19.com/tides-of-history" },
     { name: "HistoryExtra Podcast",        url: "https://feeds.megaphone.fm/GLT5697813216"},
-    { name: "History Workshop Podcast",    url: "https://feeds.soundcloud.com/users/soundcloud:users:240847727/sounds.rss"},
+    
   ],
 
   "Arts & Culture": [
