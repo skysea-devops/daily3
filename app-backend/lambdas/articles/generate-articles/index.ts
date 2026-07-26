@@ -63,6 +63,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Stratechery",             url: "https://stratechery.com/feed/" },
     { name: "Not Boring",              url: "https://www.notboring.co/feed" },
     { name: "Commoncog",               url: "https://commoncog.com/rss/" },
+    { name: "Kellogg Insight",       url: "https://insight.kellogg.northwestern.edu/feed/rss" },
+    { name: "Farnam Street",         url: "https://fs.blog/feed/" },
   ],
 
   "Economics": [
@@ -89,6 +91,9 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Ars Technica Science",    url: "https://feeds.arstechnica.com/arstechnica/science" },
     { name: "Scientific American",     url: "http://rss.sciam.com/ScientificAmerican-Global" },
     { name: "Smithsonian (Science)",   url: "https://www.smithsonianmag.com/rss/science-nature/" },
+    { name: "Nature News",          url: "https://www.nature.com/nature.rss" },
+    { name: "Science Magazine",     url: "https://www.science.org/rss/news_current.xml" },
+    { name: "The Naked Scientists", url: "https://www.thenakedscientists.com/rss.xml" },
   ],
 
   "Productivity": [
@@ -141,6 +146,9 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Defense One",             url: "https://www.defenseone.com/rss/all/" },
     { name: "Breaking Defense",        url: "https://breakingdefense.com/feed/" },
     { name: "War History Online",      url: "https://www.warhistoryonline.com/feed/" },
+    { name: "Defense & Aero Report",   url: "https://defaeroreport.com/feed/" },
+    { name: "Irregular Warfare ",      url: "https://irregularwarfare.org/feed/" },
+    { name: "The Bulwark",             url: "https://www.thebulwark.com/feed/" },
     
   ],
 
@@ -154,6 +162,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "STAT (First Opinion)",     url: "https://www.statnews.com/category/first-opinion/feed/" },
     { name: "Harvard Public Health",    url: "https://harvardpublichealth.org/feed/" },
     { name: "MIT News (Health)",        url: "https://news.mit.edu/rss/topic/health" },
+    { name: "Medical Xpress",             url: "https://medicalxpress.com/rss-feed/" },
+    { name: "STAT News",                  url: "https://www.statnews.com/feed/" },
     
   ],
 
@@ -241,7 +251,9 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
     { name: "From Our Own Correspondent",  url: "https://podcasts.files.bbci.co.uk/b006qjlq.rss" },
     { name: "The Foreign Affairs Interview", url: "https://feed.podbean.com/foreignaffairsmagazine/feed.xml" },
-    { name: "The President's Inbox",       url: "https://feed.podbean.com/thepresidentsinbox/feed.xml" },   // World Politics
+    { name: "The President's Inbox",       url: "https://feed.podbean.com/thepresidentsinbox/feed.xml" }, 
+    { name: "Chatham House",                  url: "https://feeds.soundcloud.com/users/soundcloud:users:13610790/sounds.rss" },
+    { name: "Hold Your Fire!",                url: "https://feeds.acast.com/public/shows/hold-your-fire" },
     
   ],
 
@@ -251,6 +263,9 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Masters of Scale",            url: "https://rss.art19.com/masters-of-scale" },
     { name: "Invest Like the Best",        url: "https://feeds.megaphone.fm/investlikethebest" },
     { name: "The Knowledge Project",       url: "https://fs.blog/knowledge-project-podcast/feed/" },
+    { name: "Acquired",                url: "https://feeds.transistor.fm/acquired" },
+    { name: "a16z Podcast",            url: "https://feeds.simplecast.com/JGE3yC0V" },
+    { name: "MIT Sloan Management Review", url: "https://sloanreview.mit.edu/feed/podcast/" },
   ],
 
   "Economics": [
@@ -259,6 +274,9 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "The Indicator",               url: "https://feeds.npr.org/510325/podcast.xml" },
     { name: "Freakonomics Radio",          url: "https://feeds.simplecast.com/Y8lFbOT4" },
     { name: "Macro Musings",               url: "https://macromusings.libsyn.com/rss" },
+    { name: "Think Like An Economist",     url: "https://feeds.buzzsprout.com/2038780.rss" },
+    { name: "IMF Podcasts",                url: "https://feeds.soundcloud.com/users/soundcloud:users:20527198/sounds.rss" },
+    { name: "Steady State Podcast",        url: "https://feed.podbean.com/steadystate/feed.xml" },
   ],
 
   "Science": [
@@ -267,6 +285,10 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Huberman Lab",                url: "https://feeds.megaphone.fm/hubermanlab" },
     { name: "Radiolab",                    url: "http://feeds.wnyc.org/radiolab" },
     { name: "Lex Fridman Podcast",         url: "https://lexfridman.com/feed/podcast/" },
+    { name: "Science Magazine Podcast",       url: "https://www.science.org/rss/podcast.xml" },
+    { name: "The Naked Scientists",           url: "https://www.thenakedscientists.com/podcast/rss.xml" },
+    { name: "BBC Discovery",                  url: "https://podcasts.files.bbci.co.uk/p002w557.rss" },
+    { name: "This Week in Virology (TWiV)",   url: "https://feeds.microbe.tv/twiv" },
   ],
 
   "Productivity": [
@@ -284,6 +306,10 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "American History Tellers",    url: "https://rss.art19.com/american-history-tellers" },
     { name: "Tides of History",            url: "https://rss.art19.com/tides-of-history" },
     { name: "HistoryExtra Podcast",        url: "https://feeds.megaphone.fm/GLT5697813216"},
+    { name: "You're Dead To Me",                url: "https://podcasts.files.bbci.co.uk/p07mdbhg.rss" },
+    { name: "Witness History (BBC)",            url: "https://podcasts.files.bbci.co.uk/p004t1hd.rss" },
+    { name: "Revolutions",                      url: "https://revolutionspodcast.libsyn.com/rss" },
+    { name: "The History of Rome",              url: "https://historyofrome.libsyn.com/rss" },
     
   ],
 
@@ -293,14 +319,18 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Fresh Air (Arts)",            url: "https://feeds.npr.org/381444908/podcast.xml" },
     { name: "Friday Night Comedy (BBC)",   url: "https://podcasts.files.bbci.co.uk/p02pc9pj.rss" },
     { name: "The Week in Art",             url: "https://feeds.acast.com/public/shows/5e29a2ef7644ff6b3f984cff" },
-    { name: "Articles of Interest",    url: "https://feed.articlesofinterest.club/" },                  // Arts & Culture
+    { name: "Articles of Interest",        url: "https://feed.articlesofinterest.club/" },                  // Arts & Culture
   ],
 
   "Military": [
     { name: "War on the Rocks",            url: "https://rss.libsyn.com/shows/70702/destinations/298196.xml" },
     { name: "Modern War Institute",        url: "https://mwi.westpoint.edu/category/podcasts/feed/" },
     { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
-    { name: "Throughline",                 url: "https://feeds.npr.org/510333/podcast.xml" },
+    { name: "Defense & Aerospace Report", url: "https://feeds.soundcloud.com/users/soundcloud:users:276288852/sounds.rss" },
+    { name: "The Merge",                  url: "https://anchor.fm/s/e448f9d8/podcast/rss" },
+    { name: "Net Assessment",             url: "https://feeds.libsyn.com/477495/rss" },
+    { name: "Irregular Warfare Podcast",  url: "https://feed.podbean.com/irregularwarfare/feed.xml" },
+    
    
   ],
 
@@ -310,6 +340,9 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "In Our Time (Medicine)",      url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
     { name: "Science Friday",              url: "https://feeds.simplecast.com/h18ZIZD_" },
     { name: "The Peter Attia Drive",       url: "https://peterattiadrive.libsyn.com/rss" },
+    { name: "The BMJ Podcast",                url: "https://feeds.bmj.com/bmj/podcast" },
+    { name: "Nutrition Facts",                url: "https://nutritionfacts.org/audio/feed/" },
+    { name: "Sigma Nutrition Radio",          url: "https://sigmanutrition.com/feed/podcast/" },
   ],
 
   "Environment": [
@@ -349,6 +382,7 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
 };
 
 // ─── RSS fetch & parse ────────────────────────────────────────────────────────
+
 
 export interface RSSItem {
   title: string;
