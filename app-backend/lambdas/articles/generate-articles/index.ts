@@ -70,7 +70,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Works in Progress",       url: "https://worksinprogress.co/rss.xml" },
     { name: "Conversable Economist",   url: "https://conversableeconomist.com/feed/" },
     { name: "Marginal Revolution",     url: "https://marginalrevolution.com/feed" },
-    { name: "Project Syndicate",       url: "https://www.project-syndicate.org/rss" },
     { name: "VoxEU (CEPR)",            url: "https://cepr.org/rss/vox-content" },
     { name: "Knowledge at Wharton",    url: "https://knowledge.wharton.upenn.edu/feed/" },
     { name: "Econbrowser",             url: "https://econbrowser.com/feed" },
