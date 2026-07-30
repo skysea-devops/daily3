@@ -85,7 +85,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Aeon",                    url: "https://aeon.co/feed.rss" },
     { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
     { name: "Ars Technica Science",    url: "https://feeds.arstechnica.com/arstechnica/science" },
-    { name: "Scientific American",     url: "http://rss.sciam.com/ScientificAmerican-Global" },
     { name: "Smithsonian (Science)",   url: "https://www.smithsonianmag.com/rss/science-nature/" },
   ],
 
