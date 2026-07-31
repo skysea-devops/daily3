@@ -4,9 +4,9 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://cogletta.com"),
-  title: "Cogletta — Read what matters to you",
+  title: "Cogletta — A simple daily reading habit",
   description:
-    "Every morning, carefully selected articles on the topics you care about. Curated by AI, delivered daily.",
+    "A few hand-picked articles each morning on the topics you choose — an easy daily reading habit, delivered to your inbox.",
   openGraph: {
     siteName: "Cogletta",
     type: "website",
