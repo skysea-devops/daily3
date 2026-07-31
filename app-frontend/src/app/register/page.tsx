@@ -200,7 +200,7 @@ export default function RegisterPage() {
             Join Cogletta
           </span>
           <h1 style={{ fontFamily: "'Lora', serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 600, color: "var(--ink)", marginTop: 16, marginBottom: 16, lineHeight: 1.2 }}>
-            Read what matters to you.
+            A daily reading habit, made simple.
           </h1>
           <p style={{ fontSize: "1.0625rem", color: "var(--ink-soft)", maxWidth: 500, margin: "0 auto", lineHeight: 1.75 }}>
             Every morning, a curated article and a podcast episode selected for your interests — delivered to your inbox before you start your day.
