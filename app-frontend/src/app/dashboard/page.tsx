@@ -44,12 +44,13 @@ function useUnsplashPhoto(article: Article): UnsplashPhoto | null {
     const key = `unsplash:${kw}`;
     const cached = sessionStorage.getItem(key);
     if (cached) { setPhoto(JSON.parse(cached)); return; }
-    fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(kw)}&orientation=landscape&content_filter=high`,
+    fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(kw)}&per_page=1&orientation=landscape&content_filter=high`,
       { headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` } })
       .then(r => r.json()).then(data => {
-        if (data?.urls?.regular) {
-          if (data.links?.download_location) fetch(data.links.download_location, { headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` } }).catch(()=>{});
-          const p = { url: data.urls.regular, authorName: data.user?.name ?? "Unsplash", authorUrl: `${data.user?.links?.html ?? "https://unsplash.com"}?utm_source=cogletta&utm_medium=referral` };
+        const hit = data?.results?.[0];
+        if (hit?.urls?.regular) {
+          if (hit.links?.download_location) fetch(hit.links.download_location, { headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` } }).catch(()=>{});
+          const p = { url: hit.urls.regular, authorName: hit.user?.name ?? "Unsplash", authorUrl: `${hit.user?.links?.html ?? "https://unsplash.com"}?utm_source=cogletta&utm_medium=referral` };
           sessionStorage.setItem(key, JSON.stringify(p));
           setPhoto(p);
         }

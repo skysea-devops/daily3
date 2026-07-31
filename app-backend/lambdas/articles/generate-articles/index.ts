@@ -1059,6 +1059,7 @@ function truncateDescription(description: string, maxLength = 320): string {
 
 interface BedrockSelection {
   selectedIndex: number;
+  imageQuery?: string;
   category: string;
   summary: string;
   reason: string;
@@ -1123,7 +1124,8 @@ Return only valid JSON:
   "category": "<one exact valid interest; empty when -1>",
   "summary": "<3-4 sentences, about 75 words; direct, specific and jargon-free; do not begin 'This article' or use delve/explore/unpack/shed light on>",
   "reason": "<max 18 words; a concrete idea, question, tension or takeaway; no generic relevance or must-read wording>",
-  "readingTime": "<estimate such as '8 min read'>"
+  "readingTime": "<estimate such as '8 min read'>",
+  "imageQuery": "<3-4 concrete VISUAL stock-photo keywords for the article THEME (tangible scene/object/setting). NEVER use acronyms, organization names, place names, people names, or figurative/ambiguous title words. Example: for an essay titled 'I can't bear my sorrows' use 'person walking rain street', NOT 'bear'.>"
 }`;
 
   const command = new InvokeModelCommand({
@@ -1159,6 +1161,7 @@ Return only valid JSON:
       summary: "",
       reason: "",
       readingTime: "~5 min read",
+      imageQuery: "",
     };
   }
 
@@ -1705,6 +1708,7 @@ export async function pickArticle(
         chosen.description ||
         "Click to read the full article.",
       reason: selection.reason,
+      imageQuery: selection.imageQuery,
       url: resolvedUrl,
       source: chosen.sourceName,
       readingTime: selection.readingTime || "~5 min read",
