@@ -49,6 +49,10 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Just Security",           url: "https://www.justsecurity.org/feed/" },
     { name: "ECFR",                    url: "https://ecfr.eu/feed/" },
     { name: "Lowy Interpreter",        url: "https://www.lowyinstitute.org/the-interpreter/rss.xml" },
+    { name: "LSE European Politics and Policy", url: "https://blogs.lse.ac.uk/europpblog/feed/"},
+    { name: "LSE IR Blog",             url: "https://blogs.lse.ac.uk/internationalrelations/feed/" },
+    { name: "World Politics Review",   url: "https://www.worldpoliticsreview.com/feed" },
+    { name: "The Conversation (World)", url: "https://theconversation.com/us/topics/world-politics-25/articles.atom" },
     
   ],
  
@@ -60,6 +64,9 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Stratechery",             url: "https://stratechery.com/feed/" },
     { name: "Not Boring",              url: "https://www.notboring.co/feed" },
     { name: "Commoncog",               url: "https://commoncog.com/rss/" },
+    { name: "Kellogg Insight",         url: "https://insight.kellogg.northwestern.edu/feed/rss" },
+    { name: "Rotman Insights",         url: "https://www.rotman.utoronto.ca/InsightsHub/rss" }, 
+    { name: "AVC",                     url: "https://avc.com/feed/" },
   ],
  
   "Economics": [
@@ -171,10 +178,10 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Legal Planet",            url: "https://legal-planet.org/feed" },
     { name: "Weather West",            url: "https://weatherwest.com/feed" },
     { name: "CleanTechnica",           url: "https://cleantechnica.com/feed" },
-    { name: "My Planet First",           url: "https://myplanetfirst.com/feed" },
-    { name: "World Resources Institute", url: "https://www.wri.org/insights/rss.xml" },
-    { name: "The Nature Conservancy", url: "https://blog.nature.org/feed/" },
-    { name: "The Revelator", url: "https://therevelator.org/feed/" },
+    { name: "My Planet First",         url: "https://myplanetfirst.com/feed" },
+    { name: "World Resources Institute",url: "https://www.wri.org/insights/rss.xml" },
+    { name: "The Nature Conservancy",  url: "https://blog.nature.org/feed/" },
+    { name: "The Revelator",           url: "https://therevelator.org/feed/" },
   ],
  
   "Philosophy & Ethics": [
@@ -246,7 +253,13 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
     { name: "From Our Own Correspondent",  url: "https://podcasts.files.bbci.co.uk/b006qjlq.rss" },
     { name: "The Foreign Affairs Interview", url: "https://feed.podbean.com/foreignaffairsmagazine/feed.xml" },
-    { name: "The President's Inbox",       url: "https://feed.podbean.com/thepresidentsinbox/feed.xml" },   // World Politics
+    { name: "The President's Inbox",       url: "https://feed.podbean.com/thepresidentsinbox/feed.xml" }, 
+    { name: "The President's Inbox",       url: "https://feed.podbean.com/thepresidentsinbox/feed.xml" }, 
+    { name: "Middle East Institute",       url: "https://middleeastinst.libsyn.com/rss" },
+    { name: "The Century Foundation",      url: "https://feed.podbean.com/thecenturyfoundation/feed.xml" },
+    { name: "Simplecast",                  url: "https://feeds.simplecast.com/Ng1Zvnge" },
+    { name: "Independent Thinking (Chatham House)", url: "https://independentthinking.libsyn.com/rss" },
+    { name: "Trend Lines (WPR)",       url: "https://feeds.simplecast.com/2cd8WWLc" },
     
   ],
  
@@ -256,6 +269,8 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Masters of Scale",            url: "https://rss.art19.com/masters-of-scale" },
     { name: "Invest Like the Best",        url: "https://feeds.megaphone.fm/investlikethebest" },
     { name: "The Knowledge Project",       url: "https://fs.blog/knowledge-project-podcast/feed/" },
+    { name: "The Insightful Leader",       url: "https://feeds.libsyn.com/59519/rss"},
+    
   ],
  
   "Economics": [
@@ -320,6 +335,12 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "In Our Time (Medicine)",      url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
     { name: "Science Friday",              url: "https://feeds.simplecast.com/h18ZIZD_" },
     { name: "The Peter Attia Drive",       url: "https://peterattiadrive.libsyn.com/rss" },
+    { name: "Living Better, Living Longer",                   url: "https://rss.libsyn.com/shows/213719/destinations/1546805.xml" },
+    { name: "Health & Veritas",                               url: "https://rss.libsyn.com/shows/371540/destinations/3052370.xml" },
+    { name: "Yale Cancer Answers",                            url: "https://medicine.yale.edu/cancer/podcast/feed.xml" },
+    { name: "Speaking of Science",                            url: "https://rss.libsyn.com/shows/95491/destinations/488242.xml" },
+    { name: "Cleveland Clinic Health Essentials Podcast",     url: "https://feeds.megaphone.fm/IAIIL7971610262" },
+    { name: "McGill Podcasts: Science & Technology",          url: "https://feeds.feedburner.com/McGillUniversity-ScienceTechnologyPod" },
   ],
  
   "Environment": [
