@@ -36,7 +36,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Eurozine",                url: "https://www.eurozine.com/feed/" },
     { name: "Works in Progress",       url: "https://worksinprogress.co/rss.xml" },
     { name: "Rest of World",           url: "https://restofworld.org/feed/" },
-    { name: "Wired",                   url: "https://www.wired.com/feed/rss" },
     { name: "404 Media",               url: "https://www.404media.co/rss/" },
     { name: "Sentiers",               url: "https://sentiers.media/feed/" },         // [VERIFY] teknoloji/gelecek üzerine haftalık düşünsel küratörlük
     { name: "Why is this interesting?", url: "https://whyisthisinteresting.substack.com/feed" }, // günlük deneme + seçilmiş linkler
@@ -276,7 +275,6 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
 
   "History": [
-    { name: "Hardcore History",            url: "https://feeds.feedburner.com/dancarlin/history" },
     { name: "In Our Time",                 url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
     { name: "Throughline",                 url: "https://feeds.npr.org/510333/podcast.xml" },
     { name: "American History Tellers",    url: "https://rss.art19.com/american-history-tellers" },
