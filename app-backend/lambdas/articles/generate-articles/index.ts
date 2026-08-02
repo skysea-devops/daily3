@@ -51,7 +51,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Lowy Interpreter",        url: "https://www.lowyinstitute.org/the-interpreter/rss.xml" },
     { name: "LSE European Politics and Policy", url: "https://blogs.lse.ac.uk/europpblog/feed/"},
     { name: "LSE IR Blog",             url: "https://blogs.lse.ac.uk/internationalrelations/feed/" },
-    { name: "World Politics Review",   url: "https://www.worldpoliticsreview.com/feed" },
     { name: "The Conversation (World)", url: "https://theconversation.com/us/topics/world-politics-25/articles.atom" },
     
   ],
