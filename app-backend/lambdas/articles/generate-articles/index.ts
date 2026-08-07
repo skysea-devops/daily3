@@ -116,7 +116,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Lapham's Quarterly",      url: "https://www.laphamsquarterly.org/rss.xml" },
     { name: "The Public Domain Review", url: "https://publicdomainreview.org/rss.xml" },
     { name: "Eurozine",                url: "https://www.eurozine.com/feed/" },
-    { name: "Engelsberg Ideas",        url: "https://engelsbergideas.com/feed/" },
+
     { name: "Smithsonian (History)",   url: "https://www.smithsonianmag.com/rss/history/" },  
     { name: "History Workshop",        url: "https://www.historyworkshop.org.uk/feed/" },
     { name: "Columbia University Press", url: "https://cupblog.org/feed/" },
@@ -224,6 +224,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Gretchen Rubin",          url: "https://gretchenrubin.com/feed" },
     { name: "The Positivity Blog",     url: "https://positivityblog.com/feed" },
     { name: "The Positivity Blog",     url: "https://www.ask-polly.com/feed" },
+    { name: "Engelsberg Ideas",        url: "https://engelsbergideas.com/feed/" },
   ],
 };
  
@@ -234,7 +235,6 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
   "Software & DevOps": [
     { name: "Software Engineering Daily",  url: "https://softwareengineeringdaily.com/feed/podcast/" },
     { name: "The Changelog",               url: "https://changelog.com/podcast/feed" },
-    { name: "Darknet Diaries",             url: "https://feeds.megaphone.fm/darknetdiaries" },
     { name: "Hanselminutes",               url: "https://feeds.simplecast.com/gvtxUiIf" },
     { name: "CoRecursive",                 url: "https://corecursive.com/feed" },
   ],
@@ -291,10 +291,9 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
  
   "Productivity": [
-    { name: "Huberman Lab",                url: "https://feeds.megaphone.fm/hubermanlab" },
+   
     { name: "Hidden Brain",                url: "https://feeds.npr.org/510308/podcast.xml" },
     { name: "The Tim Ferriss Show",        url: "https://rss.art19.com/tim-ferriss-show" },
-    { name: "The Knowledge Project",       url: "https://fs.blog/knowledge-project-podcast/feed/" },
     { name: "Fresh Air",                   url: "https://feeds.npr.org/381444908/podcast.xml" },
   ],
  
