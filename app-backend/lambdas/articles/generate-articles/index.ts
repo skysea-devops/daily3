@@ -140,7 +140,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
  
   "Military": [
-    { name: "War on the Rocks",        url: "https://warontherocks.com/feed/" },
+    
     { name: "Modern War Institute",    url: "https://mwi.westpoint.edu/feed/" },
     { name: "Inkstick Media",          url: "https://inkstickmedia.com/feed/" },
     { name: "Atlantic Council",        url: "https://www.atlanticcouncil.org/feed/" },
@@ -328,7 +328,6 @@ const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
   ],
  
   "Health": [
-    { name: "Huberman Lab",                url: "https://feeds.megaphone.fm/hubermanlab" },
     { name: "Hidden Brain",                url: "https://feeds.npr.org/510308/podcast.xml" },
     { name: "In Our Time (Medicine)",      url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
     { name: "Science Friday",              url: "https://feeds.simplecast.com/h18ZIZD_" },
