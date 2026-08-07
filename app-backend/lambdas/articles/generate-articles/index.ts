@@ -46,8 +46,9 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Works in Progress",       url: "https://worksinprogress.co/rss.xml" },
     { name: "Rest of World",           url: "https://restofworld.org/feed/latest/" },
     { name: "404 Media",               url: "https://www.404media.co/rss/" },
-    // Removed 2026-08-07: Sentiers (19g araliklarla yayin; ayrica link-kuratorlugu formati).
     { name: "Why is this interesting?", url: "https://whyisthisinteresting.substack.com/feed" },
+    // Removed 2026-08-07: Sentiers (19 gunluk araliklarla yayin; ayrica
+    // link-kuratorlugu formati, havuz promptunun link-post kuralina takiliyor).
   ],
  
   "World Politics": [
@@ -58,12 +59,15 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Lowy Interpreter",        url: "https://www.lowyinstitute.org/the-interpreter/rss.xml" },
     { name: "LSE European Politics and Policy", url: "https://blogs.lse.ac.uk/europpblog/feed/"},
     { name: "LSE IR Blog",             url: "https://blogs.lse.ac.uk/internationalrelations/feed/" },
-    // Was /topics/world-politics-25/ — id 25 now resolves to "fire", so the feed
-    // had been serving wildfire coverage into World Politics. Section feed instead.
     { name: "The Conversation (Politics)", url: "https://theconversation.com/us/politics/articles.atom" },
+    { name: "The Diplomat",            url: "https://thediplomat.com/feed/" },
+    { name: "Engelsberg Ideas",        url: "https://engelsbergideas.com/feed/" },
     // Removed 2026-08-07: Le Monde Diplomatique ve Foreign Policy — --deep
     // taramasinda 3/3 ornek makale "sign in to read" / "already a subscriber"
     // duvarinda cikti. Ikisi de PAYWALLED_DOMAINS'e eklendi.
+    // Removed 2026-08-07: E-International Relations — FEED'in kendisi HTTP 403
+    // dondu (0 item). Bu, makale sayfasi bot korumasindan farkli: Lambda ayni
+    // User-Agent'i kullandigi icin prod'da da hicbir sey alamaz.
   ],
  
   "Business": [
@@ -74,6 +78,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Stratechery",             url: "https://stratechery.com/feed/" },
     { name: "Commoncog",               url: "https://commoncog.com/rss/" },
     { name: "Kellogg Insight",         url: "https://insight.kellogg.northwestern.edu/feed/rss" },
+    { name: "HBS Working Knowledge",   url: "https://hbswk.hbs.edu/rss/rss.xml" },
+    { name: "Rest of World",           url: "https://restofworld.org/feed/latest/" },
     // Removed 2026-08-07: Rotman Insights (url served HTML, not a feed),
     // AVC (827d), Not Boring (--deep: 3/3 ornek "keep reading with a" duvarinda).
   ],
@@ -101,7 +107,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Ars Technica Science",    url: "https://feeds.arstechnica.com/arstechnica/science" },
     { name: "Smithsonian (Science)",   url: "https://www.smithsonianmag.com/rss/science-nature/" },
     { name: "Physics World",           url: "https://physicsworld.com/feed/" },
-    // Was /topics/science-39/ — id 39 now resolves to "transport".
+    // Was /topics/science-39/ — id 39 now resolves to "transport". The US
+    // section for science is published under /us/technology/ ("Science + Tech").
     { name: "The Conversation (Science)", url: "https://theconversation.com/us/technology/articles.atom" },
     { name: "Science News",            url: "https://www.sciencenews.org/feed" },
   ],
@@ -113,8 +120,10 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Scott H. Young",          url: "https://www.scotthyoung.com/blog/feed/" },
     { name: "Raptitude",               url: "https://www.raptitude.com/feed/" },
     { name: "Happier Human",           url: "https://www.happierhuman.com/feed/" },
+    { name: "Behavioral Scientist",    url: "https://behavioralscientist.org/feed/" },
+    { name: "Kellogg Insight",         url: "https://insight.kellogg.northwestern.edu/feed/rss" },
     // Removed 2026-08-07: Wait But Why (255d), Sources of Insight (132d),
-    // Productivityist (redirects to mikevardy.com, 93d), Steve Pavlina (66d),
+    // Productivityist (mikevardy.com'a tasinmis, 93d), Steve Pavlina (66d),
     // Ness Labs (57d — 45 gunluk pencereye de sigmiyor).
   ],
  
@@ -155,6 +164,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Defense One",             url: "https://www.defenseone.com/rss/all/" },
     { name: "Breaking Defense",        url: "https://breakingdefense.com/feed/" },
     { name: "The Diplomat",            url: "https://thediplomat.com/feed/" },
+    { name: "The Strategist (ASPI)",   url: "https://www.aspistrategist.org.au/feed/" },
+    { name: "CIMSEC",                  url: "https://cimsec.org/feed/" },
     // Removed 2026-08-07: The Strategy Bridge (942d), War History Online (28d,
     // ayrica populer-tarih icerik ciftligi kalitesinde).
   ],
@@ -204,6 +215,10 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     // Removed 2026-08-07: Blog of the APA (url served HTML, not a feed).
   ],
  
+  // Kitle dengesi: bu kategoride menswear ve womenswear kaynak sayisi kabaca
+  // esit tutulur. Havuz promptundaki audience-balance kurali ancak her iki
+  // taraftan da yeterli aday geldiginde ise yarar (2026-07-15: 3 gun ust uste
+  // erkek giyimi vakasi). Su an 3 menswear / 4 womenswear / 2 sektor-notr.
   "Fashion & Style": [
     { name: "Business of Fashion",     url: "https://www.businessoffashion.com/arc/outboundfeeds/rss/?outputType=xml" },
     { name: "Dazed (Fashion)",         url: "https://www.dazeddigital.com/rss" },
@@ -212,8 +227,11 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Who What Wear",           url: "https://www.whowhatwear.com/feeds.xml" },
     { name: "Permanent Style",         url: "https://www.permanentstyle.com/feed" },
     { name: "Corporette",              url: "https://corporette.com/feed/" },
-    // Removed 2026-08-07: Advanced Style (435d), Blackbird Spyplane
-    // (--deep: 2/3 ornek "this post is for paid subscribers").
+    { name: "Heddels",                 url: "https://heddels.com/feed" },
+    { name: "Fashionista",             url: "https://fashionista.com/.rss/feed/28e21eb8-20ac-4617-a448-e845081591ca.xml" },
+    // Removed 2026-08-07: Advanced Style (435d), Blackbird Spyplane (--deep:
+    // 2/3 ornek "this post is for paid subscribers"), Die, Workwear! (feed
+    // gecerli ama en taze yazi 252 gunluk — yazar sosyal medyaya tasinmis).
   ],
  
   "Life & Relationships": [
@@ -228,8 +246,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Gretchen Rubin",          url: "https://gretchenrubin.com/feed/" },
     { name: "The Positivity Blog",     url: "https://www.positivityblog.com/feed/" },
     { name: "Ask Polly",               url: "https://www.ask-polly.com/feed" },
-    { name: "Engelsberg Ideas",        url: "https://engelsbergideas.com/feed/" },
-    // Removed 2026-08-07: Mark Manson (224d), Ness Labs (57d).
+    // Removed 2026-08-07: Mark Manson (224d), Ness Labs (57d), Engelsberg Ideas
+    // (jeopolitik/tarih denemeleri yayinliyor — World Politics'e tasindi).
   ],
 };
  
@@ -298,6 +316,8 @@ export const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = 
     { name: "Hidden Brain",                url: "https://feeds.simplecast.com/kwWc0lhf" },
     { name: "The Tim Ferriss Show",        url: "https://rss.art19.com/tim-ferriss-show" },
     { name: "Fresh Air",                   url: "https://feeds.npr.org/381444908/podcast.xml" },
+    { name: "Deep Questions with Cal Newport", url: "https://feeds.megaphone.fm/BVLLC6571400024" },
+    { name: "The Knowledge Project",       url: "https://fs.blog/knowledge-project-podcast/feed/" },
   ],
  
   "History": [
@@ -324,7 +344,157 @@ export const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = 
     { name: "War on the Rocks",            url: "https://rss.libsyn.com/shows/70702/destinations/298196.xml" },
     { name: "Modern War Institute",        url: "https://mwi.westpoint.edu/category/podcasts/feed/" },
     { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
+    { name: "Horns of a Dilemma",          url: "https://rss.libsyn.com/shows/116143/destinations/662418.xml" },
     // Removed 2026-08-07: RUSI Podcast (144d), The Strategy Bridge Podcast (136d).
+  ],
+ 
+  "Health": [
+    { name: "Hidden Brain",                url: "https://feeds.simplecast.com/kwWc0lhf" },
+    { name: "In Our Time",                 url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
+    { name: "Science Friday",              url: "https://feeds.simplecast.com/h18ZIZD_" },
+    { name: "The Peter Attia Drive",       url: "https://rss.libsyn.com/shows/121729/destinations/713489.xml" },
+    { name: "Health & Veritas",            url: "https://rss.libsyn.com/shows/371540/destinations/3052370.xml" },
+    { name: "Yale Cancer Answers",         url: "https://medicine.yale.edu/cancer/podcast/feed.xml" },
+    { name: "Cleveland Clinic Health Essentials Podcast", url: "https://feeds.megaphone.fm/IAIIL7971610262" },
+    // Removed 2026-08-07: Living Better Living Longer (235d), Speaking of
+    // Science (235d), McGill Podcasts (3825d).
+  ],
+ 
+  "Environment": [
+    { name: "Volts",                       url: "https://www.volts.wtf/feed" },
+    { name: "Outside/In",                  url: "https://rss.introcast.io/1061222770/feeds.megaphone.fm/TPG9719828981" },
+    { name: "Emergence Magazine",          url: "https://feeds.captivate.fm/emergence-magazine/" },
+    { name: "The Climate Question (BBC)",  url: "https://podcasts.files.bbci.co.uk/w13xtvb6.rss" },
+    { name: "Mongabay Newscast",           url: "https://rss.libsyn.com/shows/87224/destinations/424646.xml" },
+    { name: "Stockholm Environment Institute Podcast", url: "https://anchor.fm/s/fef3bdcc/podcast/rss" },
+    // Removed 2026-08-07: The Nature Conservancy Podcast (2892d), World
+    // Resources Institute Podcast (526d).
+  ],
+ 
+  "Philosophy & Ethics": [
+    { name: "In Our Time",                 url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
+    { name: "Philosophize This!",          url: "https://feeds.feedburner.com/philosophizethis" },
+    { name: "The Partially Examined Life", url: "https://rss.libsyn.com/shows/19421/destinations/16399.xml" },
+    { name: "Hidden Brain",                url: "https://feeds.simplecast.com/kwWc0lhf" },
+    { name: "Philosophy Bites",            url: "https://rss.libsyn.com/shows/18828/destinations/14010.xml" },
+    { name: "Mindscape",                   url: "https://rss.libsyn.com/shows/604590/destinations/5264190.xml" },
+    { name: "The Gray Area",               url: "https://feeds.megaphone.fm/VMP5705694065" },
+    { name: "Off the Page (Columbia UP)",  url: "https://feeds.megaphone.fm/NBN2998548382" },
+    // Removed 2026-08-07: The Oxford Comment (last episode ~983 days old).
+  ],
+ 
+  "Fashion & Style": [
+    { name: "99% Invisible",               url: "https://feeds.simplecast.com/BqbsxVfO" },
+    { name: "The BoF Podcast",             url: "https://feeds.acast.com/public/shows/6355d904dd5e0e0012da88d1" },
+    { name: "The Glossy Podcast",          url: "https://feeds.megaphone.fm/DIGI4036367252" },
+    { name: "Articles of Interest",        url: "https://feed.articlesofinterest.club/" },
+    { name: "Dressed: History of Fashion", url: "https://feeds.megaphone.fm/ARML9655034287" },
+  ],
+ 
+  "Life & Relationships": [
+    { name: "Hidden Brain",                url: "https://feeds.simplecast.com/kwWc0lhf" },
+    { name: "Fresh Air",                   url: "https://feeds.npr.org/381444908/podcast.xml" },
+    { name: "Where Should We Begin?",      url: "https://feeds.megaphone.fm/ep-wswb" },
+    { name: "The Happiness Lab",           url: "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/96c5c41e-0bc8-4661-b184-ae32006cd726/d623ef0b-3fee-4c26-b815-ae32006cd739/podcast.rss" },
+    { name: "The Science of Happiness",    url: "http://feeds.feedburner.com/TheScienceOfHappiness" },
+    { name: "Off the Page (Columbia UP)",  url: "https://feeds.megaphone.fm/NBN2998548382" },
+  ],
+};
+ 
+// ─── RSS fetch & parse ────────────────────────────────────────────────────────
+ 
+export const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
+ 
+  "Software & DevOps": [
+    { name: "Software Engineering Daily",  url: "https://softwareengineeringdaily.com/feed/podcast/" },
+    { name: "The Changelog",               url: "https://changelog.com/podcast/feed" },
+    { name: "Hanselminutes",               url: "https://feeds.simplecast.com/gvtxUiIf" },
+    { name: "CoRecursive",                 url: "https://rss.libsyn.com/shows/112428/destinations/628353.xml" },
+  ],
+ 
+  "Technology": [
+    { name: "Lex Fridman Podcast",         url: "https://lexfridman.com/feed/podcast/" },
+    { name: "Hard Fork",                   url: "https://feeds.simplecast.com/l2i9YnTd" },
+    { name: "StarTalk Radio",              url: "https://feeds.simplecast.com/4T39_jAj" },
+    { name: "Acquired",                    url: "https://feeds.transistor.fm/acquired" },
+    { name: "Search Engine",               url: "https://rss.amperwave.net/v2/feed/audacynetwork/search-engine" },
+  ],
+ 
+  "World Politics": [
+    { name: "War on the Rocks",            url: "https://rss.libsyn.com/shows/70702/destinations/298196.xml" },
+    { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
+    { name: "From Our Own Correspondent",  url: "https://podcasts.files.bbci.co.uk/b006qjlq.rss" },
+    { name: "The Foreign Affairs Interview", url: "https://feed.podbean.com/foreignaffairsmagazine/feed.xml" },
+    { name: "The President's Inbox",       url: "https://feed.podbean.com/thepresidentsinbox/feed.xml" },
+    { name: "Middle East Institute",       url: "https://rss.libsyn.com/shows/100837/destinations/531685.xml" },
+    { name: "The Century Foundation",      url: "https://feed.podbean.com/thecenturyfoundation/feed.xml" },
+    { name: "Independent Thinking (Chatham House)", url: "https://rss.libsyn.com/shows/248171/destinations/1866551.xml" },
+    { name: "Trend Lines (WPR)",           url: "https://feeds.simplecast.com/2cd8WWLc" },
+    // Removed 2026-08-07: duplicate "The President's Inbox" entry, and the
+    // unnamed "Simplecast" feed (Ng1Zvnge — last episode ~1928 days old, and the
+    // placeholder name would have been shown to users as the source).
+  ],
+ 
+  "Business": [
+    { name: "The Tim Ferriss Show",        url: "https://rss.art19.com/tim-ferriss-show" },
+    { name: "How I Built This",            url: "https://rss.art19.com/how-i-built-this" },
+    { name: "Masters of Scale",            url: "https://rss.art19.com/masters-of-scale" },
+    { name: "Invest Like the Best",        url: "https://feeds.megaphone.fm/investlikethebest" },
+    { name: "The Knowledge Project",       url: "https://fs.blog/knowledge-project-podcast/feed/" },
+    { name: "The Insightful Leader",       url: "https://rss.libsyn.com/shows/59519/destinations/228034.xml" },
+  ],
+ 
+  "Economics": [
+    { name: "Planet Money",                url: "https://feeds.npr.org/510289/podcast.xml" },
+    { name: "EconTalk",                    url: "https://feeds.simplecast.com/wgl4xEgL" },
+    { name: "The Indicator",               url: "https://feeds.npr.org/510325/podcast.xml" },
+    { name: "Freakonomics Radio",          url: "https://feeds.simplecast.com/Y8lFbOT4" },
+    { name: "Macro Musings",               url: "https://rss.libsyn.com/shows/138806/destinations/865793.xml" },
+  ],
+ 
+  "Science": [
+    { name: "In Our Time",                 url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
+    { name: "Science Friday",              url: "https://feeds.simplecast.com/h18ZIZD_" },
+    { name: "Huberman Lab",                url: "https://feeds.megaphone.fm/hubermanlab" },
+    { name: "Radiolab",                    url: "https://feeds.simplecast.com/EmVW7VGp" },
+    { name: "Lex Fridman Podcast",         url: "https://lexfridman.com/feed/podcast/" },
+    { name: "New Scientist Podcast",       url: "https://feeds.megaphone.fm/ARML6831509338" },
+    { name: "Physics World Weekly",        url: "https://physicsworld.com/feed/podcast-weekly/" },
+  ],
+ 
+  "Productivity": [
+    { name: "Hidden Brain",                url: "https://feeds.simplecast.com/kwWc0lhf" },
+    { name: "The Tim Ferriss Show",        url: "https://rss.art19.com/tim-ferriss-show" },
+    { name: "Fresh Air",                   url: "https://feeds.npr.org/381444908/podcast.xml" },
+    { name: "Deep Questions with Cal Newport", url: "https://feeds.megaphone.fm/BVLLC6571400024" },
+    { name: "The Knowledge Project",           url: "https://fs.blog/knowledge-project-podcast/feed/" },
+  ],
+ 
+  "History": [
+    { name: "In Our Time",                 url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
+    { name: "Throughline",                 url: "https://feeds.npr.org/510333/podcast.xml" },
+    { name: "American History Tellers",    url: "https://rss.art19.com/american-history-tellers" },
+    { name: "Tides of History",            url: "https://rss.art19.com/tides-of-history" },
+    { name: "HistoryExtra Podcast",        url: "https://feeds.megaphone.fm/GLT5697813216" },
+    { name: "Off the Page (Columbia UP)",  url: "https://feeds.megaphone.fm/NBN2998548382" },
+  ],
+ 
+  "Arts & Culture": [
+    { name: "Switched on Pop",             url: "https://feeds.megaphone.fm/switchedonpop" },
+    { name: "99% Invisible",               url: "https://feeds.simplecast.com/BqbsxVfO" },
+    { name: "Fresh Air",                   url: "https://feeds.npr.org/381444908/podcast.xml" },
+    { name: "Friday Night Comedy (BBC)",   url: "https://podcasts.files.bbci.co.uk/p02pc9pj.rss" },
+    { name: "The Week in Art",             url: "https://feeds.acast.com/public/shows/5e29a2ef7644ff6b3f984cff" },
+    { name: "Articles of Interest",        url: "https://feed.articlesofinterest.club/" },
+    { name: "Off the Page (Columbia UP)",  url: "https://feeds.megaphone.fm/NBN2998548382" },
+    // Removed 2026-08-07: The Oxford Comment (last episode ~983 days old).
+  ],
+ 
+  "Military": [
+    { name: "War on the Rocks",            url: "https://rss.libsyn.com/shows/70702/destinations/298196.xml" },
+    { name: "Modern War Institute",        url: "https://mwi.westpoint.edu/category/podcasts/feed/" },
+    { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
+    { name: "Horns of a Dilemma",      url: "https://hornsofadilemma.libsyn.com/rss" },
   ],
  
   "Health": [
