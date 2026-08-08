@@ -50,8 +50,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Rest of World",           url: "https://restofworld.org/feed/latest/" },
     { name: "404 Media",               url: "https://www.404media.co/rss/" },
     { name: "Why is this interesting?", url: "https://whyisthisinteresting.substack.com/feed" },
-    // Removed 2026-08-07: Sentiers (19 gunluk araliklarla yayin; ayrica
-    // link-kuratorlugu formati, havuz promptunun link-post kuralina takiliyor).
+    { name: "Securities",              url: "https://www.readsecurities.com/feed" },
   ],
  
   "World Politics": [
@@ -77,8 +76,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Kellogg Insight",         url: "https://insight.kellogg.northwestern.edu/feed/rss" },
     { name: "HBS Working Knowledge",   url: "https://hbswk.hbs.edu/rss/rss.xml" },
     { name: "Rest of World",           url: "https://restofworld.org/feed/latest/" },
-    // Removed 2026-08-07: Rotman Insights (url served HTML, not a feed),
-    // AVC (827d), Not Boring (--deep: 3/3 ornek "keep reading with a" duvarinda).
+    
   ],
  
   "Economics": [
@@ -92,7 +90,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Econbrowser",             url: "https://econbrowser.com/feed" },
     { name: "FRED Blog",               url: "https://fredblog.stlouisfed.org/feed/" },
     { name: "The Big Picture",         url: "https://ritholtz.com/feed/" },
-    // Removed 2026-08-07: Chris Blattman (last post ~1327 days old).
+    
   ],
  
   "Science": [
@@ -134,6 +132,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Smithsonian (History)",   url: "https://www.smithsonianmag.com/rss/history/" },
     { name: "History Workshop",        url: "https://www.historyworkshop.org.uk/feed/" },
     { name: "Columbia University Press", url: "https://cupblog.org/feed/" },
+    { name: "Medieval Histories",      url: "https://www.medieval.eu/feed/" },
   ],
  
   "Arts & Culture": [
@@ -364,8 +363,7 @@ export const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = 
     { name: "The Climate Question (BBC)",  url: "https://podcasts.files.bbci.co.uk/w13xtvb6.rss" },
     { name: "Mongabay Newscast",           url: "https://rss.libsyn.com/shows/87224/destinations/424646.xml" },
     { name: "Stockholm Environment Institute Podcast", url: "https://anchor.fm/s/fef3bdcc/podcast/rss" },
-    // Removed 2026-08-07: The Nature Conservancy Podcast (2892d), World
-    // Resources Institute Podcast (526d).
+   
   ],
  
   "Philosophy & Ethics": [
@@ -377,7 +375,7 @@ export const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = 
     { name: "Mindscape",                   url: "https://rss.libsyn.com/shows/604590/destinations/5264190.xml" },
     { name: "The Gray Area",               url: "https://feeds.megaphone.fm/VMP5705694065" },
     { name: "Off the Page (Columbia UP)",  url: "https://feeds.megaphone.fm/NBN2998548382" },
-    // Removed 2026-08-07: The Oxford Comment (last episode ~983 days old).
+   
   ],
  
   "Fashion & Style": [
