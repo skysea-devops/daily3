@@ -63,14 +63,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "LSE European Politics and Policy", url: "https://blogs.lse.ac.uk/europpblog/feed/"},
     { name: "LSE IR Blog",             url: "https://blogs.lse.ac.uk/internationalrelations/feed/" },
     { name: "The Conversation (Politics)", url: "https://theconversation.com/us/politics/articles.atom" },
-    { name: "The Diplomat",            url: "https://thediplomat.com/feed/" },
     { name: "Engelsberg Ideas",        url: "https://engelsbergideas.com/feed/" },
-    // Removed 2026-08-07: Le Monde Diplomatique ve Foreign Policy — --deep
-    // taramasinda 3/3 ornek makale "sign in to read" / "already a subscriber"
-    // duvarinda cikti. Ikisi de PAYWALLED_DOMAINS'e eklendi.
-    // Removed 2026-08-07: E-International Relations — FEED'in kendisi HTTP 403
-    // dondu (0 item). Bu, makale sayfasi bot korumasindan farkli: Lambda ayni
-    // User-Agent'i kullandigi icin prod'da da hicbir sey alamaz.
+  
   ],
  
   "Business": [
