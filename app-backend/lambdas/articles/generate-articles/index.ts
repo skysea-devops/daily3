@@ -87,7 +87,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Marginal Revolution",     url: "https://marginalrevolution.com/feed" },
     { name: "VoxEU (CEPR)",            url: "https://cepr.org/rss/vox-content" },
     { name: "Knowledge at Wharton",    url: "https://knowledge.wharton.upenn.edu/feed/" },
-    { name: "Econbrowser",             url: "https://econbrowser.com/feed" },
     { name: "FRED Blog",               url: "https://fredblog.stlouisfed.org/feed/" },
     { name: "The Big Picture",         url: "https://ritholtz.com/feed/" },
     
