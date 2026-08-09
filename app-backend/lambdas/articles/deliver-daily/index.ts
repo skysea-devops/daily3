@@ -338,7 +338,8 @@ export const handler = async (event: DeliverEvent): Promise<void> => {
       try {
         await sendDailyEmail(userEmail, articles, podcasts);
       } catch (err) {
-        console.error("Failed to send email notification:", err);
+        // EMAIL_SEND_FAILED: CloudWatch metric filter bu ifadeye baglanabilir.
+        console.error(`EMAIL_SEND_FAILED user=${userId} reason=${(err as Error)?.name ?? "unknown"}`, err);
       }
     } else {
       console.warn(`No email found for user=${userId}, skipping notification`);

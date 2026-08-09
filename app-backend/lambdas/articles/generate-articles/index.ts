@@ -16,7 +16,15 @@ import {
 
 const dynamo  = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const bedrock = new BedrockRuntimeClient({ region: process.env.AWS_REGION });
-const ses     = new SESClient({ region: process.env.AWS_REGION });
+// retryMode "adaptive": SDK'nin client-side rate limiter'i devreye girer —
+// Throttling alindiginda gonderim hizini kendi kendine dusurur. Varsayilan
+// "standard" mod sadece 3 kez hizlica yeniden dener ve surekli asim halinde
+// yetmez. SES Frankfurt limiti: 14 gonderim/saniye.
+const ses     = new SESClient({
+  region: process.env.AWS_REGION,
+  maxAttempts: 5,
+  retryMode: "adaptive",
+});
 
 const ARTICLES_TABLE   = process.env.ARTICLES_TABLE_NAME!;
 const USERS_TABLE      = process.env.USERS_TABLE_NAME!;
@@ -1945,7 +1953,9 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
       try {
         await sendDailyEmail(userEmail, articles, podcasts);
       } catch (err) {
-        console.error("Failed to send email notification:", err);
+        // EMAIL_SEND_FAILED: CloudWatch metric filter bu ifadeye baglanabilir.
+        // Gonderim sessizce kaybolmamali — SES throttling'i burada goruntur.
+        console.error(`EMAIL_SEND_FAILED user=${userId} reason=${(err as Error)?.name ?? "unknown"}`, err);
       }
     } else {
       console.warn(`No email found for user=${userId}, skipping notification`);

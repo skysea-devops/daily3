@@ -111,11 +111,23 @@ async function ensureCategoryPicks(categories: string[], activeSubTopicsByCatego
 
 // ─── Faz B: fan-out ───────────────────────────────────────────────────────────
 
+// SES gonderim hizi tavani: Frankfurt'ta 14 e-posta/saniye.
+//
+// Fan-out "Event" invoke oldugu icin tetiklenen her Lambda hemen basliyor ve
+// sonunda bir SES cagrisi yapiyor — yani e-posta hizi, dagitim hizini takip
+// ediyor. Onceki ayar (10 invoke / 500ms) saniyede 20 gonderim demekti ve tek
+// batch'i asan her calistirmada SES limitini asiyordu. Asim sessizdi: throttling
+// hatasi deliver-daily icinde yakalanip loglaniyor, kullanici mail almiyordu.
+//
+// 10 invoke / 1000ms = saniyede 10 gonderim; 14'un altinda emniyet payi birakir.
+// Limit artarsa (SES konsolundan quota yukseltilirse) BATCH_SIZE degil,
+// BATCH_DELAY_MS asagi cekilmelidir.
+const BATCH_SIZE     = 10;
+const BATCH_DELAY_MS = 1000;
+
 async function fanOut(
   invocations: { functionName: string; payload: Record<string, unknown>; label: string }[]
 ): Promise<void> {
-  const BATCH_SIZE = 10;
-
   for (let i = 0; i < invocations.length; i += BATCH_SIZE) {
     const batch = invocations.slice(i, i + BATCH_SIZE);
 
@@ -135,9 +147,8 @@ async function fanOut(
       )
     );
 
-    // Batch'ler arası 500ms bekle
     if (i + BATCH_SIZE < invocations.length) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
     }
   }
 }
