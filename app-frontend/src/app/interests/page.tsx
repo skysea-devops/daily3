@@ -7,6 +7,7 @@ import { updateUserInterests } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import { CATEGORIES, SUB_TOPICS } from "@/lib/constants";
+import { isCategoryId } from "@/lib/categories";
 
 // ─── Saat dilimi → gönderim bölgesi ───────────────────────────────────────────
 // Kullanıcının tarayıcı saat dilimini 4 kovadan birine eşler. Backend her bölge
@@ -219,9 +220,12 @@ function InterestsForm() {
       try {
         const { getUserProfile } = await import("@/lib/api");
         const profile = await getUserProfile(user!.accessToken);
-        if (profile.interests && profile.interests.length >= 1) {
-          setSelected(profile.interests);
-          localStorage.setItem("cogletta-categories", JSON.stringify(profile.interests));
+        // Taninmayan kategori ID'lerini ele: aksi halde secili gorunmeyen ama
+        // sayima dahil olan degerler "3 kategori sec" kontrolunu kilitler.
+        const valid = (profile.interests ?? []).filter(isCategoryId);
+        if (valid.length >= 1) {
+          setSelected(valid);
+          localStorage.setItem("cogletta-categories", JSON.stringify(valid));
         } else {
           const stored = localStorage.getItem("cogletta-categories");
           if (stored) setSelected(JSON.parse(stored));

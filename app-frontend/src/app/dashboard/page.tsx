@@ -8,23 +8,11 @@ import { getDailyArticles, getTrendReport } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import type { Article, Podcast, TrendPick, WeeklyTrendReport } from "@/lib/types";
+import { categoryEmoji, categoryLabel } from "@/lib/categories";
 
 const UNSPLASH_ACCESS_KEY = "rp-OBp3MMcxOlSCIV6GyPh3DOkX4IgmEGq8XBJQVnvs";
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  "Software & DevOps": "🛠️",
-  "Technology":        "💡",
-  "World Politics":    "🌍",
-  "Business":         "📈",
-  "Economics":        "💰",
-  "Science":          "🔬",
-  "Productivity":     "⚡",
-  "History":          "🏛️",
-  "Arts & Culture":   "🎭",
-  "Military":         "⚔️",
-  "Health":           "🧬",
-  "Environment":      "🌿",
-};
+
 
 function extractKeywords(title: string, category: string): string {
   const stop = new Set(["the","a","an","of","in","on","at","to","for","is","are","was","were","and","or","but","how","why","what","when","who","will","can","has","have","its","by","with","from","as","this","that","these","those","be","been","being","do","you","lose","when","says","why","new","your"]);
@@ -60,7 +48,7 @@ function useUnsplashPhoto(article: Article): UnsplashPhoto | null {
 }
 
 function ArticleCard({ article }: { article: Article }) {
-  const emoji = CATEGORY_EMOJI[article.category] ?? "📄";
+  const emoji = categoryEmoji(article.category);
   const isFallback = !article.url || article.url === "https://news.ycombinator.com";
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -84,7 +72,7 @@ function ArticleCard({ article }: { article: Article }) {
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: "0.9rem" }}>{emoji}</span>
               <span style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-muted)" }}>
-                {article.category}
+                {categoryLabel(article.category)}
               </span>
             </div>
 
@@ -156,7 +144,7 @@ function PodcastCard({ podcast }: { podcast: Podcast }) {
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: "0.9rem" }}>🎙</span>
               <span style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-muted)" }}>
-                Podcast · {podcast.category}
+                Podcast · {categoryLabel(podcast.category)}
               </span>
             </div>
 
@@ -195,8 +183,8 @@ function PodcastCard({ podcast }: { podcast: Podcast }) {
 }
 
 function PendingCard({ category, type = "article" }: { category: string; type?: "article" | "podcast" }) {
-  const emoji = type === "podcast" ? "🎙" : (CATEGORY_EMOJI[category] ?? "📄");
-  const label = type === "podcast" ? `Podcast · ${category}` : category;
+  const emoji = type === "podcast" ? "🎙" : categoryEmoji(category);
+  const label = type === "podcast" ? `Podcast · ${categoryLabel(category)}` : categoryLabel(category);
   return (
     <article style={{ background: "var(--white)", border: "1px dashed var(--rule)", borderRadius: 16, overflow: "hidden", opacity: 0.7 }}>
       <div style={{ height: 80, background: "var(--paper-warm)", animation: "pulse 2s infinite" }} />

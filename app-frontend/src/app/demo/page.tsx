@@ -6,28 +6,22 @@ import Navbar from "@/components/Navbar";
 // STATİK SNAPSHOT — bilerek constants'tan bağımsız. Demo bir pazarlama anlık
 // görüntüsü; canlı kategoriler değişse bile burası sabit kalır. Gerekirse ELLE güncelle.
 const DEMO_CATEGORIES: { id: string; label: string; emoji: string; description: string; subTopics: string[] }[] = [
-  { id: "Software & DevOps",    label: "Software & DevOps",    emoji: "🛠️", description: "Architecture, system design, cloud, CI/CD", subTopics: ["Backend Engineering", "Cloud & DevOps", "Security & Cybersecurity", "AI & ML Engineering", "Open Source", "Engineering Culture"] },
-  { id: "Technology",           label: "Technology",           emoji: "💡", description: "AI, product, innovation, industry trends", subTopics: ["Emerging Tech", "Space Technology", "Robotics & Automation", "Semiconductors & Hardware", "Biotech & Deep Tech", "Tech Policy & Society"] },
-  { id: "World Politics",       label: "World Politics",       emoji: "🌍", description: "Geopolitics, policy, international affairs", subTopics: ["US Politics", "Europe", "Middle East", "Asia & China", "Russia & Eurasia", "International Institutions"] },
-  { id: "Business",             label: "Business",             emoji: "📈", description: "Strategy, leadership, management thinking", subTopics: ["Startups & Venture", "Strategy & Management", "Leadership", "Marketing", "Finance", "Future of Work"] },
-  { id: "Economics",            label: "Economics",            emoji: "💰", description: "Markets, finance, economic trends", subTopics: ["Macroeconomics", "Trade & Globalization", "Labor Markets", "Monetary Policy", "Development Economics", "Behavioral Economics"] },
-  { id: "Science",              label: "Science",              emoji: "🔬", description: "Research, discoveries, physics, biology", subTopics: ["Biology & Life Sciences", "Physics", "Space & Astronomy", "Climate Science", "Neuroscience", "Mathematics"] },
-  { id: "Productivity",         label: "Productivity",         emoji: "⚡", description: "Focus, habits, tools, mental models", subTopics: ["Decision Making", "Mental Models", "Habits & Systems", "Focus & Deep Work", "Learning & Memory", "Creativity"] },
-  { id: "History",              label: "History",              emoji: "🏛️", description: "Ancient to modern, events, civilizations", subTopics: ["Ancient History", "Medieval", "Modern History", "Military History", "Social History", "Cultural History"] },
-  { id: "Arts & Culture",       label: "Arts & Culture",       emoji: "🎭", description: "Literature, film, music, criticism", subTopics: ["Literature", "Film & Cinema", "Music", "Visual Arts", "Architecture", "Philosophy"] },
-  { id: "Military",             label: "Military",             emoji: "⚔️", description: "Strategy, defense policy, military history", subTopics: ["Strategy & Doctrine", "Geopolitics & Conflict", "Technology & Weapons", "Intelligence", "Military History", "Naval & Air Power"] },
-  { id: "Health",               label: "Health",               emoji: "🧬", description: "Medicine, mental health, longevity, well-being", subTopics: ["Nutrition & Longevity", "Mental Health", "Neuroscience", "Exercise Science", "Medicine & Research", "Public Health"] },
-  { id: "Environment",          label: "Environment",          emoji: "🌿", description: "Climate, ecology, sustainability, energy", subTopics: ["Climate Change", "Renewable Energy", "Biodiversity", "Oceans", "Urban Sustainability", "Policy & Activism"] },
-  { id: "Philosophy & Ethics",  label: "Philosophy & Ethics",  emoji: "🧠", description: "Moral philosophy, ethics, logic, political thought", subTopics: ["Moral Philosophy", "Political Philosophy", "Existentialism", "Applied Ethics", "Philosophy of Mind", "Logic & Epistemology"] },
-  { id: "Fashion & Style",      label: "Fashion & Style",      emoji: "👗", description: "Style, design, fashion industry and culture", subTopics: ["Clothing & Accessories", "Beauty & Cosmetics", "Lifestyle", "Trend Analysis", "Design & Creativity", "Industry Insights"] },
-  { id: "Life & Relationships", label: "Life & Relationships", emoji: "💛", description: "Relationships, family, personal growth, well-being", subTopics: ["Relationships & Dating", "Parenting", "Career & Life Balance", "Personal Finance", "Self-Development", "Community & Belonging"] },
+  { id: "technology", label: "Technology & Software", emoji: "💡", description: "AI, engineering, hardware, and the industry around them", subTopics: ["Software & DevOps", "Emerging Tech", "AI & Machine Learning", "Security & Cybersecurity", "Hardware & Semiconductors", "Tech Policy & Society"] },
+  { id: "geopolitics", label: "Geopolitics & Security", emoji: "🌍", description: "Strategy, defence, and how states contend with each other", subTopics: ["World Politics", "Military & Defence", "Europe", "Middle East", "Asia & the Pacific", "Russia & Eurasia"] },
+  { id: "business_economics", label: "Business & Economics", emoji: "📈", description: "Markets, management, and the forces behind them", subTopics: ["Business", "Economics", "Startups & Venture", "Strategy & Leadership", "Markets & Finance", "Future of Work"] },
+  { id: "science_environment", label: "Science & Environment", emoji: "🔬", description: "Research, discovery, climate, and the natural world", subTopics: ["Science", "Environment", "Space & Astronomy", "Biology & Life Sciences", "Climate & Energy", "Physics & Mathematics"] },
+  { id: "life_work", label: "Life, Work & Wellbeing", emoji: "💛", description: "Focus, habits, relationships, and living well", subTopics: ["Productivity", "Life & Relationships", "Focus & Deep Work", "Habits & Systems", "Career & Life Balance", "Self-Development"] },
+  { id: "culture_style", label: "Culture & Style", emoji: "🎭", description: "Literature, film, art, design, and what we wear", subTopics: ["Arts & Culture", "Fashion & Style", "Literature & Books", "Film & Music", "Menswear", "Womenswear"] },
+  { id: "philosophy", label: "Philosophy & Ethics", emoji: "🧠", description: "Moral thought, political philosophy, and how to think", subTopics: ["Moral Philosophy", "Political Philosophy", "Existentialism", "Applied Ethics", "Philosophy of Mind", "Logic & Epistemology"] },
+  { id: "history", label: "History", emoji: "🏛️", description: "Ancient to modern — events, people, civilisations", subTopics: ["Ancient History", "Medieval", "Modern History", "Military History", "Social History", "Cultural History"] },
+  { id: "health", label: "Health", emoji: "🧬", description: "Medicine, longevity, mental health, public health", subTopics: ["Nutrition & Longevity", "Mental Health", "Neuroscience", "Exercise Science", "Medicine & Research", "Public Health"] },
 ];
 
 // Statik, gerçekçi örnek kartlar. CANLI ÜRETİM DEĞİL — demo amaçlı sabit veri.
 const SAMPLE_ARTICLES = [
   {
     emoji: "💛",
-    category: "Life & Relationships",
+    category: "Life, Work & Wellbeing",
     title: "How Can We Feel Loved If We Don’t Feel Known?",
     source: "Behavioral Scientist",
     readingTime: "8 min read",
@@ -38,7 +32,7 @@ const SAMPLE_ARTICLES = [
   },
   {
     emoji: "🔬",
-    category: "Science",
+    category: "Science & Environment",
     title: "The Quiet Revolution in How We Map the Brain",
     source: "Quanta Magazine",
     readingTime: "6 min read",
@@ -51,7 +45,7 @@ const SAMPLE_ARTICLES = [
 
 const SAMPLE_PODCAST = {
   emoji: "🎧",
-  category: "Technology",
+  category: "Technology & Software",
   title: "What Small AI Models Change for Everyone",
   source: "The World Unpacked",
   readingTime: "42 min listen",
