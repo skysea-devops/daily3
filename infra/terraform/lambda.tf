@@ -323,6 +323,13 @@ resource "aws_iam_role_policy" "get_articles_lambda_policy" {
         Action   = ["lambda:InvokeFunction"]
         Resource = aws_lambda_function.generate_articles.arn
       },
+      {
+        # Havuz hazirsa Bedrock'a hic gitmeyen teslimat yoluna yonlendirilir.
+        Sid      = "InvokeDeliverDaily"
+        Effect   = "Allow"
+        Action   = ["lambda:InvokeFunction"]
+        Resource = aws_lambda_function.deliver_daily.arn
+      },
     ]
   })
 }
@@ -348,6 +355,7 @@ resource "aws_lambda_function" "get_articles" {
       ARTICLES_TABLE_NAME             = aws_dynamodb_table.articles.name
       USERS_TABLE_NAME                = aws_dynamodb_table.users.name
       GENERATE_ARTICLES_FUNCTION_NAME = aws_lambda_function.generate_articles.function_name
+      DELIVER_DAILY_FUNCTION_NAME     = aws_lambda_function.deliver_daily.function_name
       CORS_ORIGIN                     = var.cors_origin
       NODE_OPTIONS                    = "--enable-source-maps"
     }

@@ -1401,9 +1401,24 @@ async function fetchPoolCandidates(
       );
   });
   const filtered = scoreAndFilter(allItems, history, isPodcast, [category]);
+  // Aday sayisi = havuz promptunun input maliyetinin neredeyse tamami: her aday
+  // basliK + kaynak + URL + kirpilmis aciklama ile ~115 token tutuyor.
+  //
+  // 40 → 28 (2026-08-09): birlesmis kategorilerde ortalama 18 makale kaynagi
+  // var, yani 40 slot kaynak basina ~2.2 aday demekti. 28'de bu ~1.5 oluyor;
+  // maxPerSource=4 sinirli oldugu icin her kaynak hala temsil ediliyor, sadece
+  // guclu kaynaklarin ikinci/ucuncu adaylari duşuyor. Bedrock zaten bu listeden
+  // 10-20 tanesini seciyor — kirpilanlar buyuk olcude elenecek olanlar.
+  //
+  // Podcast tarafi 24'te birakildi: orada kategori basina 6-13 kaynak var, yani
+  // 24 aday zaten kaynak basina ~2 ve daha fazla daraltmak cesitliligi bozar.
+  //
+  // Dikkat: aday havuzu daraldikca havuz promptundaki "her aktif alt konu icin
+  // en az bir oge" kuralini karsilamak zorlasir. CloudWatch'ta
+  // unrepresentedSubTopics artiyorsa bu deger geri yukseltilmeli.
   return buildBalancedShortlist(
     filtered,
-    isPodcast ? 24 : 40,
+    isPodcast ? 24 : 28,
     isPodcast ? 3 : 4,
   );
 }

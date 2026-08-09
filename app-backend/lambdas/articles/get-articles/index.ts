@@ -11,6 +11,7 @@ import type {
   APIGatewayProxyResultV2,
 } from "aws-lambda";
 import { Keys } from "../../../shared/types";
+import { isCategoryId } from "../../../shared/categories";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const lambda = new LambdaClient({});
@@ -18,6 +19,7 @@ const lambda = new LambdaClient({});
 const ARTICLES_TABLE             = process.env.ARTICLES_TABLE_NAME!;
 const USERS_TABLE                = process.env.USERS_TABLE_NAME!;
 const GENERATE_ARTICLES_FUNCTION = process.env.GENERATE_ARTICLES_FUNCTION_NAME!;
+const DELIVER_DAILY_FUNCTION     = process.env.DELIVER_DAILY_FUNCTION_NAME ?? "";
 
 // CORS_ORIGIN virgülle ayrılmış birden çok origin içerebilir
 // (ör. "https://cogletta.com,https://www.cogletta.com").
@@ -55,6 +57,42 @@ interface GeneratePayload {
   subTopics: Record<string, string[]>;
   email?: string;
   plan: string;
+}
+
+/**
+ * O gunun kategori havuzu hazir mi?
+ *
+ * Bu kontrol 2026-08-09'da eklendi. Havuz mimarisi daily-trigger'a eklenirken
+ * get-articles guncellenmemisti: kayit yoksa kosulsuz generate-articles
+ * cagriliyordu, yani feed'ler bastan cekilip Bedrock'a gidiliyordu — oysa ayni
+ * icerik havuzda hazir bekliyordu. Prod'da 10 gunde ~1.2M gereksiz input token
+ * bunun sonucuydu (Pro kullanici basina gunde 3 pickArticle + 2 pickPodcast).
+ */
+async function poolReady(categoryId: string, sk: string): Promise<boolean> {
+  try {
+    const res = await dynamo.send(new GetCommand({
+      TableName: ARTICLES_TABLE,
+      Key: { PK: Keys.categoryPK(categoryId), SK: sk },
+      ProjectionExpression: "articles, #s",
+      ExpressionAttributeNames: { "#s": "status" },
+    }));
+    const item = res.Item;
+    // "generating" placeholder hazir sayilmaz — icerik henuz yazilmadi.
+    return Boolean(item && item.status !== "generating" && (item.articles as unknown[] | undefined)?.length);
+  } catch (err) {
+    console.warn(`Pool check failed for ${categoryId}:`, err);
+    return false;
+  }
+}
+
+async function invokeDeliver(payload: Record<string, unknown>): Promise<void> {
+  await lambda.send(
+    new InvokeCommand({
+      FunctionName:   DELIVER_DAILY_FUNCTION,
+      InvocationType: "Event",
+      Payload:        Buffer.from(JSON.stringify(payload)),
+    })
+  );
 }
 
 /**
@@ -122,6 +160,36 @@ async function invokeGenerate(payload: GeneratePayload): Promise<void> {
   );
 }
 
+/**
+ * Havuz hazirsa deliver-daily'ye (Bedrock YOK), degilse generate-articles'a
+ * (Bedrock VAR) yonlendirir. daily-trigger'daki yonlendirmenin ayni mantigi:
+ * Pro kullanicida TUM kategorilerin havuzu hazir olmali, aksi halde kismi
+ * teslimat olusur.
+ */
+async function routeGeneration(payload: GeneratePayload, sk: string): Promise<void> {
+  const { userId, interests, plan } = payload;
+  const isPro = plan.toLowerCase() === "pro";
+
+  if (DELIVER_DAILY_FUNCTION && interests.length > 0 && interests.every(isCategoryId)) {
+    const readiness = await Promise.all(interests.map((c) => poolReady(c, sk)));
+    const missing = interests.filter((_, i) => !readiness[i]);
+
+    if (missing.length === 0) {
+      await invokeDeliver(
+        isPro
+          ? { userId, interests, subTopics: payload.subTopics, email: payload.email, plan: "pro" }
+          : { userId, category: interests[0], email: payload.email, plan: "free" },
+      );
+      console.log(`Routed user=${userId} to pool delivery (${interests.join(", ")})`);
+      return;
+    }
+    console.warn(`Pool unavailable for user=${userId}; falling back to generation — missing=${missing.join(", ")}`);
+  }
+
+  await invokeGenerate(payload);
+  console.log(`Triggered generate for user=${userId} (no pool available)`);
+}
+
 export const handler = async (
   event: APIGatewayProxyEventV2WithJWTAuthorizer
 ): Promise<APIGatewayProxyResultV2> => {
@@ -186,8 +254,7 @@ export const handler = async (
       if (isToday && userInterests && userInterests.length >= 1) {
         const locked = await acquireGenerationLock(pk, todaySK);
         if (locked) {
-          await invokeGenerate(generatePayload);
-          console.log(`Triggered generate for user=${userId} (no articles today, lock acquired)`);
+          await routeGeneration(generatePayload, todaySK);
         } else {
           console.log(`Skipped generate for user=${userId} (already in progress)`);
         }
@@ -213,8 +280,8 @@ export const handler = async (
       if (isToday && isStale && userInterests && userInterests.length >= 1) {
         const refreshed = await refreshStaleLock(pk, requestedSK, generatingAt);
         if (refreshed) {
-          await invokeGenerate(generatePayload);
-          console.log(`Re-triggered generate for user=${userId} (stale lock, generatingAt=${generatingAt})`);
+          console.log(`Stale lock for user=${userId} (generatingAt=${generatingAt}); re-routing`);
+          await routeGeneration(generatePayload, requestedSK);
         }
       }
 

@@ -5,6 +5,7 @@ import type {
   APIGatewayProxyEventV2WithJWTAuthorizer,
   APIGatewayProxyResultV2,
 } from "aws-lambda";
+import { isCategoryId, isSubTopicOf, subTopicsFor } from "../../../shared/categories";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const lambda = new LambdaClient({});
@@ -76,10 +77,43 @@ export const handler = async (
     const body = JSON.parse(event.body ?? "{}") as { interests?: unknown; email?: unknown; subTopics?: unknown; region?: unknown };
     const { interests } = body;
     const emailFromBody = typeof body.email === "string" ? body.email : null;
-    const subTopics = body.subTopics && typeof body.subTopics === "object" ? body.subTopics : {};
+    const rawSubTopics = body.subTopics && typeof body.subTopics === "object"
+      ? (body.subTopics as Record<string, unknown>)
+      : {};
+
+    /**
+     * subTopics de kullanicidan geliyor ve dogrulanmadan yaziliyordu. Gecersiz
+     * bir alt konu deliver-daily'de sessizce hicbir seye eslesmez
+     * (subTopicMatchCount 0 doner) — yani kullanici bir seyi secmis sanir ama
+     * hicbir etkisi olmaz. Bilinmeyen kategori anahtarlari ve o kategoriye ait
+     * olmayan alt konular burada elenir.
+     */
+    function sanitiseSubTopics(input: Record<string, unknown>): Record<string, string[]> {
+      const clean: Record<string, string[]> = {};
+      for (const [categoryId, value] of Object.entries(input)) {
+        if (!isCategoryId(categoryId)) continue;
+        if (!Array.isArray(value)) continue;
+        const allowed = value.filter(
+          (v): v is string => typeof v === "string" && isSubTopicOf(categoryId, v),
+        );
+        // Kanonik yazimi kullan: kullanici "menswear" gonderse bile kayitta
+        // "Menswear" durur, boylece deliver-daily'deki eslesme tutar.
+        const canonical = subTopicsFor(categoryId).filter((s) =>
+          allowed.some((v) => v.trim().toLowerCase() === s.toLowerCase()),
+        );
+        if (canonical.length > 0) clean[categoryId] = canonical.slice(0, 3);
+      }
+      return clean;
+    }
+
+    const subTopics = sanitiseSubTopics(rawSubTopics);
     const ALLOWED_REGIONS = ["EU", "US_EAST", "US_WEST", "ASIA"];
     const region = typeof body.region === "string" && ALLOWED_REGIONS.includes(body.region) ? body.region : "EU";
 
+    // Kategori ID'leri beyaz listeye karsi DOGRULANIR. Onceden yalnizca "bos
+    // olmayan string" kontrolu vardi; gecersiz bir ad sessizce kaydediliyor ve
+    // hata ancak ertesi sabah kullanici bos mail alinca ortaya cikiyordu
+    // (pickArticle: "No RSS sources for X" → fallback karti).
     if (
       !Array.isArray(interests) ||
       !interests.every((i) => typeof i === "string" && i.trim().length > 0)
@@ -110,6 +144,25 @@ export const handler = async (
       plan = rawPlan?.toLowerCase() === "pro" ? "pro" : "free";
     } catch (err) {
       console.warn("Failed to read plan, defaulting to free:", err);
+    }
+
+    const unknown = (interests as string[]).filter((i) => !isCategoryId(i));
+    if (unknown.length > 0) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          message: `Unknown category: ${unknown.join(", ")}`,
+        }),
+      };
+    }
+
+    if (new Set(interests as string[]).size !== interests.length) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ message: "Duplicate categories are not allowed." }),
+      };
     }
 
     const requiredCount = plan === "pro" ? 3 : 1;
