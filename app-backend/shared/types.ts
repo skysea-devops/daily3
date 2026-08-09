@@ -55,6 +55,8 @@ export const Keys = {
   categoryPK: (category: string)       => `CATEGORY#${category}`,
   dateSK:    (date: Date = new Date()) => `DATE#${date.toISOString().slice(0, 10)}`,
   ttl30Days: ()                        => Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+  /** Haftalık bonus okuma — TÜM kullanıcılar için ortak tek kayıt */
+  bonusPK:   ()                        => `BONUS#weekly`,
   // Haftalık trend raporu anahtarı: ISO yıl-hafta (ör. TREND#2026-W27)
   weekSK:    (date: Date = new Date()) => {
     const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
@@ -91,20 +93,58 @@ export interface CategoryDailyPicks {
 }
 
 // Haftalık trend raporu (Pro, her Pazar)
+
+/**
+ * Rapordaki tek bir okuma kartı. `category` yalnızca seçim mantığı için
+ * taşınır — arayüzde ve e-postada GÖSTERİLMEZ (her kart farklı bir ilgi
+ * alanından gelir ama okuyucuya kategori etiketi sunulmaz).
+ */
+export interface TrendPick {
+  title:       string;
+  summary:     string;
+  url:         string;
+  source:      string;
+  readingTime: string;
+  category?:   string;
+}
+
+/** @deprecated 2026-08-09 öncesi tema tabanlı rapor şekli. TTL 30 gün olduğu
+ *  için eski kayıtlar bir süre daha bu alanla gelmeye devam eder. */
 export interface TrendInterest {
-  category:  string;      // kullanıcının ilgi alanı
-  themes:    string[];    // haftanın 2-3 teması (birer cümle)
-  topTitle:  string;      // haftanın öne çıkan tek makalesi
+  category:  string;
+  themes:    string[];
+  topTitle:  string;
   topUrl:    string;
   topSource: string;
-  topIsListen?: boolean;  // top pick audio/podcast ise true → "Listen of the week"
+  topIsListen?: boolean;
 }
 
 export interface WeeklyTrendReport {
   PK:          string;    // USER#<sub>
   SK:          string;    // TREND#<YYYY-Www>
   weekLabel:   string;    // insan-okur etiket, ör. "Jun 30 – Jul 6"
-  interests:   TrendInterest[];
+  /** Kullanıcının o hafta ALDIĞI makalelerden, ilgi alanı başına bir tane. */
+  picks:       TrendPick[];
+  /** Tüm kullanıcılara giden ortak Pazar okuması. Üretilemezse null. */
+  bonus:       TrendPick | null;
   generatedAt: string;
   ttl:         number;
+  /** @deprecated eski kayıtlarda bulunur */
+  interests?:  TrendInterest[];
+}
+
+/**
+ * Haftalık bonus okuma — kullanıcıdan bağımsız, haftada bir üretilir.
+ * PK sabit (BONUS#weekly), SK hafta anahtarı. generate-category-picks ile
+ * aynı conditional-write kilit desenini kullanır.
+ */
+export interface WeeklyBonusRead {
+  PK:            string;   // BONUS#weekly
+  SK:            string;   // TREND#<YYYY-Www>
+  pick:          TrendPick | null;
+  category:      string;
+  generatedAt:   string;
+  ttl:           number;
+  status?:       string;   // "generating" iken placeholder
+  generatingAt?: number;
 }
