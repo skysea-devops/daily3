@@ -7,24 +7,12 @@ import ShareCard from "@/components/ShareCard";
 import { getDailyArticles, getTrendReport } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
-import type { Article, Podcast, WeeklyTrendReport } from "@/lib/types";
+import type { Article, Podcast, TrendPick, WeeklyTrendReport } from "@/lib/types";
+import { categoryEmoji, categoryLabel } from "@/lib/categories";
 
 const UNSPLASH_ACCESS_KEY = "rp-OBp3MMcxOlSCIV6GyPh3DOkX4IgmEGq8XBJQVnvs";
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  "Software & DevOps": "🛠️",
-  "Technology":        "💡",
-  "World Politics":    "🌍",
-  "Business":         "📈",
-  "Economics":        "💰",
-  "Science":          "🔬",
-  "Productivity":     "⚡",
-  "History":          "🏛️",
-  "Arts & Culture":   "🎭",
-  "Military":         "⚔️",
-  "Health":           "🧬",
-  "Environment":      "🌿",
-};
+
 
 function extractKeywords(title: string, category: string): string {
   const stop = new Set(["the","a","an","of","in","on","at","to","for","is","are","was","were","and","or","but","how","why","what","when","who","will","can","has","have","its","by","with","from","as","this","that","these","those","be","been","being","do","you","lose","when","says","why","new","your"]);
@@ -60,7 +48,7 @@ function useUnsplashPhoto(article: Article): UnsplashPhoto | null {
 }
 
 function ArticleCard({ article }: { article: Article }) {
-  const emoji = CATEGORY_EMOJI[article.category] ?? "📄";
+  const emoji = categoryEmoji(article.category);
   const isFallback = !article.url || article.url === "https://news.ycombinator.com";
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -84,7 +72,7 @@ function ArticleCard({ article }: { article: Article }) {
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: "0.9rem" }}>{emoji}</span>
               <span style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-muted)" }}>
-                {article.category}
+                {categoryLabel(article.category)}
               </span>
             </div>
 
@@ -156,7 +144,7 @@ function PodcastCard({ podcast }: { podcast: Podcast }) {
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: "0.9rem" }}>🎙</span>
               <span style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-muted)" }}>
-                Podcast · {podcast.category}
+                Podcast · {categoryLabel(podcast.category)}
               </span>
             </div>
 
@@ -195,8 +183,8 @@ function PodcastCard({ podcast }: { podcast: Podcast }) {
 }
 
 function PendingCard({ category, type = "article" }: { category: string; type?: "article" | "podcast" }) {
-  const emoji = type === "podcast" ? "🎙" : (CATEGORY_EMOJI[category] ?? "📄");
-  const label = type === "podcast" ? `Podcast · ${category}` : category;
+  const emoji = type === "podcast" ? "🎙" : categoryEmoji(category);
+  const label = type === "podcast" ? `Podcast · ${categoryLabel(category)}` : categoryLabel(category);
   return (
     <article style={{ background: "var(--white)", border: "1px dashed var(--rule)", borderRadius: 16, overflow: "hidden", opacity: 0.7 }}>
       <div style={{ height: 80, background: "var(--paper-warm)", animation: "pulse 2s infinite" }} />
@@ -252,7 +240,36 @@ function isWeeklyReviewDay(): boolean {
   return new Date().getDay() === 0;
 }
 
+function PickRow({ pick, index, isFirst }: { pick: TrendPick; index: number; isFirst: boolean }) {
+  return (
+    <div style={{ borderTop: isFirst ? "none" : "1px solid var(--rule)", paddingTop: isFirst ? 0 : 20 }}>
+      <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.08em", color: "var(--rule)" }}>
+        {String(index + 1).padStart(2, "0")}
+      </span>
+      <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1.0625rem", fontWeight: 600, lineHeight: 1.4, margin: "6px 0 4px" }}>
+        <a href={pick.url} target="_blank" rel="noreferrer" style={{ color: "var(--ink)", textDecoration: "none" }}>
+          {pick.title}
+        </a>
+      </h3>
+      <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", margin: "0 0 8px" }}>
+        {pick.source} · {pick.readingTime}
+      </p>
+      <p style={{ fontSize: "0.9375rem", lineHeight: 1.65, color: "var(--ink-soft)", margin: 0 }}>
+        {pick.summary}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Pazar kartı. Kategori etiketi BİLİNÇLİ olarak gösterilmiyor — kartlar farklı
+ * ilgi alanlarından seçiliyor ama okuyucuya konu başlığı sunulmuyor.
+ * `interests` dalı 2026-08-09 öncesi kayıtlar içindir (TTL 30 gün).
+ */
 function TrendCard({ report }: { report: WeeklyTrendReport }) {
+  const picks = report.picks ?? [];
+  const isLegacy = picks.length === 0 && (report.interests?.length ?? 0) > 0;
+
   return (
     <div style={{
       background: "var(--white)", border: "1px solid var(--rule)",
@@ -264,35 +281,57 @@ function TrendCard({ report }: { report: WeeklyTrendReport }) {
         </span>
         <span style={{ fontSize: "0.8125rem", color: "var(--ink-muted)" }}>{report.weekLabel}</span>
       </div>
-      <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.375rem", fontWeight: 600, color: "var(--ink)", margin: "0 0 20px" }}>
-        Your week in review
+      <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.375rem", fontWeight: 600, color: "var(--ink)", margin: "0 0 6px" }}>
+        This week&apos;s selections
       </h2>
-
-      <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", margin: "4px 0 26px", lineHeight: 1.5 }}>
-          Highlights from this week's reading:
+      <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", margin: "0 0 26px", lineHeight: 1.5 }}>
+        A few pieces from your week worth a second look{report.bonus ? ", plus one on us" : ""}.
       </p>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-        {report.interests.map((t, i) => (
-          <div key={i} style={{ borderTop: i === 0 ? "none" : "1px solid var(--rule)", paddingTop: i === 0 ? 0 : 20 }}>
-            <p style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--ink-muted)", marginBottom: 10 }}>
-              {t.category}
-            </p>
-            <ul style={{ margin: "0 0 12px", paddingLeft: 18 }}>
-              {t.themes.map((th, j) => (
-                <li key={j} style={{ fontSize: "0.9375rem", lineHeight: 1.65, color: "var(--ink-soft)", marginBottom: 6 }}>{th}</li>
-              ))}
-            </ul>
-            {t.topUrl && (
-              <a href={t.topUrl} target="_blank" rel="noreferrer" style={{ fontSize: "0.875rem", color: "var(--ink)", textDecoration: "none" }}>
-                <span style={{ color: "var(--ink-muted)" }}>Read of the week — </span>
-                <span style={{ fontWeight: 600 }}>{t.topTitle}</span>
-                <span style={{ color: "var(--ink-muted)" }}> ({t.topSource}) →</span>
-              </a>
-            )}
-          </div>
-        ))}
-      </div>
+      {isLegacy ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+          {report.interests!.map((t, i) => (
+            <div key={i} style={{ borderTop: i === 0 ? "none" : "1px solid var(--rule)", paddingTop: i === 0 ? 0 : 20 }}>
+              <ul style={{ margin: "0 0 12px", paddingLeft: 18 }}>
+                {t.themes.map((th, j) => (
+                  <li key={j} style={{ fontSize: "0.9375rem", lineHeight: 1.65, color: "var(--ink-soft)", marginBottom: 6 }}>{th}</li>
+                ))}
+              </ul>
+              {t.topUrl && (
+                <a href={t.topUrl} target="_blank" rel="noreferrer" style={{ fontSize: "0.875rem", color: "var(--ink)", textDecoration: "none" }}>
+                  <span style={{ fontWeight: 600 }}>{t.topTitle}</span>
+                  <span style={{ color: "var(--ink-muted)" }}> ({t.topSource}) →</span>
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+          {picks.map((p, i) => (
+            <PickRow key={p.url} pick={p} index={i} isFirst={i === 0} />
+          ))}
+        </div>
+      )}
+
+      {report.bonus && (
+        <div style={{ marginTop: 26, background: "var(--paper, #f9fafb)", borderRadius: 12, padding: 22 }}>
+          <span style={{ fontSize: "0.6875rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--ink-muted)" }}>
+            Bonus read
+          </span>
+          <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1rem", fontWeight: 600, lineHeight: 1.4, margin: "8px 0 4px" }}>
+            <a href={report.bonus.url} target="_blank" rel="noreferrer" style={{ color: "var(--ink)", textDecoration: "none" }}>
+              {report.bonus.title}
+            </a>
+          </h3>
+          <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", margin: "0 0 8px" }}>
+            {report.bonus.source} · {report.bonus.readingTime}
+          </p>
+          <p style={{ fontSize: "0.9rem", lineHeight: 1.6, color: "var(--ink-soft)", margin: 0 }}>
+            {report.bonus.summary}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

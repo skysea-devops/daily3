@@ -10,6 +10,7 @@ import {
 import { userPool } from "@/lib/cognito";
 import { getUserProfile } from "@/lib/api";
 import type { CognitoUserSession } from "amazon-cognito-identity-js";
+import { isCategoryId } from "./categories";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -94,10 +95,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Free plan 1, Pro plan 3 interest kullanır — 1+ interest onboarding'in
             // tamamlandığı anlamına gelir. (Eski `=== 3` koşulu, 1 interest'e geçen
             // free kullanıcıları her taze login'de onboarding'e geri atıyordu.)
-            if (profile.interests && profile.interests.length >= 1) {
-              localStorage.setItem("cogletta-categories", JSON.stringify(profile.interests));
+            // Kayitli degerler bilinen kategori ID'lerine karsi suzulur.
+            // Bos dizi degil AMA gecerli hicbir ID icermeyen bir kayit (ornegin
+            // kategori yeniden adlandirildiginda kalan eski deger) kullaniciyi
+            // sessizce fallback kartlarina mahkum ediyordu: hasInterests true
+            // kaliyor, onboarding'e yonlendirilmiyor, ama backend o kategori
+            // icin hicbir kaynak bulamiyor.
+            const validInterests = (profile.interests ?? []).filter(isCategoryId);
+            if (validInterests.length >= 1) {
+              localStorage.setItem("cogletta-categories", JSON.stringify(validInterests));
               setHasInterests(true);
             } else {
+              localStorage.removeItem("cogletta-categories");
               setHasInterests(false);
             }
             setPlan(profile.plan === "pro" ? "pro" : "free");
