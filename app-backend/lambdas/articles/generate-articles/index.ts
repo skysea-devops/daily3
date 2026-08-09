@@ -122,27 +122,24 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Quanta Magazine",            url: "https://www.quantamagazine.org/feed/" },
     { name: "Nautilus",                   url: "https://nautil.us/feed" },
     { name: "Undark",                     url: "https://undark.org/feed/" },
-    { name: "Aeon",                       url: "https://aeon.co/feed.rss" },
     { name: "Knowable Magazine",          url: "https://knowablemagazine.org/rss" },
     { name: "Ars Technica Science",       url: "https://feeds.arstechnica.com/arstechnica/science" },
     { name: "Smithsonian (Science)",      url: "https://www.smithsonianmag.com/rss/science-nature/" },
     { name: "Physics World",              url: "https://physicsworld.com/feed/" },
     { name: "The Conversation (Science)", url: "https://theconversation.com/us/technology/articles.atom" },
     { name: "Science News",               url: "https://www.sciencenews.org/feed" },
+    { name: "MIT News (Genetics)",        url: "https://news.mit.edu/rss/topic/genetics" },
+    { name: "The Transmitter",            url: "https://www.thetransmitter.org/feed/" },
     { name: "Yale Environment 360",       url: "https://e360.yale.edu/feed.xml" },
     { name: "Carbon Brief",               url: "https://www.carbonbrief.org/feed" },
-    { name: "Grist",                      url: "https://grist.org/feed/" },
     { name: "Anthropocene Magazine",      url: "https://www.anthropocenemagazine.org/feed/" },
     { name: "bioGraphic",                 url: "https://www.biographic.com/feed/" },
     { name: "Atmos",                      url: "https://atmos.earth/feed/" },
     { name: "Noema Magazine",             url: "https://www.noemamag.com/?feed=noemarss" },
     { name: "Yale Climate Connections",   url: "https://yaleclimateconnections.org/feed/" },
     { name: "Legal Planet",               url: "https://legal-planet.org/feed/" },
-    { name: "Weather West",               url: "https://weatherwest.com/feed" },
-    { name: "CleanTechnica",              url: "https://cleantechnica.com/feed/" },
     { name: "World Resources Institute",  url: "https://www.wri.org/insights/rss.xml" },
     { name: "The Nature Conservancy",     url: "https://blog.nature.org/feed/" },
-    { name: "The Revelator",              url: "https://therevelator.org/feed/" },
   ],
 
   // Life, Work & Wellbeing
@@ -1418,15 +1415,17 @@ async function fetchPoolCandidates(
   // guclu kaynaklarin ikinci/ucuncu adaylari duşuyor. Bedrock zaten bu listeden
   // 10-20 tanesini seciyor — kirpilanlar buyuk olcude elenecek olanlar.
   //
-  // Podcast tarafi 24'te birakildi: orada kategori basina 6-13 kaynak var, yani
-  // 24 aday zaten kaynak basina ~2 ve daha fazla daraltmak cesitliligi bozar.
+  // Podcast 24 → 18 (2026-08-09): birlesme sonrasi kategori basina 6-13 podcast
+  // kaynagi var ve maxPerSource=3. "history" 6 kaynakla zaten en fazla 18 aday
+  // uretebiliyor, yani 24 orada ulasilamaz bir tavandi. Havuz da yalnizca 8
+  // bolum seciyor (poolSizeFor: min(10, max(5, altKonu+2)) = 8).
   //
   // Dikkat: aday havuzu daraldikca havuz promptundaki "her aktif alt konu icin
   // en az bir oge" kuralini karsilamak zorlasir. CloudWatch'ta
   // unrepresentedSubTopics artiyorsa bu deger geri yukseltilmeli.
   return buildBalancedShortlist(
     filtered,
-    isPodcast ? 24 : 28,
+    isPodcast ? 18 : 28,
     isPodcast ? 3 : 4,
   );
 }
