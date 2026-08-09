@@ -4,14 +4,6 @@ import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedroc
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { createHash } from "crypto";
 import { Article, Podcast, DailyArticles, Keys } from "../../../shared/types";
-import {
-  ARTICLE_MAX_AGE_DAYS,
-  PODCAST_MAX_AGE_DAYS,
-  LIGHT_CATEGORY_IDS,
-  AUDIENCE_BALANCED_CATEGORY_ID,
-  categoryEmoji,
-  categoryLabel,
-} from "../../../shared/categories";
 
 
 const dynamo  = DynamoDBDocumentClient.from(new DynamoDBClient({}));
@@ -24,9 +16,6 @@ const SES_FROM_EMAIL   = process.env.SES_FROM_EMAIL!;
 
 // ─── Article RSS source map ───────────────────────────────────────────────────
 //
-// Anahtarlar shared/categories.ts icindeki CategoryId'lerdir — kullaniciya
-// gosterilen etiket degil. Etiketi degistirmek bu dosyayi etkilemez.
-//
 // Source hygiene rules (enforced by scripts/check-feeds.mjs):
 //   1. A source name must map to exactly ONE url. `history.seenSources` is keyed
 //      by name, so the same feed listed under two names silently defeats the
@@ -38,274 +27,306 @@ const SES_FROM_EMAIL   = process.env.SES_FROM_EMAIL!;
 //   4. A feed working is not the same as a feed being alive. Check the newest
 //      item age too — Die, Workwear! returned valid RSS whose newest post was
 //      252 days old.
-//   5. Genel amacli bir kaynak birden fazla kategoride kullanilacaksa mumkunse
-//      bolum feed'i tercih edilir (Literary Hub, STAT, Smithsonian orneginde
-//      oldugu gibi). Eleme item duzeyinde Bedrock'ta yapiliyor ama elenen her
-//      item shortlist'te yer isgal ediyor.
-
+ 
 export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
-
-  // Technology & Software
-  technology: [
-    { name: "MIT Technology Review",    url: "https://www.technologyreview.com/feed/" },
-    { name: "IEEE Spectrum",            url: "https://spectrum.ieee.org/feeds/feed.rss" },
-    { name: "Ars Technica",             url: "https://feeds.arstechnica.com/arstechnica/index" },
-    { name: "Eurozine",                 url: "https://www.eurozine.com/feed/" },
-    { name: "Works in Progress",        url: "https://worksinprogress.co/rss.xml" },
-    { name: "Rest of World",            url: "https://restofworld.org/feed/latest/" },
-    { name: "404 Media",                url: "https://www.404media.co/rss/" },
+ 
+  "Software & DevOps": [
+    { name: "Stack Overflow Blog",     url: "https://stackoverflow.blog/feed/" },
+    { name: "Martin Fowler",           url: "https://martinfowler.com/feed.atom" },
+    { name: "InfoQ",                   url: "https://feed.infoq.com/" },
+    { name: "The New Stack",           url: "https://thenewstack.io/feed/" },
+    { name: "AWS Architecture",        url: "https://aws.amazon.com/blogs/architecture/feed/" },
+    { name: "ACM Queue",               url: "https://queue.acm.org/rss/feeds/queuecontent.xml" },
+    { name: "The Pragmatic Engineer",  url: "https://blog.pragmaticengineer.com/rss/" },
+    { name: "Cloudflare Blog",         url: "https://blog.cloudflare.com/rss/" },
+  ],
+ 
+  "Technology": [
+    { name: "MIT Technology Review",   url: "https://www.technologyreview.com/feed/" },
+    { name: "IEEE Spectrum",           url: "https://spectrum.ieee.org/feeds/feed.rss" },
+    { name: "Ars Technica",            url: "https://feeds.arstechnica.com/arstechnica/index" },
+    { name: "Eurozine",                url: "https://www.eurozine.com/feed/" },
+    { name: "Works in Progress",       url: "https://worksinprogress.co/rss.xml" },
+    { name: "Rest of World",           url: "https://restofworld.org/feed/latest/" },
+    { name: "404 Media",               url: "https://www.404media.co/rss/" },
     { name: "Why is this interesting?", url: "https://whyisthisinteresting.substack.com/feed" },
-    { name: "Securities",               url: "https://www.readsecurities.com/feed" },
-    { name: "Stack Overflow Blog",      url: "https://stackoverflow.blog/feed/" },
-    { name: "Martin Fowler",            url: "https://martinfowler.com/feed.atom" },
-    { name: "InfoQ",                    url: "https://feed.infoq.com/" },
-    { name: "The New Stack",            url: "https://thenewstack.io/feed/" },
-    { name: "AWS Architecture",         url: "https://aws.amazon.com/blogs/architecture/feed/" },
-    { name: "ACM Queue",                url: "https://queue.acm.org/rss/feeds/queuecontent.xml" },
-    { name: "The Pragmatic Engineer",   url: "https://blog.pragmaticengineer.com/rss/" },
-    { name: "Cloudflare Blog",          url: "https://blog.cloudflare.com/rss/" },
+    { name: "Securities",              url: "https://www.readsecurities.com/feed" },
   ],
-
-  // Geopolitics & Security
-  // 2026-08-09: The Conversation (Politics) ve Just Security cikarildi — ikisi de
-  // ABD IC siyaseti/hukuku agirlikli. Kategori etiketi "Geopolitics & Security"
-  // devletler arasi strateji vaat ediyor; ic siyaset o vaadi bozuyordu.
-  geopolitics: [
-    { name: "Atlantic Council",                 url: "https://www.atlanticcouncil.org/feed/" },
-    { name: "Responsible Statecraft",           url: "https://responsiblestatecraft.org/feeds/feed.rss" },
-    { name: "ECFR",                             url: "https://ecfr.eu/feed/" },
-    { name: "Lowy Interpreter",                 url: "https://www.lowyinstitute.org/the-interpreter/rss.xml" },
-    { name: "LSE European Politics and Policy", url: "https://blogs.lse.ac.uk/europpblog/feed/" },
-    { name: "LSE IR Blog",                      url: "https://blogs.lse.ac.uk/internationalrelations/feed/" },
-    { name: "Engelsberg Ideas",                 url: "https://engelsbergideas.com/feed/" },
-    { name: "War on the Rocks",                 url: "https://warontherocks.com/feed/" },
-    { name: "Modern War Institute",             url: "https://mwi.westpoint.edu/feed/" },
-    { name: "Inkstick Media",                   url: "https://inkstickmedia.com/feed/" },
-    { name: "Defense One",                      url: "https://www.defenseone.com/rss/all/" },
-    { name: "Breaking Defense",                 url: "https://breakingdefense.com/feed/" },
-    { name: "The Diplomat",                     url: "https://thediplomat.com/feed/" },
-    { name: "The Strategist (ASPI)",            url: "https://www.aspistrategist.org.au/feed/" },
-    { name: "CIMSEC",                           url: "https://cimsec.org/feed/" },
+ 
+  "World Politics": [
+    { name: "Atlantic Council",        url: "https://www.atlanticcouncil.org/feed/" },
+    { name: "Responsible Statecraft",  url: "https://responsiblestatecraft.org/feeds/feed.rss" },
+    { name: "Just Security",           url: "https://www.justsecurity.org/feed/" },
+    { name: "ECFR",                    url: "https://ecfr.eu/feed/" },
+    { name: "Lowy Interpreter",        url: "https://www.lowyinstitute.org/the-interpreter/rss.xml" },
+    { name: "LSE European Politics and Policy", url: "https://blogs.lse.ac.uk/europpblog/feed/"},
+    { name: "LSE IR Blog",             url: "https://blogs.lse.ac.uk/internationalrelations/feed/" },
+    { name: "East Asia Forum",         url: "https://www.eastasiaforum.org/feed/" },
+    { name: "Middle East Institute",   url: "https://www.mei.edu/rss.xml" },
+  
   ],
-
-  // Business & Economics
-  business_economics: [
-    { name: "MIT Sloan Review",      url: "https://sloanreview.mit.edu/feed/" },
-    { name: "Noema Magazine",        url: "https://www.noemamag.com/?feed=noemarss" },
-    { name: "Knowledge at Wharton",  url: "https://knowledge.wharton.upenn.edu/feed/" },
-    { name: "Fast Company",          url: "https://www.fastcompany.com/latest/rss" },
-    { name: "Stratechery",           url: "https://stratechery.com/feed/" },
-    { name: "Commoncog",             url: "https://commoncog.com/rss/" },
-    { name: "Kellogg Insight",       url: "https://insight.kellogg.northwestern.edu/feed/rss" },
-    { name: "HBS Working Knowledge", url: "https://hbswk.hbs.edu/rss/rss.xml" },
-    { name: "Rest of World",         url: "https://restofworld.org/feed/latest/" },
-    { name: "Econlib",               url: "https://www.econlib.org/feed/" },
-    { name: "Noahpinion",            url: "https://www.noahpinion.blog/feed" },
-    { name: "Works in Progress",     url: "https://worksinprogress.co/rss.xml" },
-    { name: "Conversable Economist", url: "https://conversableeconomist.com/feed/" },
-    { name: "Marginal Revolution",   url: "https://marginalrevolution.com/feed" },
-    { name: "VoxEU (CEPR)",          url: "https://cepr.org/rss/vox-content" },
-    { name: "FRED Blog",             url: "https://fredblog.stlouisfed.org/feed/" },
-    { name: "The Big Picture",       url: "https://ritholtz.com/feed/" },
+ 
+  "Business": [
+    
+    { name: "Noema Magazine",          url: "https://www.noemamag.com/?feed=noemarss" },
+    { name: "Knowledge at Wharton",    url: "https://knowledge.wharton.upenn.edu/feed/" },
+    { name: "Fast Company",            url: "https://www.fastcompany.com/latest/rss" },
+    { name: "Stratechery",             url: "https://stratechery.com/feed/" },
+    { name: "Commoncog",               url: "https://commoncog.com/rss/" },
+    { name: "Kellogg Insight",         url: "https://insight.kellogg.northwestern.edu/feed/rss" },
+    { name: "HBS Working Knowledge",   url: "https://hbswk.hbs.edu/rss/rss.xml" },
+    { name: "Rest of World",           url: "https://restofworld.org/feed/latest/" },
+    { name: "LSE Business Review",     url: "https://blogs.lse.ac.uk/businessreview/feed/" },
+    { name: "INSEAD Knowledge",        url: "https://knowledge.insead.edu/rss.xml" },
+    
   ],
-
-  // Science & Environment
-  science_environment: [
-    { name: "Quanta Magazine",            url: "https://www.quantamagazine.org/feed/" },
-    { name: "Nautilus",                   url: "https://nautil.us/feed" },
-    { name: "Undark",                     url: "https://undark.org/feed/" },
-    { name: "Aeon",                       url: "https://aeon.co/feed.rss" },
-    { name: "Knowable Magazine",          url: "https://knowablemagazine.org/rss" },
-    { name: "Ars Technica Science",       url: "https://feeds.arstechnica.com/arstechnica/science" },
-    { name: "Smithsonian (Science)",      url: "https://www.smithsonianmag.com/rss/science-nature/" },
-    { name: "Physics World",              url: "https://physicsworld.com/feed/" },
+ 
+  "Economics": [
+    { name: "Econlib",                 url: "https://www.econlib.org/feed/" },
+    { name: "Noahpinion",              url: "https://www.noahpinion.blog/feed" },
+    { name: "Works in Progress",       url: "https://worksinprogress.co/rss.xml" },
+    { name: "Conversable Economist",   url: "https://conversableeconomist.com/feed/" },
+    { name: "Marginal Revolution",     url: "https://marginalrevolution.com/feed" },
+    { name: "VoxEU (CEPR)",            url: "https://cepr.org/rss/vox-content" },
+    { name: "Knowledge at Wharton",    url: "https://knowledge.wharton.upenn.edu/feed/" },
+    { name: "FRED Blog",               url: "https://fredblog.stlouisfed.org/feed/" },
+    { name: "The Big Picture",         url: "https://ritholtz.com/feed/" },
+    { name: "VoxDev",                  url: "https://voxdev.org/rss" },
+    
+    
+  ],
+ 
+  "Science": [
+    { name: "Quanta Magazine",         url: "https://www.quantamagazine.org/feed/" },
+    { name: "Undark",                  url: "https://undark.org/feed/" },
+    { name: "Aeon",                    url: "https://aeon.co/feed.rss" },
+    { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
+    { name: "Ars Technica Science",    url: "https://feeds.arstechnica.com/arstechnica/science" },
+    { name: "Smithsonian (Science)",   url: "https://www.smithsonianmag.com/rss/science-nature/" },
+    { name: "Physics World",           url: "https://physicsworld.com/feed/" },
+    // Was /topics/science-39/ — id 39 now resolves to "transport". The US
+    // section for science is published under /us/technology/ ("Science + Tech").
     { name: "The Conversation (Science)", url: "https://theconversation.com/us/technology/articles.atom" },
-    { name: "Science News",               url: "https://www.sciencenews.org/feed" },
-    { name: "Yale Environment 360",       url: "https://e360.yale.edu/feed.xml" },
-    { name: "Carbon Brief",               url: "https://www.carbonbrief.org/feed" },
-    { name: "Grist",                      url: "https://grist.org/feed/" },
-    { name: "Anthropocene Magazine",      url: "https://www.anthropocenemagazine.org/feed/" },
-    { name: "bioGraphic",                 url: "https://www.biographic.com/feed/" },
-    { name: "Atmos",                      url: "https://atmos.earth/feed/" },
-    { name: "Noema Magazine",             url: "https://www.noemamag.com/?feed=noemarss" },
-    { name: "Yale Climate Connections",   url: "https://yaleclimateconnections.org/feed/" },
-    { name: "Legal Planet",               url: "https://legal-planet.org/feed/" },
-    { name: "Weather West",               url: "https://weatherwest.com/feed" },
-    { name: "CleanTechnica",              url: "https://cleantechnica.com/feed/" },
-    { name: "World Resources Institute",  url: "https://www.wri.org/insights/rss.xml" },
-    { name: "The Nature Conservancy",     url: "https://blog.nature.org/feed/" },
-    { name: "The Revelator",              url: "https://therevelator.org/feed/" },
+    { name: "Science News",            url: "https://www.sciencenews.org/feed" },
   ],
-
-  // Life, Work & Wellbeing
-  life_work: [
-    { name: "Farnam Street",         url: "https://fs.blog/feed/" },
-    { name: "Psyche (Aeon)",         url: "https://psyche.co/feed.rss" },
-    { name: "Cal Newport",           url: "https://calnewport.com/feed/" },
-    { name: "Scott H. Young",        url: "https://www.scotthyoung.com/blog/feed/" },
-    { name: "Raptitude",             url: "https://www.raptitude.com/feed/" },
-    { name: "Happier Human",         url: "https://www.happierhuman.com/feed/" },
-    { name: "Behavioral Scientist",  url: "https://behavioralscientist.org/feed/" },
-    { name: "Kellogg Insight",       url: "https://insight.kellogg.northwestern.edu/feed/rss" },
-    { name: "Aeon",                  url: "https://aeon.co/feed.rss" },
-    { name: "The Marginalian",       url: "https://www.themarginalian.org/feed/" },
-    { name: "The Gottman Institute", url: "https://www.gottman.com/blog/feed/" },
-    { name: "Tiny Buddha",           url: "https://tinybuddha.com/feed/" },
-    { name: "Kendra Nicole",         url: "https://kendranicole.net/feed/" },
-    { name: "Gretchen Rubin",        url: "https://gretchenrubin.com/feed/" },
-    { name: "The Positivity Blog",   url: "https://www.positivityblog.com/feed/" },
-    { name: "Ask Polly",             url: "https://www.ask-polly.com/feed" },
+ 
+  "Productivity": [
+    { name: "Farnam Street",           url: "https://fs.blog/feed/" },
+    { name: "Psyche (Aeon)",           url: "https://psyche.co/feed.rss" },
+    { name: "Cal Newport",             url: "https://calnewport.com/feed/" },
+    { name: "Scott H. Young",          url: "https://www.scotthyoung.com/blog/feed/" },
+    { name: "Raptitude",               url: "https://www.raptitude.com/feed/" },
+    { name: "Happier Human",           url: "https://www.happierhuman.com/feed/" },
+    { name: "Behavioral Scientist",    url: "https://behavioralscientist.org/feed/" },
+    { name: "Kellogg Insight",         url: "https://insight.kellogg.northwestern.edu/feed/rss" },
+    // Removed 2026-08-07: Wait But Why (255d), Sources of Insight (132d),
+    // Productivityist (mikevardy.com'a tasinmis, 93d), Steve Pavlina (66d),
+    // Ness Labs (57d — 45 gunluk pencereye de sigmiyor).
   ],
-
-  // Culture & Style
-  culture_style: [
-    { name: "Literary Hub (Arts)",  url: "https://lithub.com/category/newsandculture/art-and-photography/feed/" },
-    { name: "Aeon",                 url: "https://aeon.co/feed.rss" },
-    { name: "Smithsonian Magazine", url: "https://www.smithsonianmag.com/rss/latest_articles/" },
-    { name: "Public Books",         url: "https://www.publicbooks.org/feed/" },
-    { name: "JSTOR Daily",          url: "https://daily.jstor.org/feed/" },
-    { name: "Eurozine",             url: "https://www.eurozine.com/feed/" },
-    { name: "Hyperallergic",        url: "https://hyperallergic.com/rss/" },
-    { name: "Arts & Letters Daily", url: "https://www.aldaily.com/feed/" },
-    { name: "Kottke",               url: "https://feeds.kottke.org/main" },
-    { name: "The Sunday Long Read", url: "https://sundaylongread.com/feed/" },
-    { name: "The Stacks Reader",    url: "https://www.thestacksreader.com/feed/" },
-    { name: "Neal Stephenson",      url: "https://nealstephenson.substack.com/feed" },
-    { name: "N + 1 Mag",            url: "https://www.nplusonemag.com/feed/" },
-    { name: "OUPblog",              url: "https://blog.oup.com/feed/" },
-    { name: "Business of Fashion",  url: "https://www.businessoffashion.com/arc/outboundfeeds/rss/?outputType=xml" },
-    { name: "Dazed (Fashion)",      url: "https://www.dazeddigital.com/rss" },
-    { name: "Vestoj",               url: "https://vestoj.com/feed/" },
-    { name: "Put This On",          url: "https://putthison.com/feed/" },
-    { name: "Who What Wear",        url: "https://www.whowhatwear.com/feeds.xml" },
-    { name: "Permanent Style",      url: "https://www.permanentstyle.com/feed" },
-    { name: "Corporette",           url: "https://corporette.com/feed/" },
-    { name: "Heddels",              url: "https://heddels.com/feed" },
-    { name: "Fashionista",          url: "https://fashionista.com/.rss/feed/28e21eb8-20ac-4617-a448-e845081591ca.xml" },
-  ],
-
-  // Philosophy & Ethics
-  philosophy: [
-    { name: "Aeon",                      url: "https://aeon.co/feed.rss" },
-    { name: "Psyche (Aeon)",             url: "https://psyche.co/feed.rss" },
-    { name: "Philosophy Now",            url: "https://philosophynow.org/rss" },
-    { name: "Justice Everywhere",        url: "https://justice-everywhere.org/feed/" },
-    { name: "Practical Ethics (Oxford)", url: "https://blog.practicalethics.ox.ac.uk/feed/" },
-    { name: "The Point Magazine",        url: "https://thepointmag.com/feed/" },
-    { name: "JSTOR Daily",               url: "https://daily.jstor.org/feed/" },
-    { name: "Arts & Letters Daily",      url: "https://www.aldaily.com/feed/" },
-    { name: "New Humanist",              url: "https://newhumanist.org.uk/feed/" },
+ 
+  "History": [
+    { name: "Aeon",                    url: "https://aeon.co/feed.rss" },
+    { name: "History Today",           url: "https://www.historytoday.com/feed/rss.xml" },
+    { name: "JSTOR Daily",             url: "https://daily.jstor.org/feed/" },
+    { name: "Lapham's Quarterly",      url: "https://www.laphamsquarterly.org/rss.xml" },
+    { name: "The Public Domain Review", url: "https://publicdomainreview.org/rss.xml" },
+    { name: "Eurozine",                url: "https://www.eurozine.com/feed/" },
+    { name: "Smithsonian (History)",   url: "https://www.smithsonianmag.com/rss/history/" },
+    { name: "History Workshop",        url: "https://www.historyworkshop.org.uk/feed/" },
     { name: "Columbia University Press", url: "https://cupblog.org/feed/" },
-    { name: "OUPblog",                   url: "https://blog.oup.com/feed/" },
+    { name: "Medieval Histories",      url: "https://www.medieval.eu/feed/" },
+    { name: "Engelsberg Ideas",        url: "https://engelsbergideas.com/feed/" },
   ],
-
-  // History
-  history: [
-    { name: "Aeon",                      url: "https://aeon.co/feed.rss" },
-    { name: "History Today",             url: "https://www.historytoday.com/feed/rss.xml" },
-    { name: "JSTOR Daily",               url: "https://daily.jstor.org/feed/" },
-    { name: "Lapham's Quarterly",        url: "https://www.laphamsquarterly.org/rss.xml" },
-    { name: "The Public Domain Review",  url: "https://publicdomainreview.org/rss.xml" },
-    { name: "Eurozine",                  url: "https://www.eurozine.com/feed/" },
-    { name: "Smithsonian (History)",     url: "https://www.smithsonianmag.com/rss/history/" },
-    { name: "History Workshop",          url: "https://www.historyworkshop.org.uk/feed/" },
-    { name: "Columbia University Press", url: "https://cupblog.org/feed/" },
-    { name: "Medieval Histories",        url: "https://www.medieval.eu/feed/" },
+ 
+  "Arts & Culture": [
+    { name: "Literary Hub (Arts)",     url: "https://lithub.com/category/newsandculture/art-and-photography/feed/" },
+    { name: "Aeon",                    url: "https://aeon.co/feed.rss" },
+    { name: "Smithsonian Magazine",    url: "https://www.smithsonianmag.com/rss/latest_articles/" },
+    { name: "Public Books",            url: "https://www.publicbooks.org/feed/" },
+    { name: "JSTOR Daily",             url: "https://daily.jstor.org/feed/" },
+    { name: "Eurozine",                url: "https://www.eurozine.com/feed/" },
+    { name: "Hyperallergic",           url: "https://hyperallergic.com/rss/" },
+    { name: "Arts & Letters Daily",    url: "https://www.aldaily.com/feed/" },
+    { name: "Kottke",                  url: "https://feeds.kottke.org/main" },
+    { name: "The Sunday Long Read",    url: "https://sundaylongread.com/feed/" },
+    { name: "The Stacks Reader",       url: "https://www.thestacksreader.com/feed/" },
+    { name: "Neal Stephenson",         url: "https://nealstephenson.substack.com/feed" },
+    { name: "N + 1 Mag",               url: "https://www.nplusonemag.com/feed/" },
+    { name: "OUPblog",                 url: "https://blog.oup.com/feed/" },
   ],
-
-  // Health
-  health: [
-    { name: "Psyche (Aeon)",             url: "https://psyche.co/feed.rss" },
-    { name: "Knowable Magazine",         url: "https://knowablemagazine.org/rss" },
-    { name: "NPR Health (Shots)",        url: "https://feeds.npr.org/1128/rss.xml" },
+ 
+  "Military": [
+    { name: "War on the Rocks",        url: "https://warontherocks.com/feed/" },
+    { name: "Modern War Institute",    url: "https://mwi.westpoint.edu/feed/" },
+    { name: "Inkstick Media",          url: "https://inkstickmedia.com/feed/" },
+    { name: "Atlantic Council",        url: "https://www.atlanticcouncil.org/feed/" },
+    { name: "Defense One",             url: "https://www.defenseone.com/rss/all/" },
+    { name: "Breaking Defense",        url: "https://breakingdefense.com/feed/" },
+    { name: "The Diplomat",            url: "https://thediplomat.com/feed/" },
+    { name: "The Strategist (ASPI)",   url: "https://www.aspistrategist.org.au/feed/" },
+    { name: "CIMSEC",                  url: "https://cimsec.org/feed/" },
+  ],
+ 
+  "Health": [
+    { name: "Psyche (Aeon)",           url: "https://psyche.co/feed.rss" },
+    { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
+    { name: "NPR Health (Shots)",      url: "https://feeds.npr.org/1128/rss.xml" },
     { name: "The Conversation (Health)", url: "https://theconversation.com/us/health/articles.atom" },
-    { name: "Undark",                    url: "https://undark.org/feed/" },
-    { name: "Fight Aging",               url: "https://www.fightaging.org/feed" },
-    { name: "STAT (First Opinion)",      url: "https://www.statnews.com/category/first-opinion/feed/" },
-    { name: "MIT News (Health)",         url: "https://news.mit.edu/rss/topic/health" },
+    { name: "Undark",                  url: "https://undark.org/feed/" },
+    { name: "Fight Aging",             url: "https://www.fightaging.org/feed" },
+    { name: "STAT (First Opinion)",    url: "https://www.statnews.com/category/first-opinion/feed/" },
+    { name: "MIT News (Health)",       url: "https://news.mit.edu/rss/topic/health" },
   ],
-
+ 
+  "Environment": [
+    { name: "Yale Environment 360",    url: "https://e360.yale.edu/feed.xml" },
+    { name: "Carbon Brief",            url: "https://www.carbonbrief.org/feed" },
+    { name: "Grist",                   url: "https://grist.org/feed/" },
+    { name: "Anthropocene Magazine",   url: "https://www.anthropocenemagazine.org/feed/" },
+    { name: "bioGraphic",              url: "https://www.biographic.com/feed/" },
+    { name: "Atmos",                   url: "https://atmos.earth/feed/" },
+    { name: "Noema Magazine",          url: "https://www.noemamag.com/?feed=noemarss" },
+    { name: "Knowable Magazine",       url: "https://knowablemagazine.org/rss" },
+    { name: "Yale Climate Connections", url: "https://yaleclimateconnections.org/feed/" },
+    { name: "Legal Planet",            url: "https://legal-planet.org/feed/" },
+    { name: "Weather West",            url: "https://weatherwest.com/feed" },
+    { name: "CleanTechnica",           url: "https://cleantechnica.com/feed/" },
+    { name: "World Resources Institute",url: "https://www.wri.org/insights/rss.xml" },
+    { name: "The Nature Conservancy",  url: "https://blog.nature.org/feed/" },
+    { name: "The Revelator",           url: "https://therevelator.org/feed/" },
+    // Removed 2026-08-07: My Planet First (last post ~239 days old).
+  ],
+ 
+  "Philosophy & Ethics": [
+    { name: "Aeon",                    url: "https://aeon.co/feed.rss" },
+    { name: "Psyche (Aeon)",           url: "https://psyche.co/feed.rss" },
+    { name: "Philosophy Now",          url: "https://philosophynow.org/rss" },
+    { name: "Justice Everywhere",      url: "https://justice-everywhere.org/feed/" },
+    { name: "Practical Ethics (Oxford)", url: "https://blog.practicalethics.ox.ac.uk/feed/" },
+    { name: "The Point Magazine",      url: "https://thepointmag.com/feed/" },
+    { name: "JSTOR Daily",             url: "https://daily.jstor.org/feed/" },
+    { name: "Arts & Letters Daily",    url: "https://www.aldaily.com/feed/" },
+    { name: "New Humanist",            url: "https://newhumanist.org.uk/feed/" },
+    { name: "Columbia University Press", url: "https://cupblog.org/feed/" },
+    { name: "OUPblog",                 url: "https://blog.oup.com/feed/" },
+    // Removed 2026-08-07: Blog of the APA (url served HTML, not a feed).
+  ],
+ 
+  // Kitle dengesi: bu kategoride menswear ve womenswear kaynak sayisi kabaca
+  // esit tutulur. Havuz promptundaki audience-balance kurali ancak her iki
+  // taraftan da yeterli aday geldiginde ise yarar (2026-07-15: 3 gun ust uste
+  // erkek giyimi vakasi). Su an 3 menswear / 4 womenswear / 2 sektor-notr.
+  "Fashion & Style": [
+    { name: "Business of Fashion",     url: "https://www.businessoffashion.com/arc/outboundfeeds/rss/?outputType=xml" },
+    { name: "Dazed (Fashion)",         url: "https://www.dazeddigital.com/rss" },
+    { name: "Vestoj",                  url: "https://vestoj.com/feed/" },
+    { name: "Put This On",             url: "https://putthison.com/feed/" },
+    { name: "Who What Wear",           url: "https://www.whowhatwear.com/feeds.xml" },
+    { name: "Permanent Style",         url: "https://www.permanentstyle.com/feed" },
+    { name: "Corporette",              url: "https://corporette.com/feed/" },
+    { name: "Heddels",                 url: "https://heddels.com/feed" },
+    { name: "Fashionista",             url: "https://fashionista.com/.rss/feed/28e21eb8-20ac-4617-a448-e845081591ca.xml" },
+    // Removed 2026-08-07: Advanced Style (435d), Blackbird Spyplane (--deep:
+    // 2/3 ornek "this post is for paid subscribers"), Die, Workwear! (feed
+    // gecerli ama en taze yazi 252 gunluk — yazar sosyal medyaya tasinmis).
+  ],
+ 
+  "Life & Relationships": [
+    { name: "Psyche (Aeon)",           url: "https://psyche.co/feed.rss" },
+    { name: "Aeon",                    url: "https://aeon.co/feed.rss" },
+    { name: "The Marginalian",         url: "https://www.themarginalian.org/feed/" },
+    { name: "The Gottman Institute",   url: "https://www.gottman.com/blog/feed/" },
+    { name: "Behavioral Scientist",    url: "https://behavioralscientist.org/feed/" },
+    { name: "Tiny Buddha",             url: "https://tinybuddha.com/feed/" },
+    { name: "Raptitude",               url: "https://www.raptitude.com/feed/" },
+    { name: "Kendra Nicole",           url: "https://kendranicole.net/feed/" },
+    { name: "Gretchen Rubin",          url: "https://gretchenrubin.com/feed/" },
+    { name: "The Positivity Blog",     url: "https://www.positivityblog.com/feed/" },
+    { name: "Ask Polly",               url: "https://www.ask-polly.com/feed" },
+    // Removed 2026-08-07: Mark Manson (224d), Ness Labs (57d), Engelsberg Ideas
+    // (jeopolitik/tarih denemeleri yayinliyor — World Politics'e tasindi).
+  ],
 };
-
+ 
 // ─── Podcast RSS source map ───────────────────────────────────────────────────
-
+ 
 export const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = {
-
-  // Technology & Software
-  technology: [
-    { name: "Lex Fridman Podcast",        url: "https://lexfridman.com/feed/podcast/" },
-    { name: "Hard Fork",                  url: "https://feeds.simplecast.com/l2i9YnTd" },
-    { name: "StarTalk Radio",             url: "https://feeds.simplecast.com/4T39_jAj" },
-    { name: "Acquired",                   url: "https://feeds.transistor.fm/acquired" },
-    { name: "Search Engine",              url: "https://rss.amperwave.net/v2/feed/audacynetwork/search-engine" },
-    { name: "Software Engineering Daily", url: "https://softwareengineeringdaily.com/feed/podcast/" },
-    { name: "The Changelog",              url: "https://changelog.com/podcast/feed" },
-    { name: "Hanselminutes",              url: "https://feeds.simplecast.com/gvtxUiIf" },
-    { name: "CoRecursive",                url: "https://rss.libsyn.com/shows/112428/destinations/628353.xml" },
+ 
+  "Software & DevOps": [
+    { name: "Software Engineering Daily",  url: "https://softwareengineeringdaily.com/feed/podcast/" },
+    { name: "The Changelog",               url: "https://changelog.com/podcast/feed" },
+    { name: "Hanselminutes",               url: "https://feeds.simplecast.com/gvtxUiIf" },
+    { name: "CoRecursive",                 url: "https://rss.libsyn.com/shows/112428/destinations/628353.xml" },
   ],
-
-  // Geopolitics & Security
-  geopolitics: [
-    { name: "War on the Rocks",                     url: "https://rss.libsyn.com/shows/70702/destinations/298196.xml" },
-    { name: "Foreign Policy Podcast",               url: "https://foreignpolicy.com/podcasts/feed/" },
-    { name: "From Our Own Correspondent",           url: "https://podcasts.files.bbci.co.uk/b006qjlq.rss" },
-    { name: "The Foreign Affairs Interview",        url: "https://feed.podbean.com/foreignaffairsmagazine/feed.xml" },
-    { name: "The President's Inbox",                url: "https://feed.podbean.com/thepresidentsinbox/feed.xml" },
-    { name: "Middle East Institute",                url: "https://rss.libsyn.com/shows/100837/destinations/531685.xml" },
-    { name: "The Century Foundation",               url: "https://feed.podbean.com/thecenturyfoundation/feed.xml" },
+ 
+  "Technology": [
+    { name: "Lex Fridman Podcast",         url: "https://lexfridman.com/feed/podcast/" },
+    { name: "Hard Fork",                   url: "https://feeds.simplecast.com/l2i9YnTd" },
+    { name: "StarTalk Radio",              url: "https://feeds.simplecast.com/4T39_jAj" },
+    { name: "Acquired",                    url: "https://feeds.transistor.fm/acquired" },
+    { name: "Search Engine",               url: "https://rss.amperwave.net/v2/feed/audacynetwork/search-engine" },
+  ],
+ 
+  "World Politics": [
+    { name: "War on the Rocks",            url: "https://rss.libsyn.com/shows/70702/destinations/298196.xml" },
+    { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
+    { name: "From Our Own Correspondent",  url: "https://podcasts.files.bbci.co.uk/b006qjlq.rss" },
+    { name: "The Foreign Affairs Interview", url: "https://feed.podbean.com/foreignaffairsmagazine/feed.xml" },
+    { name: "The President's Inbox",       url: "https://feed.podbean.com/thepresidentsinbox/feed.xml" },
+    { name: "Middle East Institute",       url: "https://rss.libsyn.com/shows/100837/destinations/531685.xml" },
+    { name: "The Century Foundation",      url: "https://feed.podbean.com/thecenturyfoundation/feed.xml" },
     { name: "Independent Thinking (Chatham House)", url: "https://rss.libsyn.com/shows/248171/destinations/1866551.xml" },
-    { name: "Trend Lines (WPR)",                    url: "https://feeds.simplecast.com/2cd8WWLc" },
-    { name: "Modern War Institute",                 url: "https://mwi.westpoint.edu/category/podcasts/feed/" },
-    { name: "Horns of a Dilemma",                   url: "https://rss.libsyn.com/shows/116143/destinations/662418.xml" },
+    { name: "Trend Lines (WPR)",           url: "https://feeds.simplecast.com/2cd8WWLc" },
+    // Removed 2026-08-07: duplicate "The President's Inbox" entry, and the
+    // unnamed "Simplecast" feed (Ng1Zvnge — last episode ~1928 days old, and the
+    // placeholder name would have been shown to users as the source).
   ],
-
-  // Business & Economics
-  business_economics: [
-    { name: "The Tim Ferriss Show",  url: "https://rss.art19.com/tim-ferriss-show" },
-    { name: "How I Built This",      url: "https://rss.art19.com/how-i-built-this" },
-    { name: "Masters of Scale",      url: "https://rss.art19.com/masters-of-scale" },
-    { name: "Invest Like the Best",  url: "https://feeds.megaphone.fm/investlikethebest" },
-    { name: "The Knowledge Project", url: "https://fs.blog/knowledge-project-podcast/feed/" },
-    { name: "The Insightful Leader", url: "https://rss.libsyn.com/shows/59519/destinations/228034.xml" },
-    { name: "Planet Money",          url: "https://feeds.npr.org/510289/podcast.xml" },
-    { name: "EconTalk",              url: "https://feeds.simplecast.com/wgl4xEgL" },
-    { name: "The Indicator",         url: "https://feeds.npr.org/510325/podcast.xml" },
-    { name: "Freakonomics Radio",    url: "https://feeds.simplecast.com/Y8lFbOT4" },
-    { name: "Macro Musings",         url: "https://rss.libsyn.com/shows/138806/destinations/865793.xml" },
+ 
+  "Business": [
+    { name: "The Tim Ferriss Show",        url: "https://rss.art19.com/tim-ferriss-show" },
+    { name: "How I Built This",            url: "https://rss.art19.com/how-i-built-this" },
+    { name: "Masters of Scale",            url: "https://rss.art19.com/masters-of-scale" },
+    { name: "Invest Like the Best",        url: "https://feeds.megaphone.fm/investlikethebest" },
+    { name: "The Knowledge Project",       url: "https://fs.blog/knowledge-project-podcast/feed/" },
+    { name: "The Insightful Leader",       url: "https://rss.libsyn.com/shows/59519/destinations/228034.xml" },
   ],
-
-  // Science & Environment
-  science_environment: [
-    { name: "In Our Time",                             url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
-    { name: "Science Friday",                          url: "https://feeds.simplecast.com/h18ZIZD_" },
-    { name: "Huberman Lab",                            url: "https://feeds.megaphone.fm/hubermanlab" },
-    { name: "Radiolab",                                url: "https://feeds.simplecast.com/EmVW7VGp" },
-    { name: "Lex Fridman Podcast",                     url: "https://lexfridman.com/feed/podcast/" },
-    { name: "New Scientist Podcast",                   url: "https://feeds.megaphone.fm/ARML6831509338" },
-    { name: "Physics World Weekly",                    url: "https://physicsworld.com/feed/podcast-weekly/" },
-    { name: "Volts",                                   url: "https://www.volts.wtf/feed" },
-    { name: "Outside/In",                              url: "https://rss.introcast.io/1061222770/feeds.megaphone.fm/TPG9719828981" },
-    { name: "Emergence Magazine",                      url: "https://feeds.captivate.fm/emergence-magazine/" },
-    { name: "The Climate Question (BBC)",              url: "https://podcasts.files.bbci.co.uk/w13xtvb6.rss" },
-    { name: "Mongabay Newscast",                       url: "https://rss.libsyn.com/shows/87224/destinations/424646.xml" },
-    { name: "Stockholm Environment Institute Podcast", url: "https://anchor.fm/s/fef3bdcc/podcast/rss" },
+ 
+  "Economics": [
+    { name: "Planet Money",                url: "https://feeds.npr.org/510289/podcast.xml" },
+    { name: "EconTalk",                    url: "https://feeds.simplecast.com/wgl4xEgL" },
+    { name: "The Indicator",               url: "https://feeds.npr.org/510325/podcast.xml" },
+    { name: "Freakonomics Radio",          url: "https://feeds.simplecast.com/Y8lFbOT4" },
+    { name: "Macro Musings",               url: "https://rss.libsyn.com/shows/138806/destinations/865793.xml" },
   ],
-
-  // Life, Work & Wellbeing
-  life_work: [
-    { name: "Hidden Brain",                    url: "https://feeds.simplecast.com/kwWc0lhf" },
-    { name: "The Tim Ferriss Show",            url: "https://rss.art19.com/tim-ferriss-show" },
-    { name: "Fresh Air",                       url: "https://feeds.npr.org/381444908/podcast.xml" },
+ 
+  "Science": [
+    { name: "In Our Time",                 url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
+    { name: "Science Friday",              url: "https://feeds.simplecast.com/h18ZIZD_" },
+    { name: "Huberman Lab",                url: "https://feeds.megaphone.fm/hubermanlab" },
+    { name: "Radiolab",                    url: "https://feeds.simplecast.com/EmVW7VGp" },
+    { name: "Lex Fridman Podcast",         url: "https://lexfridman.com/feed/podcast/" },
+    { name: "New Scientist Podcast",       url: "https://feeds.megaphone.fm/ARML6831509338" },
+    { name: "Physics World Weekly",        url: "https://physicsworld.com/feed/podcast-weekly/" },
+  ],
+ 
+  "Productivity": [
+    { name: "Hidden Brain",                url: "https://feeds.simplecast.com/kwWc0lhf" },
+    { name: "The Tim Ferriss Show",        url: "https://rss.art19.com/tim-ferriss-show" },
+    { name: "Fresh Air",                   url: "https://feeds.npr.org/381444908/podcast.xml" },
     { name: "Deep Questions with Cal Newport", url: "https://feeds.megaphone.fm/BVLLC6571400024" },
-    { name: "The Knowledge Project",           url: "https://fs.blog/knowledge-project-podcast/feed/" },
-    { name: "Where Should We Begin?",          url: "https://feeds.megaphone.fm/ep-wswb" },
-    { name: "The Happiness Lab",               url: "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/96c5c41e-0bc8-4661-b184-ae32006cd726/d623ef0b-3fee-4c26-b815-ae32006cd739/podcast.rss" },
-    { name: "The Science of Happiness",        url: "http://feeds.feedburner.com/TheScienceOfHappiness" },
-    { name: "Off the Page (Columbia UP)",      url: "https://feeds.megaphone.fm/NBN2998548382" },
+    { name: "The Knowledge Project",       url: "https://fs.blog/knowledge-project-podcast/feed/" },
   ],
-
-  // Culture & Style
-  culture_style: [
+ 
+  "History": [
+    { name: "In Our Time",                 url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
+    { name: "Throughline",                 url: "https://feeds.npr.org/510333/podcast.xml" },
+    { name: "American History Tellers",    url: "https://rss.art19.com/american-history-tellers" },
+    { name: "Tides of History",            url: "https://rss.art19.com/tides-of-history" },
+    { name: "HistoryExtra Podcast",        url: "https://feeds.megaphone.fm/GLT5697813216" },
+    { name: "Off the Page (Columbia UP)",  url: "https://feeds.megaphone.fm/NBN2998548382" },
+  ],
+ 
+  "Arts & Culture": [
     { name: "Switched on Pop",             url: "https://feeds.megaphone.fm/switchedonpop" },
     { name: "99% Invisible",               url: "https://feeds.simplecast.com/BqbsxVfO" },
     { name: "Fresh Air",                   url: "https://feeds.npr.org/381444908/podcast.xml" },
@@ -313,13 +334,40 @@ export const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = 
     { name: "The Week in Art",             url: "https://feeds.acast.com/public/shows/5e29a2ef7644ff6b3f984cff" },
     { name: "Articles of Interest",        url: "https://feed.articlesofinterest.club/" },
     { name: "Off the Page (Columbia UP)",  url: "https://feeds.megaphone.fm/NBN2998548382" },
-    { name: "The BoF Podcast",             url: "https://feeds.acast.com/public/shows/6355d904dd5e0e0012da88d1" },
-    { name: "The Glossy Podcast",          url: "https://feeds.megaphone.fm/DIGI4036367252" },
-    { name: "Dressed: History of Fashion", url: "https://feeds.megaphone.fm/ARML9655034287" },
+    // Removed 2026-08-07: The Oxford Comment (last episode ~983 days old).
   ],
-
-  // Philosophy & Ethics
-  philosophy: [
+ 
+  "Military": [
+    { name: "War on the Rocks",            url: "https://rss.libsyn.com/shows/70702/destinations/298196.xml" },
+    { name: "Modern War Institute",        url: "https://mwi.westpoint.edu/category/podcasts/feed/" },
+    { name: "Foreign Policy Podcast",      url: "https://foreignpolicy.com/podcasts/feed/" },
+    { name: "Horns of a Dilemma",          url: "https://rss.libsyn.com/shows/116143/destinations/662418.xml" },
+    // Removed 2026-08-07: RUSI Podcast (144d), The Strategy Bridge Podcast (136d).
+  ],
+ 
+  "Health": [
+    { name: "Hidden Brain",                url: "https://feeds.simplecast.com/kwWc0lhf" },
+    { name: "In Our Time",                 url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
+    { name: "Science Friday",              url: "https://feeds.simplecast.com/h18ZIZD_" },
+    { name: "The Peter Attia Drive",       url: "https://rss.libsyn.com/shows/121729/destinations/713489.xml" },
+    { name: "Health & Veritas",            url: "https://rss.libsyn.com/shows/371540/destinations/3052370.xml" },
+    { name: "Yale Cancer Answers",         url: "https://medicine.yale.edu/cancer/podcast/feed.xml" },
+    { name: "Cleveland Clinic Health Essentials Podcast", url: "https://feeds.megaphone.fm/IAIIL7971610262" },
+    // Removed 2026-08-07: Living Better Living Longer (235d), Speaking of
+    // Science (235d), McGill Podcasts (3825d).
+  ],
+ 
+  "Environment": [
+    { name: "Volts",                       url: "https://www.volts.wtf/feed" },
+    { name: "Outside/In",                  url: "https://rss.introcast.io/1061222770/feeds.megaphone.fm/TPG9719828981" },
+    { name: "Emergence Magazine",          url: "https://feeds.captivate.fm/emergence-magazine/" },
+    { name: "The Climate Question (BBC)",  url: "https://podcasts.files.bbci.co.uk/w13xtvb6.rss" },
+    { name: "Mongabay Newscast",           url: "https://rss.libsyn.com/shows/87224/destinations/424646.xml" },
+    { name: "Stockholm Environment Institute Podcast", url: "https://anchor.fm/s/fef3bdcc/podcast/rss" },
+   
+  ],
+ 
+  "Philosophy & Ethics": [
     { name: "In Our Time",                 url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
     { name: "Philosophize This!",          url: "https://feeds.feedburner.com/philosophizethis" },
     { name: "The Partially Examined Life", url: "https://rss.libsyn.com/shows/19421/destinations/16399.xml" },
@@ -328,31 +376,27 @@ export const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = 
     { name: "Mindscape",                   url: "https://rss.libsyn.com/shows/604590/destinations/5264190.xml" },
     { name: "The Gray Area",               url: "https://feeds.megaphone.fm/VMP5705694065" },
     { name: "Off the Page (Columbia UP)",  url: "https://feeds.megaphone.fm/NBN2998548382" },
+   
   ],
-
-  // History
-  history: [
-    { name: "In Our Time",                url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
-    { name: "Throughline",                url: "https://feeds.npr.org/510333/podcast.xml" },
-    { name: "American History Tellers",   url: "https://rss.art19.com/american-history-tellers" },
-    { name: "Tides of History",           url: "https://rss.art19.com/tides-of-history" },
-    { name: "HistoryExtra Podcast",       url: "https://feeds.megaphone.fm/GLT5697813216" },
-    { name: "Off the Page (Columbia UP)", url: "https://feeds.megaphone.fm/NBN2998548382" },
+ 
+  "Fashion & Style": [
+    { name: "99% Invisible",               url: "https://feeds.simplecast.com/BqbsxVfO" },
+    { name: "The BoF Podcast",             url: "https://feeds.acast.com/public/shows/6355d904dd5e0e0012da88d1" },
+    { name: "The Glossy Podcast",          url: "https://feeds.megaphone.fm/DIGI4036367252" },
+    { name: "Articles of Interest",        url: "https://feed.articlesofinterest.club/" },
+    { name: "Dressed: History of Fashion", url: "https://feeds.megaphone.fm/ARML9655034287" },
   ],
-
-  // Health
-  health: [
-    { name: "Hidden Brain",                               url: "https://feeds.simplecast.com/kwWc0lhf" },
-    { name: "In Our Time",                                url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
-    { name: "Science Friday",                             url: "https://feeds.simplecast.com/h18ZIZD_" },
-    { name: "The Peter Attia Drive",                      url: "https://rss.libsyn.com/shows/121729/destinations/713489.xml" },
-    { name: "Health & Veritas",                           url: "https://rss.libsyn.com/shows/371540/destinations/3052370.xml" },
-    { name: "Yale Cancer Answers",                        url: "https://medicine.yale.edu/cancer/podcast/feed.xml" },
-    { name: "Cleveland Clinic Health Essentials Podcast", url: "https://feeds.megaphone.fm/IAIIL7971610262" },
+ 
+  "Life & Relationships": [
+    { name: "Hidden Brain",                url: "https://feeds.simplecast.com/kwWc0lhf" },
+    { name: "Fresh Air",                   url: "https://feeds.npr.org/381444908/podcast.xml" },
+    { name: "Where Should We Begin?",      url: "https://feeds.megaphone.fm/ep-wswb" },
+    { name: "The Happiness Lab",           url: "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/96c5c41e-0bc8-4661-b184-ae32006cd726/d623ef0b-3fee-4c26-b815-ae32006cd739/podcast.rss" },
+    { name: "The Science of Happiness",    url: "http://feeds.feedburner.com/TheScienceOfHappiness" },
+    { name: "Off the Page (Columbia UP)",  url: "https://feeds.megaphone.fm/NBN2998548382" },
   ],
-
 };
-
+ 
 // ─── RSS fetch & parse ────────────────────────────────────────────────────────
 
 export interface RSSItem {
@@ -669,15 +713,33 @@ async function fetchUserEmail(userId: string): Promise<string | null> {
 
 // ─── Email ────────────────────────────────────────────────────────────────────
 
+const CATEGORY_EMOJI: Record<string, string> = {
+  "Software & DevOps": "🛠️",
+  Technology: "💡",
+  "World Politics": "🌍",
+  Business: "📈",
+  Economics: "💰",
+  Science: "🔬",
+  Productivity: "⚡",
+  History: "🏛️",
+  "Arts & Culture": "🎭",
+  Military: "⚔️",
+  Health: "🧬",
+  Environment: "🌿",
+  "Philosophy & Ethics": "🧠",
+  "Fashion & Style": "👗",
+  "Life & Relationships": "💛",
+};
+
 function articleEmailBlock(article: Article, withDivider: boolean): string {
-  const emoji = categoryEmoji(article.category);
+  const emoji = CATEGORY_EMOJI[article.category] ?? "📄";
   const divider = withDivider
     ? "border-top:1px solid #f3f4f6;padding-top:28px;margin-top:4px;"
     : "";
   return `
               <tr>
                 <td style="padding:28px 0;${divider}">
-                  <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">${emoji} ${categoryLabel(article.category)}</span>
+                  <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">${emoji} ${article.category}</span>
                   <h2 style="margin:10px 0 4px 0;font-size:21px;font-weight:700;line-height:1.3;color:#111827;">
                     <a href="${article.url}" style="color:#111827;text-decoration:none;">${article.title}</a>
                   </h2>
@@ -694,7 +756,7 @@ function podcastEmailBlock(podcast: Podcast): string {
               <tr>
                 <td style="padding:28px 0;border-top:1px solid #f3f4f6;">
                   <span style="font-size:11px;font-weight:700;color:#d1d5db;margin-right:8px;">🎙</span>
-                  <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">Podcast · ${categoryLabel(podcast.category)}</span>
+                  <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">Podcast · ${podcast.category}</span>
                   <h2 style="margin:10px 0 4px 0;font-size:18px;font-weight:700;line-height:1.3;color:#111827;">
                     <a href="${podcast.url}" style="color:#111827;text-decoration:none;">${podcast.title}</a>
                   </h2>
@@ -723,8 +785,8 @@ function buildEmailHtml(articles: Article[], podcasts: Podcast[]): string {
   const cats = Array.from(new Set(articles.map((a) => a.category)));
   const chips = cats
     .map((c) => {
-      const e = categoryEmoji(c);
-      return `<span style="display:inline-block;margin:0 6px 6px 0;padding:4px 10px;background:#f3f4f6;border-radius:20px;font-size:11px;color:#6b7280;font-weight:500;">${e} ${categoryLabel(c)}</span>`;
+      const e = CATEGORY_EMOJI[c] ?? "📄";
+      return `<span style="display:inline-block;margin:0 6px 6px 0;padding:4px 10px;background:#f3f4f6;border-radius:20px;font-size:11px;color:#6b7280;font-weight:500;">${e} ${c}</span>`;
     })
     .join("");
 
@@ -782,7 +844,7 @@ function buildEmailText(articles: Article[], podcasts: Podcast[]): string {
   });
   const articleLines = articles
     .map(
-      (a) => `${categoryLabel(a.category)} — ${a.source}\n${a.title}\n${a.reason}\n${a.url}`,
+      (a) => `${a.category} — ${a.source}\n${a.title}\n${a.reason}\n${a.url}`,
     )
     .join("\n\n");
   const podcastLines = podcasts.length
@@ -790,7 +852,7 @@ function buildEmailText(articles: Article[], podcasts: Podcast[]): string {
       podcasts
         .map(
           (p) =>
-            `🎙 Podcast · ${categoryLabel(p.category)} — ${p.source}\n${p.title}\n${p.reason}\n${p.url}`,
+            `🎙 Podcast · ${p.category} — ${p.source}\n${p.title}\n${p.reason}\n${p.url}`,
         )
         .join("\n\n")
     : "";
@@ -939,9 +1001,39 @@ function isLikelyNewsReport(
   return HARD_NEWS_DESCRIPTION_PATTERN.test(item.description);
 }
 
-// Yaş pencereleri ve podcast penceresi artık shared/categories.ts'ten gelir —
-// kategori tanımıyla aynı yerde durmaları, birinin güncellenip diğerinin
-// unutulmasını engelliyor.
+// Yaş pencereleri (2026-08-07 revizyonu).
+//
+// Eski değerler haber ürünü varsayımıyla ayarlanmıştı (World Politics 4 gün,
+// Military/Business/Economics 10 gün). Bu, "asla haber raporu önerme, bir ay
+// sonra da okunmaya değsin" diyen prompt ile doğrudan çelişiyordu: dar pencere
+// havuzu zorunlu olarak en haber-benzeri içeriğe itiyordu. Ayrıca aylık yayın
+// yapan kaliteli kaynaklar (Le Monde Diplomatique, LSE IR Blog, Commoncog,
+// AWS Architecture) hiçbir zaman scoreAndFilter'dan geçemiyordu.
+//
+// Genişletmenin tekrar riski düşük: sıralamada `freshness` hâlâ birinci
+// kriter, yani taze aday varken eski seçilmiyor; ayrıca son 7 günün URL'leri
+// history.seenUrls ile zaten eleniyor.
+const ARTICLE_MAX_AGE_DAYS: Record<string, number> = {
+  "Software & DevOps": 21,
+  Technology: 14,
+  "World Politics": 14,
+  Business: 21,
+  Economics: 21,
+  Science: 21,
+  Productivity: 45,
+  History: 60,
+  "Arts & Culture": 45,
+  Military: 21,
+  Health: 21,
+  Environment: 45,
+  "Philosophy & Ethics": 60,
+  "Fashion & Style": 45,
+  "Life & Relationships": 30,
+};
+
+// Podcast'ler için tek pencere. 45 → 90: Philosophize This! gibi düzensiz ama
+// canlı programlar 45 günü aşan aralarla yayınlıyor ve tamamen görünmez oluyordu.
+const PODCAST_MAX_AGE_DAYS = 90;
 
 function normaliseTitle(title: string): string {
   return title
@@ -1098,10 +1190,11 @@ async function selectBestArticle(
     ? `\nIMPORTANT: The user has recently seen articles from: ${recentSourcesList}. Prefer a different source today if possible.`
     : "";
 
-  const categoryList = interests.map((i) => `"${categoryLabel(i)}"`).join(", ");
+  const categoryList = interests.map((i) => `"${i}"`).join(", ");
 
-  const toneNote = interests.some((i) => (LIGHT_CATEGORY_IDS as string[]).includes(i))
-    ? `\nTONE (applies to Life, Work & Wellbeing): readers of these sections want pieces that are uplifting, warm, practical, or delightful — personal growth, style, joy, connection, creativity, everyday life. Strongly prefer positive, hopeful, or genuinely useful angles. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness, tragedy) unless there is truly nothing else on-topic. When two candidates fit, always choose the lighter, more enjoyable one.`
+  const LIGHT_CATEGORIES = ["Life & Relationships"];
+  const toneNote = interests.some((i) => LIGHT_CATEGORIES.includes(i))
+    ? `\nTONE (applies to Life & Relationships): readers of these sections want pieces that are uplifting, warm, practical, or delightful — personal growth, style, joy, connection, creativity, everyday life. Strongly prefer positive, hopeful, or genuinely useful angles. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness, tragedy) unless there is truly nothing else on-topic. When two candidates fit, always choose the lighter, more enjoyable one.`
     : "";
 
   const prompt = `You curate Cogletta's daily long-form reading picks.
@@ -1234,10 +1327,11 @@ async function selectBestPodcast(
     ? `\nIMPORTANT: The user has recently seen content from: ${recentSourcesList}. Prefer a different podcast show today if possible.`
     : "";
 
-  const categoryList = interests.map((i) => `"${categoryLabel(i)}"`).join(", ");
+  const categoryList = interests.map((i) => `"${i}"`).join(", ");
 
-  const toneNote = interests.some((i) => (LIGHT_CATEGORY_IDS as string[]).includes(i))
-    ? `\nTONE (applies to Life, Work & Wellbeing): prefer episodes that are uplifting, warm, practical, or fun — personal growth, style, joy, connection, creativity, everyday life. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness) unless there is truly nothing else on-topic. When two fit, choose the lighter, more enjoyable one.`
+  const LIGHT_CATEGORIES = ["Life & Relationships"];
+  const toneNote = interests.some((i) => LIGHT_CATEGORIES.includes(i))
+    ? `\nTONE (applies to Life & Relationships): prefer episodes that are uplifting, warm, practical, or fun — personal growth, style, joy, connection, creativity, everyday life. AVOID heavy or distressing subjects (war, death, grief, trauma, abuse, serious illness) unless there is truly nothing else on-topic. When two fit, choose the lighter, more enjoyable one.`
     : "";
 
   const prompt = `You are an editorial assistant for Cogletta, a daily content curation app.
@@ -1428,12 +1522,12 @@ async function selectPoolWithBedrock(
   const extraFields = isPodcast
     ? `"duration": "<duration or estimate>"`
     : `"readingTime": "<estimate such as '8 min read'>"`;
-  // Culture & Style: kaynak listesi tek başına yetmez — kitle dengesi havuz
+  // Fashion & Style: kaynak listesi tek başına yetmez — kitle dengesi havuz
   // seviyesinde kurala bağlanmalı, yoksa güçlü menswear kaynakları üst sıraları
   // domine ediyor (2026-07-15: 3 gün üst üste erkek giyimi vakası).
   const fashionNote =
-    category === AUDIENCE_BALANCED_CATEGORY_ID
-      ? `\n\nAudience balance rule (Culture & Style): the pool MUST mix menswear and womenswear items every day — neither may exceed roughly two-thirds of the pool. Tag every item with "Menswear" or "Womenswear" in its subTopics (both for unisex/industry pieces), even when those tags are not in the active sub-topic list. Vary the audience of the TOP-RANKED items from day to day: if recently-shown markers indicate one audience dominated recent days, rank the other audience first today.`
+    category === "Fashion & Style"
+      ? `\n\nAudience balance rule (Fashion & Style): the pool MUST mix menswear and womenswear items every day — neither may exceed roughly two-thirds of the pool. Tag every item with "Menswear" or "Womenswear" in its subTopics (both for unisex/industry pieces), even when those tags are not in the active sub-topic list. Vary the audience of the TOP-RANKED items from day to day: if recently-shown markers indicate one audience dominated recent days, rank the other audience first today.`
       : "";
 
   const prompt = `Create today's shared Cogletta ${category} pool from the candidates below.\n\nSelect up to ${desiredSize} high-quality ${contentType}. Rank best first. Never repeat an index. Include at most two items from any single source. Cogletta NEVER recommends news reporting. REJECT incident reports, casualty reports, battlefield updates, attack reports and all other current-events coverage. Also REJECT government or company announcements, product or tool releases, calls for papers, event listings and meta/professional-news posts. Every selected item must itself be a substantive essay, explainer, research piece, historical analysis or long-form feature with durable educational value. Apply this evergreen test: it should still be worth reading at least one month from now. A current event may appear only as context for broader lasting analysis, never as the main subject. Reject off-topic, roundup, transcript, video, breaking-news or liveblog content. Prefer depth, then freshness and source diversity. Also REJECT items whose body is mostly a pointer to an external piece (link-posts, "read more here" redirects, roundups) rather than a complete standalone read.\n\nActive sub-topics selected by users:\n${subTopicText}${fashionNote}\n\nCoverage rule: when a clearly relevant quality candidate exists, include at least one item for every active sub-topic. Never force weak or unrelated content merely to fill coverage. Tag each selected item only with exact sub-topic names from the list. General ${category} pieces may have an empty subTopics array.\n\nCandidates:\n${candidateList}\n\nReturn only valid JSON:\n{\n  "items": [\n    {\n      "selectedIndex": <candidate index>,\n      "subTopics": ["<exact active sub-topic>"],\n      "qualityScore": <0-100>,\n      "summary": "<specific ${isPodcast ? "2-3" : "3-4"} sentence summary>",\n      "reason": "<max 18 words; concrete hook>",\n      \"imageQuery\": \"<3-4 concrete VISUAL stock-photo keywords capturing the item THEME; never reuse ambiguous or figurative title words>\",\n      ${extraFields}\n    }\n  ],\n  "unrepresentedSubTopics": ["<exact active sub-topic with no suitable selected item>"]\n}`;
