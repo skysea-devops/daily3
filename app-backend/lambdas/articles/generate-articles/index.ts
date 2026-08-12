@@ -91,7 +91,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Inkstick Media",                   url: "https://inkstickmedia.com/feed/" },
     { name: "Defense One",                      url: "https://www.defenseone.com/rss/all/" },
     { name: "Breaking Defense",                 url: "https://breakingdefense.com/feed/" },
-    { name: "The Diplomat",                     url: "https://thediplomat.com/feed/" },
     { name: "The Strategist (ASPI)",            url: "https://www.aspistrategist.org.au/feed/" },
     { name: "CIMSEC",                           url: "https://cimsec.org/feed/" },
   ],
@@ -115,12 +114,12 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "VoxEU (CEPR)",          url: "https://cepr.org/rss/vox-content" },
     { name: "FRED Blog",             url: "https://fredblog.stlouisfed.org/feed/" },
     { name: "The Big Picture",       url: "https://ritholtz.com/feed/" },
+
   ],
 
   // Science & Environment
   science_environment: [
     { name: "Quanta Magazine",            url: "https://www.quantamagazine.org/feed/" },
-    { name: "Nautilus",                   url: "https://nautil.us/feed" },
     { name: "Undark",                     url: "https://undark.org/feed/" },
     { name: "Knowable Magazine",          url: "https://knowablemagazine.org/rss" },
     { name: "Ars Technica Science",       url: "https://feeds.arstechnica.com/arstechnica/science" },
@@ -151,7 +150,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Raptitude",             url: "https://www.raptitude.com/feed/" },
     { name: "Happier Human",         url: "https://www.happierhuman.com/feed/" },
     { name: "Behavioral Scientist",  url: "https://behavioralscientist.org/feed/" },
-    { name: "Kellogg Insight",       url: "https://insight.kellogg.northwestern.edu/feed/rss" },
     { name: "Aeon",                  url: "https://aeon.co/feed.rss" },
     { name: "The Marginalian",       url: "https://www.themarginalian.org/feed/" },
     { name: "The Gottman Institute", url: "https://www.gottman.com/blog/feed/" },
@@ -160,6 +158,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Gretchen Rubin",        url: "https://gretchenrubin.com/feed/" },
     { name: "The Positivity Blog",   url: "https://www.positivityblog.com/feed/" },
     { name: "Ask Polly",             url: "https://www.ask-polly.com/feed" },
+     { name: "Kellogg Insight",       url: "https://insight.kellogg.northwestern.edu/feed/rss" },
   ],
 
   // Culture & Style
