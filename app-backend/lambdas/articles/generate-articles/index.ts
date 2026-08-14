@@ -86,7 +86,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "LSE European Politics and Policy", url: "https://blogs.lse.ac.uk/europpblog/feed/" },
     { name: "LSE IR Blog",                      url: "https://blogs.lse.ac.uk/internationalrelations/feed/" },
     { name: "Engelsberg Ideas",                 url: "https://engelsbergideas.com/feed/" },
-    { name: "War on the Rocks",                 url: "https://warontherocks.com/feed/" },
     { name: "Modern War Institute",             url: "https://mwi.westpoint.edu/feed/" },
     { name: "Inkstick Media",                   url: "https://inkstickmedia.com/feed/" },
     { name: "Defense One",                      url: "https://www.defenseone.com/rss/all/" },
