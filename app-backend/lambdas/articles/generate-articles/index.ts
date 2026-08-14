@@ -449,26 +449,59 @@ async function resolveFinalUrl(url: string): Promise<string> {
   }
 }
 
+/**
+ * HTML varliklarini cozer. Ayni metinde birden fazla tur uygulanabilir cunku
+ * bazi feed'ler cift kodluyor (`&amp;lt;p&amp;gt;` → `&lt;p&gt;` → `<p>`).
+ */
+function decodeEntities(input: string): string {
+  return input
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#0*39;/g, "'")
+    .replace(/&#8217;/g, "'")
+    .replace(/&#8216;/g, "'")
+    .replace(/&#8220;/g, '"')
+    .replace(/&#8221;/g, '"')
+    .replace(/&#8230;/g, "…")
+    .replace(/&nbsp;/gi, " ");
+}
+
+/**
+ * Feed aciklamasindan duz metin cikarir.
+ *
+ * SIRA ONEMLI (2026-08-14 vakasi): onceki surum once etiketleri siliyor, sonra
+ * varliklari cozuyordu. History Today gibi Drupal tabanli feed'ler aciklamayi
+ * CIFT kodluyor — strip calistiginda ortada etiket yok, decode edilince
+ * `<span property="schema:name">` gibi isaretleme metnin icinde beliriyor ve
+ * temizleyecek adim kalmiyordu. Kullaniciya ham HTML gosterildi.
+ *
+ * Cozum: coz → sil dongusu. Cift kodlamada ikinci tur gerektigi icin en fazla
+ * uc kez donuyoruz; metin degismeyi biraktiginda erken cikiyor.
+ */
+function stripHtml(input: string): string {
+  let text = input;
+  for (let pass = 0; pass < 3; pass++) {
+    const before = text;
+    text = decodeEntities(text).replace(/<[^>]+>/g, " ");
+    if (text === before) break;
+  }
+  return text
+    .replace(/&#\d+;/g, "")
+    .replace(/&[a-z]+;/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function extractItems(xml: string, sourceName: string): RSSItem[] {
   const itemTag = xml.includes("<entry") ? "entry" : "item";
   const segments = xml.split(`<${itemTag}`).slice(1).slice(0, 20);
 
   return segments
     .map((seg) => {
-      const title = extractText(seg, "title")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"')
-        .replace(/&#8217;/g, "'")
-        .replace(/&#8216;/g, "'")
-        .replace(/&#8220;/g, '"')
-        .replace(/&#8221;/g, '"')
-        .replace(/&#8230;/g, "…")
-        .replace(/&#\d+;/g, "")
-        .replace(/&[a-z]+;/g, "")
-        .replace(/<[^>]+>/g, "")
-        .trim();
+      const title = stripHtml(extractText(seg, "title"));
 
       const rawUrl =
         extractText(seg, "link") ||
@@ -547,15 +580,7 @@ function extractItems(xml: string, sourceName: string): RSSItem[] {
         "";
       const duration = durationRaw ? formatDuration(durationRaw) : "";
 
-      const cleanDesc = description
-        .replace(/<[^>]+>/g, " ")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"')
-        .replace(/&#8230;/g, "…")
-        .replace(/&#\d+;/g, "")
-        .replace(/&[a-z]+;/g, "")
+      const cleanDesc = stripHtml(description)
         .replace(/The post .+ appeared( first)? on .+\./gi, "")
         .replace(/\[\s*\.\.\.\s*\]/g, "…")
         .replace(/\s+/g, " ")
