@@ -16,7 +16,8 @@ export type EssayBlock =
   | { type: "p"; text: string }
   | { type: "h2"; text: string }
   | { type: "quote"; text: string; cite?: string }
-  | { type: "ul"; items: string[] };
+  | { type: "ul"; items: string[] }
+  | { type: "img"; src: string; alt: string; caption?: string };
 
 export interface Author {
   name: string;
@@ -49,6 +50,7 @@ export interface Essay {
   /** Bos birakilirsa DEFAULT_AUTHOR kullanilir. Sadece misafir yazarda doldur. */
   author?: Author;
   blocks: EssayBlock[];
+  
 }
 
 /** Yazinin yazari — alan bos ise varsayilan yazar. */
@@ -114,6 +116,7 @@ export const ESSAYS: Essay[] = [
         type: "p",
         text: "Experiencing the fruits of your own creation is a feeling like no other.",
       },
+      { type: "img", src: "/essays/chasing-an-idea/Cogletta-and-Me.jpg", alt: "..." }
     ],
   },
   {

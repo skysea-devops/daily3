@@ -75,6 +75,38 @@ function Block({ block }: { block: EssayBlock }) {
           {block.text}
         </h2>
       );
+    case "img":
+      return (
+        <figure style={{ margin: "36px 0" }}>
+          {/* next/image yerine <img>: statik export (output: export) ile
+              optimizasyon calismadigi icin dogrudan servis ediliyor. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={block.src}
+            alt={block.alt}
+            loading="lazy"
+            style={{
+              width: "100%",
+              height: "auto",
+              display: "block",
+              borderRadius: 12,
+            }}
+          />
+          {block.caption && (
+            <figcaption
+              style={{
+                marginTop: 10,
+                fontSize: "0.8125rem",
+                lineHeight: 1.6,
+                color: "var(--ink-muted)",
+                textAlign: "center",
+              }}
+            >
+              {block.caption}
+            </figcaption>
+          )}
+        </figure>
+      );
     case "quote":
       return (
         <blockquote
