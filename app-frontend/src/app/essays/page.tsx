@@ -5,7 +5,7 @@ import ShareCard from "@/components/ShareCard";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import { ESSAYS } from "@/data/essays";
+import { ESSAYS, essayAuthor } from "@/data/essays";
 
 export const metadata: Metadata = {
   title: "Essays — Cogletta",
@@ -87,6 +87,8 @@ export default function EssaysPage() {
                 <time dateTime={essay.date}>{formatDate(essay.date)}</time>
                 {" · "}
                 {essay.readingMinutes} min read
+                {" · "}
+                {essayAuthor(essay).name}
               </p>
               <h2
                 style={{

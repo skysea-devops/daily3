@@ -582,6 +582,15 @@ function extractItems(xml: string, sourceName: string): RSSItem[] {
 
       const cleanDesc = stripHtml(description)
         .replace(/The post .+ appeared( first)? on .+\./gi, "")
+        // Podcast feed'lerinde her bolumun sonuna eklenen sabit reklam ve
+        // platform metni. Ozet olarak gosterildiginde kullaniciya "Hosted by
+        // Simplecast, an AdsWizz company. See pcm.adswizz.com..." diye
+        // gidiyordu (2026-08-15 Hidden Brain vakasi).
+        .replace(/Hosted by [\s\S]{0,80}?for information about our collection and use of personal data for advertising\.?/gi, "")
+        .replace(/Learn more about your ad choices\.?\s*Visit\s+\S+/gi, "")
+        .replace(/(Be sure to )?[Ss]ubscribe so you don't miss any of our (upcoming )?videos[.!]?/g, "")
+        .replace(/[^.!?]*\bis now on YouTube\b[^.!?]*[.!?]/gi, "")
+        .replace(/[^.!?]*\bfree seven-day trial\b[^.!?]*[.!?]/gi, "")
         .replace(/\[\s*\.\.\.\s*\]/g, "…")
         .replace(/\s+/g, " ")
         .trim()
@@ -589,7 +598,12 @@ function extractItems(xml: string, sourceName: string): RSSItem[] {
 
       return {
         title,
-        url,
+        // finalUrl, url DEGIL: show-page tespiti (asagida) bolum sayfasi
+        // olmayan item <link>'lerini guid ya da ses enclosure'i ile degistirir.
+        // 2026-08-15'e kadar bu satir `url` idi — yani tum tespit mantigi olu
+        // koddu ve Hidden Brain gibi feed'lerde kullanici siriusxm.com ana
+        // sayfasina (ucretli abonelik duvari) gonderiliyordu.
+        url: finalUrl,
         description: cleanDesc,
         pubDate: pubDateRaw,
         pubTimestamp: parsePubDate(pubDateRaw),

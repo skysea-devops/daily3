@@ -4,6 +4,8 @@
 //
 // To publish a new essay:
 //   1. Add a new object to the ESSAYS array below (newest first).
+//      `author` alanini BOS BIRAK — varsayilan yazar otomatik gelir.
+//      Yalnizca misafir yazar icin: author: { name, role, avatar?, url? }
 //   2. Merge to `prod` — the static export rebuilds every page,
 //      including /essays/, /essays/<slug>/ and sitemap.xml.
 //
@@ -16,16 +18,104 @@ export type EssayBlock =
   | { type: "quote"; text: string; cite?: string }
   | { type: "ul"; items: string[] };
 
+export interface Author {
+  name: string;
+  role: string;
+  /** Opsiyonel. Foto yoksa ismin bas harfi daire icinde gosterilir —
+   *  boylece misafir yazar foto vermediginde kirik resim ikonu cikmaz. */
+  avatar?: string;
+  /** Opsiyonel. Verilirse yazar adi bu adrese link olur. */
+  url?: string;
+}
+
+/**
+ * Yazilarin cogunu Ismail yaziyor. Bu yuzden `author` OPSIYONEL: kendi
+ * yazilarinda alani hic doldurma, sistem otomatik olarak DEFAULT_AUTHOR'u
+ * gosterir. Yalnizca MISAFIR yazar geldiginde o yaziya `author` ekle.
+ */
+export const DEFAULT_AUTHOR: Author = {
+  name: "Ismail Gokdeniz",
+  role: "Founder of Cogletta",
+  url: "https://www.linkedin.com/in/samuel80/",
+  // avatar: "/authors/ismail.jpg",  // dosya eklendiginde bu satiri ac
+};
+
 export interface Essay {
   slug: string;          // URL segment: /essays/<slug>/
   title: string;
   description: string;   // Used for <meta description> and list page — keep under ~160 chars
   date: string;          // ISO format: "2026-07-09"
   readingMinutes: number;
+  /** Bos birakilirsa DEFAULT_AUTHOR kullanilir. Sadece misafir yazarda doldur. */
+  author?: Author;
   blocks: EssayBlock[];
 }
 
+/** Yazinin yazari — alan bos ise varsayilan yazar. */
+export function essayAuthor(essay: Essay): Author {
+  return essay.author ?? DEFAULT_AUTHOR;
+}
+
+/** Foto yoksa gosterilecek bas harf. */
+export function authorInitial(author: Author): string {
+  return author.name.trim().charAt(0).toUpperCase() || "?";
+}
+
 export const ESSAYS: Essay[] = [
+  {
+    slug: "chasing-an-idea",
+    title: "Chasing an Idea: The Morning Surprises of My Own Creation",
+    description:
+      "A personal essay on the quiet joy of waking up to something I built myself — and how a side project became a small, satisfying part of my daily routine.",
+    date: "2026-08-08",
+    readingMinutes: 4,
+    blocks: [
+      {
+        type: "p",
+        text: "You imagine something, you code it, you fix it, you test it again...",
+      },
+      {
+        type: "p",
+        text: "And then one day, that very thing becomes a quiet yet deeply satisfying part of your daily routine.",
+      },
+      {
+        type: "p",
+        text: "Lately, I've been waking up with a genuine sense of curiosity every morning. Before I even grab my coffee, the first thing I do is check my inbox or dashboard, just to see the titles of what's waiting for me. Because today—just like yesterday—a fresh batch of articles on the topics I'm most passionate about is waiting for me, curated while I was still asleep.",
+      },
+      {
+        type: "p",
+        text: "And the best part? I'm experiencing all of this through an app I built myself.",
+      },
+      {
+        type: "p",
+        text: "Ever since I finished the minimum viable product (MVP), the rhythm of how I consume knowledge has completely shifted. Sometimes I'm standing on a crowded subway train during my morning commute, reading a surprise article that just hit my email. Other times, I'm settled at my desk, diving deep straight from my dashboard.",
+      },
+      {
+        type: "p",
+        text: "The internet is a vast ocean, but encountering high-quality content that speaks directly to your specific curiosities isn't always easy. Now, starting the day with that simple question—\"I wonder what I'll discover today?\"—adds a whole new layer of joy to my mornings.",
+      },
+      {
+        type: "p",
+        text: "Spotting a problem is one thing, but building a solution with your own hands and watching it enrich your everyday life is something else entirely.",
+      },
+      {
+        type: "p",
+        text: "I'm happy—not just because I'm learning, but because I became the architect of the very system that feeds my curiosity.",
+      },
+      {
+        type: "p",
+        text: "If you have a side project in mind—something you don't expect to change the world with, but simply want to build to bring a little joy into your own life—don't wait.",
+      },
+      {
+        type: "p",
+        text: "Take that first step.",
+      },
+      {
+        type: "p",
+        text: "Experiencing the fruits of your own creation is a feeling like no other.",
+      },
+    ],
+  },
   {
     slug: "why-read-three-articles-a-day",
     title: "Why Read Three Articles a Day?",
