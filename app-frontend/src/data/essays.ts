@@ -131,8 +131,8 @@ export const ESSAYS: Essay[] = [
       {
         type: "img",
         src: "/essays/chasing-an-idea/Cogletta-and-Me.jpg",
-        alt: "Ismail, working on Cogletta from his balcony in Istanbul",
-        caption: "Ismail · Founder of Cogletta",
+        alt: "Working on Cogletta, the app I built to bring reading back into my mornings",
+        caption: "Working on Cogletta, the app I built to bring reading back into my mornings",
       },
     ],
   },
