@@ -94,7 +94,7 @@ export const ESSAYS: Essay[] = [
       },
       {
         type: "p",
-        text: "The internet is a vast ocean, but encountering high-quality content that speaks directly to your specific curiosities isn't always easy. Now, starting the day with that simple question—\"I wonder what I'll discover today?\"—adds a whole new layer of joy to my mornings.",
+        text: "The internet and also social media  is a vast ocean, but encountering high-quality content that speaks directly to your specific curiosities isn't always easy. Now, starting the day with that simple question—\"I wonder what I'll discover today?\"—adds a whole new layer of joy to my mornings.",
       },
       {
         type: "p",
