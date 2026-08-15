@@ -82,7 +82,15 @@ export const ESSAYS: Essay[] = [
       },
       {
         type: "p",
-        text: "Lately, I've been waking up with a genuine sense of curiosity every morning. Before I even grab my coffee, the first thing I do is check my inbox or dashboard, just to see the titles of what's waiting for me. Because today—just like yesterday—a fresh batch of articles on the topics I'm most passionate about is waiting for me, curated while I was still asleep.",
+        text: "Lately, I've been waking up with a genuine sense of curiosity every morning.",
+      },
+      {
+        type: "p",
+        text: "Before I even grab my coffee, the first thing I do is check my inbox or dashboard, just to see the titles of the articles waiting for me.",
+      },
+      {
+        type: "p",
+        text: "Because every morning, a fresh batch of articles on the topics I'm passionate about is curated while I sleep.",
       },
       {
         type: "p",
@@ -90,11 +98,15 @@ export const ESSAYS: Essay[] = [
       },
       {
         type: "p",
-        text: "Ever since I finished the minimum viable product (MVP), the rhythm of my reading habits has changed. Sometimes I'm standing on a crowded subway train during my morning commute, reading a surprise article that just hit my email. Other times, I'm settled at my desk, diving deep straight from my dashboard.",
+        text: "I've always loved reading. But somewhere along the way, between endless feeds and the noise of the day, I stopped doing it as much as I wanted to. The desire never left—only the habit did. What I really missed wasn't just reading itself, but the quiet curiosity that comes with it: the pull to understand something a little more deeply than yesterday.",
       },
       {
         type: "p",
-        text: "The internet and also social media  is a vast ocean, but encountering high-quality content that speaks directly to your specific curiosities isn't always easy. Now, starting the day with that simple question—\"I wonder what I'll discover today?\"—adds a whole new layer of joy to my mornings.",
+        text: "Ever since I finished the minimum viable product (MVP), the rhythm of my reading habit has changed. Sometimes I'm standing on a crowded subway train during my morning commute, reading a surprise article that just hit my email. Other times, I'm settled at my desk, diving deep straight from my dashboard.",
+      },
+      {
+        type: "p",
+        text: "The internet, and social media especially, is a vast ocean—but encountering high-quality content that speaks directly to your specific curiosities isn't always easy. Now, starting the day with that simple question—\"I wonder what I'll discover today?\"—adds a whole new layer of joy to my mornings.",
       },
       {
         type: "p",
@@ -116,7 +128,12 @@ export const ESSAYS: Essay[] = [
         type: "p",
         text: "Experiencing the fruits of your own creation is a feeling like no other.",
       },
-      { type: "img", src: "/essays/chasing-an-idea/Cogletta-and-Me.jpg", alt: "..." }
+      {
+        type: "img",
+        src: "/essays/chasing-an-idea/Cogletta-and-Me.jpg",
+        alt: "Working on Cogletta, the app I built to bring reading back into my mornings",
+        caption: "Working on Cogletta, the app I built to bring reading back into my mornings",
+      },
     ],
   },
   {
