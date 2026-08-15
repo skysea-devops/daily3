@@ -90,11 +90,11 @@ export const ESSAYS: Essay[] = [
       },
       {
         type: "p",
-        text: "Ever since I finished the minimum viable product (MVP), the rhythm of how I consume knowledge has completely shifted. Sometimes I'm standing on a crowded subway train during my morning commute, reading a surprise article that just hit my email. Other times, I'm settled at my desk, diving deep straight from my dashboard.",
+        text: "Ever since I finished the minimum viable product (MVP), the rhythm of my reading habits has changed. Sometimes I'm standing on a crowded subway train during my morning commute, reading a surprise article that just hit my email. Other times, I'm settled at my desk, diving deep straight from my dashboard.",
       },
       {
         type: "p",
-        text: "The internet is a vast ocean, but encountering high-quality content that speaks directly to your specific curiosities isn't always easy. Now, starting the day with that simple question—\"I wonder what I'll discover today?\"—adds a whole new layer of joy to my mornings.",
+        text: "The internet and also social media  is a vast ocean, but encountering high-quality content that speaks directly to your specific curiosities isn't always easy. Now, starting the day with that simple question—\"I wonder what I'll discover today?\"—adds a whole new layer of joy to my mornings.",
       },
       {
         type: "p",
