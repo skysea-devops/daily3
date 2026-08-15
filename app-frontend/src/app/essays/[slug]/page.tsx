@@ -9,7 +9,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { ESSAYS, getEssay, type EssayBlock } from "@/data/essays";
+import { ESSAYS, getEssay, essayAuthor, authorInitial, type Author, type EssayBlock } from "@/data/essays";
 
 export function generateStaticParams() {
   return ESSAYS.map((essay) => ({ slug: essay.slug }));
@@ -75,6 +75,38 @@ function Block({ block }: { block: EssayBlock }) {
           {block.text}
         </h2>
       );
+    case "img":
+      return (
+        <figure style={{ margin: "36px 0" }}>
+          {/* next/image yerine <img>: statik export (output: export) ile
+              optimizasyon calismadigi icin dogrudan servis ediliyor. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={block.src}
+            alt={block.alt}
+            loading="lazy"
+            style={{
+              width: "100%",
+              height: "auto",
+              display: "block",
+              borderRadius: 12,
+            }}
+          />
+          {block.caption && (
+            <figcaption
+              style={{
+                marginTop: 10,
+                fontSize: "0.8125rem",
+                lineHeight: 1.6,
+                color: "var(--ink-muted)",
+                textAlign: "center",
+              }}
+            >
+              {block.caption}
+            </figcaption>
+          )}
+        </figure>
+      );
     case "quote":
       return (
         <blockquote
@@ -129,10 +161,66 @@ function Block({ block }: { block: EssayBlock }) {
   }
 }
 
+
+/**
+ * Yazar satiri. `avatar` yoksa ismin bas harfi daire icinde gosterilir —
+ * misafir yazar foto vermediginde kirik resim ikonu cikmasin diye.
+ */
+function AuthorByline({ author }: { author: Author }) {
+  const initial = authorInitial(author);
+
+  const name = author.url ? (
+    <a
+      href={author.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ color: "var(--ink)", textDecoration: "none", fontWeight: 600 }}
+    >
+      {author.name}
+    </a>
+  ) : (
+    <span style={{ color: "var(--ink)", fontWeight: 600 }}>{author.name}</span>
+  );
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 24 }}>
+      {author.avatar ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={author.avatar}
+          alt=""
+          width={40}
+          height={40}
+          style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          style={{
+            width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+            background: "var(--rule)", color: "var(--ink-muted)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontFamily: "'Lora', serif", fontSize: "1.0625rem", fontWeight: 600,
+          }}
+        >
+          {initial}
+        </span>
+      )}
+      <span style={{ fontSize: "0.875rem", lineHeight: 1.45 }}>
+        {name}
+        <br />
+        <span style={{ color: "var(--ink-muted)" }}>{author.role}</span>
+      </span>
+    </div>
+  );
+}
+
 export default async function EssayPage({ params }: Props) {
   const { slug } = await params;
   const essay = getEssay(slug);
   if (!essay) notFound();
+
+  const author = essayAuthor(essay);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -140,7 +228,13 @@ export default async function EssayPage({ params }: Props) {
     headline: essay.title,
     description: essay.description,
     datePublished: essay.date,
-    author: { "@type": "Organization", name: "Cogletta", url: "https://cogletta.com" },
+    // Yazar artik Person: Google ve AI tarayicilari icin dogru sinyal.
+    // Yayinci Organization olarak Cogletta kaliyor.
+    author: {
+      "@type": "Person",
+      name: author.name,
+      ...(author.url ? { url: author.url } : {}),
+    },
     publisher: { "@type": "Organization", name: "Cogletta", url: "https://cogletta.com" },
     mainEntityOfPage: `https://cogletta.com/essays/${essay.slug}/`,
   };
@@ -200,6 +294,7 @@ export default async function EssayPage({ params }: Props) {
             >
               {essay.title}
             </h1>
+            <AuthorByline author={author} />
           </header>
 
           {essay.blocks.map((block, i) => (
