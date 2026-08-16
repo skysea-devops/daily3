@@ -55,8 +55,10 @@ export const Keys = {
   categoryPK: (category: string)       => `CATEGORY#${category}`,
   dateSK:    (date: Date = new Date()) => `DATE#${date.toISOString().slice(0, 10)}`,
   ttl30Days: ()                        => Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
-  /** Haftalık bonus okuma — TÜM kullanıcılar için ortak tek kayıt */
-  bonusPK:   ()                        => `BONUS#weekly`,
+  /** Pazar Eki — TÜM kullanıcılar için ortak tek kayıt (haftaya göre SK) */
+  sundayPK:  ()                        => `SUNDAY#issue`,
+  /** Pazar Eki tekrar koruması — son N haftanın secilmis URL'leri */
+  sundayHistoryPK: ()                  => `SUNDAY#history`,
   // Haftalık trend raporu anahtarı: ISO yıl-hafta (ör. TREND#2026-W27)
   weekSK:    (date: Date = new Date()) => {
     const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
@@ -92,13 +94,55 @@ export interface CategoryDailyPicks {
   poolVersion?: number;
 }
 
-// Haftalık trend raporu (Pro, her Pazar)
+// ─── Pazar Eki (The Sunday Supplement) ────────────────────────────────────────
+//
+// Pro üyelere her Pazar gönderilen tek makale + tek podcast. Hafta içi akıştan
+// TAMAMEN bağımsız: ayrı kaynak listesi, ayrı yaş penceresi, kullanıcının ilgi
+// alanlarından etkilenmez. Tüm Pro üyeler aynı içeriği alır, bu yüzden haftada
+// bir kez üretilip paylaşılır (conditional-write kilidi).
+
+export interface SundayPick {
+  title:       string;
+  summary:     string;
+  url:         string;
+  source:      string;
+  /** Makale için "8 min read", podcast için "42 min". */
+  duration:    string;
+}
 
 /**
- * Rapordaki tek bir okuma kartı. `category` yalnızca seçim mantığı için
- * taşınır — arayüzde ve e-postada GÖSTERİLMEZ (her kart farklı bir ilgi
- * alanından gelir ama okuyucuya kategori etiketi sunulmaz).
+ * Haftanın Pazar Eki. PK sabit (SUNDAY#issue), SK hafta anahtarı.
+ * generate-category-picks ile aynı kilit desenini kullanır.
  */
+export interface SundayIssue {
+  PK:            string;   // SUNDAY#issue
+  SK:            string;   // TREND#<YYYY-Www>
+  weekLabel:     string;   // insan-okur etiket, ör. "16 Aug – 22 Aug"
+  article:       SundayPick | null;
+  podcast:       SundayPick | null;
+  generatedAt:   string;
+  ttl:           number;
+  status?:       string;   // "generating" iken placeholder
+  generatingAt?: number;
+}
+
+/**
+ * Tekrar koruması. Pazar Eki penceresi 90 gün olduğu için aynı yazının
+ * birkaç ay sonra yeniden seçilmesi mümkün — bu kayıt son seçimleri tutar ve
+ * seçim sırasında dışlanır. Kullanıcıdan bağımsız, tek kayıt.
+ */
+export interface SundayHistory {
+  PK:        string;       // SUNDAY#history
+  SK:        string;       // "URLS"
+  /** En yeni önde; SUNDAY_HISTORY_LIMIT kadarı tutulur. */
+  urls:      string[];
+  /** Kaynak çeşitliliği için: aynı yayının üst üste gelmesini engeller. */
+  sources:   string[];
+  updatedAt: string;
+}
+
+/** @deprecated 2026-08-16 öncesi haftalık rapor şekilleri. TTL 30 gün olduğu
+ *  için eski kayıtlar bir süre daha gelmeye devam eder. */
 export interface TrendPick {
   title:       string;
   summary:     string;
@@ -108,8 +152,7 @@ export interface TrendPick {
   category?:   string;
 }
 
-/** @deprecated 2026-08-09 öncesi tema tabanlı rapor şekli. TTL 30 gün olduğu
- *  için eski kayıtlar bir süre daha bu alanla gelmeye devam eder. */
+/** @deprecated */
 export interface TrendInterest {
   category:  string;
   themes:    string[];
@@ -119,32 +162,14 @@ export interface TrendInterest {
   topIsListen?: boolean;
 }
 
+/** @deprecated Yerini SundayIssue aldı. */
 export interface WeeklyTrendReport {
-  PK:          string;    // USER#<sub>
-  SK:          string;    // TREND#<YYYY-Www>
-  weekLabel:   string;    // insan-okur etiket, ör. "Jun 30 – Jul 6"
-  /** Kullanıcının o hafta ALDIĞI makalelerden, ilgi alanı başına bir tane. */
-  picks:       TrendPick[];
-  /** Tüm kullanıcılara giden ortak Pazar okuması. Üretilemezse null. */
-  bonus:       TrendPick | null;
+  PK:          string;
+  SK:          string;
+  weekLabel:   string;
+  picks?:      TrendPick[];
+  bonus?:      TrendPick | null;
   generatedAt: string;
   ttl:         number;
-  /** @deprecated eski kayıtlarda bulunur */
   interests?:  TrendInterest[];
-}
-
-/**
- * Haftalık bonus okuma — kullanıcıdan bağımsız, haftada bir üretilir.
- * PK sabit (BONUS#weekly), SK hafta anahtarı. generate-category-picks ile
- * aynı conditional-write kilit desenini kullanır.
- */
-export interface WeeklyBonusRead {
-  PK:            string;   // BONUS#weekly
-  SK:            string;   // TREND#<YYYY-Www>
-  pick:          TrendPick | null;
-  category:      string;
-  generatedAt:   string;
-  ttl:           number;
-  status?:       string;   // "generating" iken placeholder
-  generatingAt?: number;
 }

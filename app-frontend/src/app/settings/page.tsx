@@ -457,7 +457,7 @@ function SettingsContent() {
         <Section title="Plan & Billing">
           <Row label="Current plan" value={currentPlanText()} />
           {plan === "free" && (
-            <Row topBorder label="Upgrade to Pro" description="3 articles per interest, sub-topics, weekly trend reports. Yearly saves two months.">
+            <Row topBorder label="Upgrade to Pro" description="3 articles per interest, sub-topics, The Sunday Supplement. Yearly saves two months.">
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                 <ActionBtn label={billingBusy ? "Redirecting…" : "Yearly · $58"} onClick={() => handleUpgrade("yearly")} disabled={billingBusy} style="accent" />
                 <ActionBtn label="Monthly · $5.80" onClick={() => handleUpgrade("monthly")} disabled={billingBusy} />
@@ -516,7 +516,7 @@ function SettingsContent() {
         <Section title="Notifications">
           <Row label="Daily digest email" description="Receive your curated content every morning." />
           {plan === "pro" && (
-            <Row topBorder label="Weekly trend report" description="A summary of the week's most important stories, every Sunday." />
+            <Row topBorder label="The Sunday Supplement" description="One lighter read and one listen, every Sunday morning." />
           )}
         </Section>
 

@@ -18,7 +18,7 @@ function setPlanIntent(billing: "monthly" | "yearly") {
 const FREE_FEATURES = [
   "1 curated article daily on your chosen topic",
   "1 podcast recommendation daily",
-  "Choose 1 of 15 interest categories",
+  "Choose 1 of 9 interest categories",
   "Daily email digest",
   "Editorial commentary on each article",
 ];
@@ -28,7 +28,7 @@ const PRO_FEATURES = [
   "3 curated articles for each interest",
   "Personalized sub-topics",
   "2 daily podcast recommendations",
-  "Weekly reading review",
+  "The Sunday Supplement — a lighter read and listen each week",
 ];
 
 const input: React.CSSProperties = {
