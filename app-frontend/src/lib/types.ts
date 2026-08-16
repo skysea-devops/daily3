@@ -1,7 +1,4 @@
-/**
- * Shared types used by Lambda functions and the frontend.
- * Import from "@/lib/types" in the frontend (symlinked or copied at build time).
- */
+// Mirrors app-backend/shared/types.ts — keep in sync when fields change.
 
 export interface Article {
   category:    string;
@@ -14,9 +11,6 @@ export interface Article {
   publishedAt: string;
   audioUrl?:   string;
   imageQuery?:  string;
-  subTopics?:   string[];
-  poolRank?:    number;
-  qualityScore?: number;
 }
 
 export interface Podcast {
@@ -28,123 +22,37 @@ export interface Podcast {
   source:      string;
   duration:    string;
   publishedAt: string;
-  subTopics?:   string[];
-  poolRank?:    number;
-  qualityScore?: number;
 }
 
 export interface DailyArticles {
-  /** DynamoDB PK — USER#<cognito-sub> */
   PK:          string;
-  /** DynamoDB SK — DATE#YYYY-MM-DD  e.g. DATE#2026-06-06 */
   SK:          string;
   articles:    Article[];
-  /** Backward-compat: first podcast (or null). Prefer `podcasts`. */
   podcast:     Podcast | null;
-  /** Pro users get one podcast per interest; free users get one. */
   podcasts?:   Podcast[];
   generatedAt: string;
-  /** Unix timestamp — item auto-deletes after 30 days */
   ttl:         number;
 }
 
-/** Key helpers — keep date formatting in one place */
 export const Keys = {
-  userPK:     (sub: string)            => `USER#${sub}`,
-  /** Kategori havuzu anahtarı — free plan günlük ortak seçim, ör. CATEGORY#Technology */
-  categoryPK: (category: string)       => `CATEGORY#${category}`,
+  userPK:    (sub: string)             => `USER#${sub}`,
   dateSK:    (date: Date = new Date()) => `DATE#${date.toISOString().slice(0, 10)}`,
   ttl30Days: ()                        => Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
-  /** Haftalık bonus okuma — TÜM kullanıcılar için ortak tek kayıt */
-  bonusPK:   ()                        => `BONUS#weekly`,
-  // Haftalık trend raporu anahtarı: ISO yıl-hafta (ör. TREND#2026-W27)
-  weekSK:    (date: Date = new Date()) => {
-    const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-    const day = d.getUTCDay() || 7;            // Pazar=7
-    d.setUTCDate(d.getUTCDate() + 4 - day);    // ISO: haftanın Perşembesi
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const week = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    return `TREND#${d.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
-  },
 };
 
-/**
- * Free plan kategori havuzu — kategori başına günde tek seçim.
- * DailyArticles ile aynı içerik şekli: deliver-daily alan dönüştürmeden
- * USER# kaydına kopyalar. status/generatingAt yalnızca "generating"
- * placeholder aşamasında bulunur (conditional-write lock).
- */
-export interface CategoryDailyPicks {
-  /** DynamoDB PK — CATEGORY#<name>  e.g. CATEGORY#Technology */
-  PK:          string;
-  /** DynamoDB SK — DATE#YYYY-MM-DD */
-  SK:          string;
-  articles:    Article[];
-  podcast:     Podcast | null;
-  podcasts:    Podcast[];
-  generatedAt: string;
-  ttl:         number;
-  /** "generating" iken placeholder; gerçek içerik yazılınca kaldırılır */
-  status?:       string;
-  generatingAt?: number;
-  activeSubTopics?: string[];
-  unrepresentedSubTopics?: string[];
-  poolVersion?: number;
+export interface SundayPick {
+  title:    string;
+  summary:  string;
+  url:      string;
+  source:   string;
+  /** Makale için "8 min read", podcast için "42 min". */
+  duration: string;
 }
 
-// Haftalık trend raporu (Pro, her Pazar)
-
-/**
- * Rapordaki tek bir okuma kartı. `category` yalnızca seçim mantığı için
- * taşınır — arayüzde ve e-postada GÖSTERİLMEZ (her kart farklı bir ilgi
- * alanından gelir ama okuyucuya kategori etiketi sunulmaz).
- */
-export interface TrendPick {
-  title:       string;
-  summary:     string;
-  url:         string;
-  source:      string;
-  readingTime: string;
-  category?:   string;
-}
-
-/** @deprecated 2026-08-09 öncesi tema tabanlı rapor şekli. TTL 30 gün olduğu
- *  için eski kayıtlar bir süre daha bu alanla gelmeye devam eder. */
-export interface TrendInterest {
-  category:  string;
-  themes:    string[];
-  topTitle:  string;
-  topUrl:    string;
-  topSource: string;
-  topIsListen?: boolean;
-}
-
-export interface WeeklyTrendReport {
-  PK:          string;    // USER#<sub>
-  SK:          string;    // TREND#<YYYY-Www>
-  weekLabel:   string;    // insan-okur etiket, ör. "Jun 30 – Jul 6"
-  /** Kullanıcının o hafta ALDIĞI makalelerden, ilgi alanı başına bir tane. */
-  picks:       TrendPick[];
-  /** Tüm kullanıcılara giden ortak Pazar okuması. Üretilemezse null. */
-  bonus:       TrendPick | null;
-  generatedAt: string;
-  ttl:         number;
-  /** @deprecated eski kayıtlarda bulunur */
-  interests?:  TrendInterest[];
-}
-
-/**
- * Haftalık bonus okuma — kullanıcıdan bağımsız, haftada bir üretilir.
- * PK sabit (BONUS#weekly), SK hafta anahtarı. generate-category-picks ile
- * aynı conditional-write kilit desenini kullanır.
- */
-export interface WeeklyBonusRead {
-  PK:            string;   // BONUS#weekly
-  SK:            string;   // TREND#<YYYY-Www>
-  pick:          TrendPick | null;
-  category:      string;
-  generatedAt:   string;
-  ttl:           number;
-  status?:       string;   // "generating" iken placeholder
-  generatingAt?: number;
+/** Pazar Eki — Pro üyelere her Pazar giden tek makale + tek podcast. */
+export interface SundayIssue {
+  weekLabel:   string;
+  article:     SundayPick | null;
+  podcast:     SundayPick | null;
+  generatedAt: string | null;
 }

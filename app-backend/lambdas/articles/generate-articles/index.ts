@@ -1,9 +1,10 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand, QueryCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, PutCommand, QueryCommand, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { createHash } from "crypto";
 import { Article, Podcast, DailyArticles, Keys } from "../../../shared/types";
+import type { SundayPick } from "../../../shared/types";
 import {
   ARTICLE_MAX_AGE_DAYS,
   PODCAST_MAX_AGE_DAYS,
@@ -113,7 +114,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "VoxEU (CEPR)",          url: "https://cepr.org/rss/vox-content" },
     { name: "FRED Blog",             url: "https://fredblog.stlouisfed.org/feed/" },
     { name: "The Big Picture",       url: "https://ritholtz.com/feed/" },
-
   ],
 
   // Science & Environment
@@ -157,7 +157,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Gretchen Rubin",        url: "https://gretchenrubin.com/feed/" },
     { name: "The Positivity Blog",   url: "https://www.positivityblog.com/feed/" },
     { name: "Ask Polly",             url: "https://www.ask-polly.com/feed" },
-     { name: "Kellogg Insight",       url: "https://insight.kellogg.northwestern.edu/feed/rss" },
+    { name: "Kellogg Insight",       url: "https://insight.kellogg.northwestern.edu/feed/rss" },
   ],
 
   // Culture & Style
@@ -224,8 +224,10 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "The Conversation (Health)", url: "https://theconversation.com/us/health/articles.atom" },
     { name: "Undark",                    url: "https://undark.org/feed/" },
     { name: "Fight Aging",               url: "https://www.fightaging.org/feed" },
-    { name: "STAT (First Opinion)",      url: "https://www.statnews.com/category/first-opinion/feed/" },
     { name: "MIT News (Health)",         url: "https://news.mit.edu/rss/topic/health" },
+    // Removed 2026-08-16: STAT (First Opinion) — abonelik duvari. Feed acikti
+    // ama makale sayfalari kayit/odeme istiyor. Domain PAYWALLED_DOMAINS'e de
+    // eklendi: aggregator feed'leri statnews.com'a link verirse o da elenir.
   ],
 
 };
@@ -355,6 +357,52 @@ export const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = 
   ],
 
 };
+
+// ─── The Sunday Supplement ────────────────────────────────────────────────────
+//
+// Pro üyelere her Pazar giden tek makale + tek podcast. Hafta içi akıştan
+// TAMAMEN ayrı: kendi kaynak listesi, kendi yaş penceresi (90 gün), kullanıcının
+// ilgi alanlarıyla ilgisi yok. Tüm Pro üyeler aynı içeriği alır.
+//
+// Ton: merak uyandıran, hafif, "bunu birine anlatmak isterim" hissi veren.
+// Hafta içi ciddi ve bilgilendirici; Pazar bunun karşıtı olmalı.
+//
+// KURAL: buraya eklenen bir kaynak yukarıdaki kategori haritalarında OLMAMALI.
+// Aksi halde kullanıcı Çarşamba aldığı yayını Pazar tekrar görür ve ekin
+// "ayrı bir şey" olma hissi kaybolur.
+
+export const SUNDAY_SOURCES: { name: string; url: string }[] = [
+  { name: "The MIT Press Reader",  url: "https://thereader.mitpress.mit.edu/feed/" },
+  { name: "Colossal",              url: "https://www.thisiscolossal.com/feed/" },
+  { name: "Medievalists.net",      url: "https://www.medievalists.net/feed/" },
+  { name: "Shakespeare & Beyond",  url: "https://www.folger.edu/blogs/shakespeare-and-beyond/feed/" },
+  { name: "The History Blog",      url: "https://www.thehistoryblog.com/feed" },
+  { name: "Disegno",               url: "https://disegnojournal.com/newsfeed?format=rss" },
+  { name: "Atlas Obscura",         url: "https://www.atlasobscura.com/feeds/latest" },
+  { name: "Taste",                 url: "https://tastecooking.com/feed/" },
+  { name: "Hakai Magazine",        url: "https://hakaimagazine.com/feed/" },
+];
+
+export const SUNDAY_PODCAST_SOURCES: { name: string; url: string }[] = [
+  { name: "Gastropod",               url: "https://feeds.megaphone.fm/VMP6255701211" },
+  { name: "No Such Thing As A Fish", url: "https://audioboom.com/channels/2399216.rss" },
+  { name: "The Allusionist",         url: "https://rss.art19.com/the-allusionist" },
+  { name: "Twenty Thousand Hertz",   url: "https://feeds.megaphone.fm/20k" },
+  { name: "Decoder Ring",            url: "https://feeds.acast.com/public/shows/696572d375c092ac4e159c27" },
+  { name: "The Sporkful",            url: "https://feeds.simplecast.com/n91GPFY5" },
+];
+
+/**
+ * Pazar Eki yaş penceresi. Kategori pencerelerinden bağımsız ve çok daha geniş:
+ * haftada tek seçim yapıldığı için dar bir pencere o hafta hiçbir kaynak yayın
+ * yapmadıysa boş dönme riski yaratır. Ayrıca Shakespeare & Beyond ve Disegno
+ * gibi düşük hacimli kaynaklar ancak bu genişlikte havuza girebiliyor.
+ *
+ * Bunun bedeli tekrar riski: 90 günlük havuzdan haftada bir seçim yapılırsa aynı
+ * yazı birkaç ay sonra yeniden çıkabilir. SUNDAY#history kaydı bunu engelliyor.
+ */
+export const SUNDAY_MAX_AGE_DAYS = 90;
+
 
 // ─── RSS fetch & parse ────────────────────────────────────────────────────────
 
@@ -914,6 +962,8 @@ const PAYWALLED_DOMAINS = new Set([
   "www.notboring.co",
   "blackbirdspyplane.com",
   "www.blackbirdspyplane.com",
+  "statnews.com",
+  "www.statnews.com",
 ]);
 function isPaywalledUrl(u: string): boolean {
   try {
@@ -1662,6 +1712,166 @@ export async function pickPodcastPool(
   };
 }
 
+
+// ─── Pazar Eki seçimi ─────────────────────────────────────────────────────────
+
+interface SundaySelection {
+  selectedIndex: number;
+  summary: string;
+  duration: string;
+}
+
+/**
+ * Pazar Eki için tek bir öğe seçer.
+ *
+ * pickArticle'dan ayrı bir fonksiyon çünkü ihtiyaçlar farklı:
+ *   - kategori kavramı yok, ilgi alanı doğrulaması yok
+ *   - yaş penceresi 90 gün (SUNDAY_MAX_AGE_DAYS), kategori tablosundan bağımsız
+ *   - "hafiflik" birincil kriter; hafta içi akışın ciddiyeti burada istenmiyor
+ *   - tekrar koruması URL VE kaynak düzeyinde (excludeUrls / recentSources)
+ */
+export async function pickSundayItem(
+  sources: { name: string; url: string }[],
+  isPodcast: boolean,
+  excludeUrls: string[] = [],
+  recentSources: string[] = [],
+): Promise<SundayPick | null> {
+  const label = isPodcast ? "Sunday podcast" : "Sunday article";
+  try {
+    const results = await Promise.allSettled(sources.map(fetchRSSFeed));
+    const items: RSSItem[] = [];
+    results.forEach((r, i) => {
+      if (r.status === "fulfilled") items.push(...r.value);
+      else console.warn(`${label} feed failed: ${sources[i].url}`, r.reason);
+    });
+    if (items.length === 0) throw new Error(`All ${label} feeds failed`);
+
+    const excluded = new Set(excludeUrls.map(canonicalizeUrl));
+    const now = Date.now();
+    const maxAgeMs = SUNDAY_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+
+    // scoreAndFilter kategori penceresine bağlı olduğu için burada kullanılmıyor;
+    // aynı elemeleri Pazar penceresiyle uyguluyoruz.
+    const seenUrls = new Set<string>();
+    const seenTitles = new Set<string>();
+    const candidates = items
+      // ScoredCandidate seklini koru: buildBalancedShortlist bunu bekliyor.
+      // freshness/penalised Pazar Eki'nde kullanilmiyor (90 gunluk pencerede
+      // "bugun mu yayinlandi" bilgisi anlamsiz), sabit deger veriliyor.
+      .map((item): ScoredCandidate => ({
+        ...item,
+        url: canonicalizeUrl(item.url),
+        freshness: "older",
+        penalised: false,
+      }))
+      .filter((i) => !excluded.has(i.url))
+      .filter((i) => i.pubTimestamp === 0 || now - i.pubTimestamp <= maxAgeMs)
+      .filter((i) => !ROUNDUP_PATTERNS.test(i.title))
+      .filter((i) => !VIDEO_URL_PATTERN.test(i.url))
+      .filter((i) => !BREAKING_PATTERNS.test(i.title))
+      .filter((i) => !LIVEBLOG_URL_PATTERN.test(i.url))
+      .filter((i) => !isPaywalledUrl(i.url))
+      .filter((i) => !isPodcast || !isMemberOnlyEpisode(i))
+      .filter((i) => isPodcast || !isLikelyNewsReport(i))
+      .sort((a, b) => {
+        // Son haftalarda kullanılan yayınlar dibe: aynı kaynağın üst üste
+        // gelmesi eki tek sesli gösterir.
+        const penalty = (n: string) => (recentSources.includes(n) ? 1 : 0);
+        const diff = penalty(a.sourceName) - penalty(b.sourceName);
+        if (diff !== 0) return diff;
+        return b.pubTimestamp - a.pubTimestamp;
+      })
+      .filter((item) => {
+        const key = normaliseTitle(item.title);
+        if (seenUrls.has(item.url) || (key && seenTitles.has(key))) return false;
+        seenUrls.add(item.url);
+        if (key) seenTitles.add(key);
+        return true;
+      });
+
+    if (candidates.length === 0) throw new Error(`No eligible ${label} candidates`);
+
+    const shortlist = buildBalancedShortlist(candidates, 20, 3);
+    console.log(`${label}: ${items.length} raw → ${candidates.length} candidates → ${shortlist.length} shortlisted`);
+
+    const list = shortlist
+      .map((c, i) => `[${i}] "${c.title}" — ${c.sourceName}\nURL: ${c.url}\n${truncateDescription(c.description, 260)}`)
+      .join("\n\n");
+
+    const kindWord = isPodcast ? "podcast episode" : "article";
+    const prompt = `You are choosing the single ${kindWord} for Cogletta's Sunday Supplement.
+
+Cogletta sends serious, informative reading on weekdays — geopolitics, economics, science, philosophy. The Sunday Supplement is the counterweight: one delightful thing to read with coffee.
+
+Choose the candidate that best fits ALL of these:
+- Curious, surprising, or quietly delightful — the kind of piece someone wants to tell a friend about
+- Light in spirit but not thin: well written, rewarding, worth the time
+- Evergreen — it would read just as well next month
+
+REJECT any candidate that is:
+- current-events reporting, politics, conflict, or market news
+- a product review, shopping guide, or listicle
+- career, productivity, or self-improvement advice
+- health advice
+- heavy or distressing (grief, illness, trauma, violence, disaster)
+- a stub, catalogue entry, event notice, book announcement, or fundraising appeal rather than a full piece
+
+Return selectedIndex -1 if nothing is genuinely suitable. A missing supplement is better than a bad one.
+
+Candidates:
+${list}
+
+Return only valid JSON:
+{
+  "selectedIndex": <0-${shortlist.length - 1}, or -1>,
+  "summary": "<2-3 sentences, about 55 words. Say what it is actually about and what makes it a pleasure. Warm and specific; no hype, no 'delve', no 'this article'.>",
+  "duration": "<${isPodcast ? "episode length such as '38 min'" : "reading estimate such as '9 min read'"}>"
+}`;
+
+    const response = await bedrock.send(new InvokeModelCommand({
+      modelId: "eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+      contentType: "application/json",
+      accept: "application/json",
+      body: JSON.stringify({
+        anthropic_version: "bedrock-2023-05-31",
+        max_tokens: 400,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    }));
+    const raw = JSON.parse(new TextDecoder().decode(response.body));
+    const text = raw.content[0].text.trim()
+      .replace(/^```json\s*/i, "").replace(/\s*```$/i, "")
+      .replace(/[\u0000-\u001F\u007F]/g, " ");
+
+    let parsed: SundaySelection;
+    try {
+      parsed = JSON.parse(text) as SundaySelection;
+    } catch {
+      console.warn(`${label}: JSON parse failed; skipping rather than guessing. Raw:`, text.slice(0, 200));
+      return null;
+    }
+
+    if (!Number.isInteger(parsed.selectedIndex) || parsed.selectedIndex < 0 || parsed.selectedIndex >= shortlist.length) {
+      console.log(`${label}: nothing suitable this week (index ${parsed.selectedIndex})`);
+      return null;
+    }
+
+    const chosen = shortlist[parsed.selectedIndex];
+    const resolved = isPodcast ? chosen.url : await resolveFinalUrl(chosen.url);
+
+    return {
+      title:    chosen.title,
+      summary:  parsed.summary || chosen.description || "",
+      url:      resolved,
+      source:   chosen.sourceName,
+      duration: parsed.duration || chosen.duration || (isPodcast ? "—" : "~6 min read"),
+    };
+  } catch (err) {
+    console.error(`${label} selection failed:`, err);
+    return null;
+  }
+}
+
 // ─── Fallback ─────────────────────────────────────────────────────────────────
 
 function fallbackArticle(interest: string): Article {
@@ -1882,6 +2092,70 @@ interface GenerateEvent {
   email?: string;
 }
 
+
+// ─── Üretim kilidi (idempotency) ──────────────────────────────────────────────
+//
+// Bu Lambda sistemin EN PAHALI işi: Pro kullanıcı için 3 pickArticle +
+// 2 pickPodcast = 5 Bedrock çağrısı, üstelik her biri onlarca RSS feed çekiyor.
+//
+// Kilit ÇAĞIRANLARDA değil BURADA olmalı. Daha önce get-articles ve
+// daily-trigger kilitliyordu ama update-interests doğrudan invoke ediyordu:
+// art arda gönderilen PUT /me/interests istekleri, ilk üretim DailyArticles'ı
+// yazmadan önce hepsi "bugün içerik yok" görüp paralel üretim başlatabiliyordu.
+// N istek = 5N Bedrock çağrısı + N e-posta. Pahalı işlemin kendi sınırında
+// idempotent olması, hangi uç noktanın kaç kez çağırdığından bağımsız güvence
+// sağlar.
+const GEN_STALE_MS        = 3 * 60 * 1000;
+const GEN_PLACEHOLDER_TTL = 6 * 60 * 60;
+
+/**
+ * Üretim hakkını atomik olarak alır.
+ *  - Kayıt yoksa: koşullu yazma ile placeholder oluşturulur → true
+ *  - Kayıt varsa ve içerik hazırsa: false (yeniden üretme)
+ *  - Kayıt "generating" ve tazeyse: false (başkası üretiyor)
+ *  - Kayıt "generating" ama bayatsa: devral → true
+ */
+async function acquireGenerationLock(userId: string, sk: string): Promise<boolean> {
+  const pk = Keys.userPK(userId);
+  try {
+    await dynamo.send(new PutCommand({
+      TableName: ARTICLES_TABLE,
+      Item: { PK: pk, SK: sk, status: "generating", generatingAt: Date.now(),
+              ttl: Math.floor(Date.now() / 1000) + GEN_PLACEHOLDER_TTL },
+      ConditionExpression: "attribute_not_exists(PK)",
+    }));
+    return true;
+  } catch (err: any) {
+    if (err?.name !== "ConditionalCheckFailedException") throw err;
+  }
+
+  const existing = await dynamo.send(new GetCommand({
+    TableName: ARTICLES_TABLE, Key: { PK: pk, SK: sk },
+    ProjectionExpression: "#s, generatingAt",
+    ExpressionAttributeNames: { "#s": "status" },
+  }));
+  const item = existing.Item;
+  if (!item) return false;
+  if (item.status !== "generating") return false;             // içerik hazır
+  const startedAt = Number(item.generatingAt ?? 0);
+  if (Date.now() - startedAt <= GEN_STALE_MS) return false;   // üretim sürüyor
+
+  try {
+    await dynamo.send(new UpdateCommand({
+      TableName: ARTICLES_TABLE, Key: { PK: pk, SK: sk },
+      UpdateExpression: "SET generatingAt = :now",
+      ConditionExpression: "#s = :generating AND generatingAt = :prev",
+      ExpressionAttributeNames:  { "#s": "status" },
+      ExpressionAttributeValues: { ":now": Date.now(), ":generating": "generating", ":prev": startedAt },
+    }));
+    console.warn(`Stale generation lock taken over for user=${userId} ${sk}`);
+    return true;
+  } catch (err: any) {
+    if (err?.name === "ConditionalCheckFailedException") return false;
+    throw err;
+  }
+}
+
 export const handler = async (event: GenerateEvent): Promise<void> => {
   const { userId, interests, subTopics = {} } = event;
 
@@ -1891,6 +2165,14 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
 
   const interestsLabel = interests.join(", ");
   const isPro = (event.plan ?? "free").toLowerCase() === "pro";
+  const todaySK = Keys.dateSK(new Date());
+
+  // Pahalı üretimden ÖNCE kilit al. Kilit alınamazsa içerik ya hazır ya da
+  // üretiliyor demektir — sessizce çık, Bedrock'a hiç gitme.
+  if (!(await acquireGenerationLock(userId, todaySK))) {
+    console.log(`Generation skipped for user=${userId} ${todaySK} (already done or in progress)`);
+    return;
+  }
 
   console.log(
     `Generating for user=${userId} plan=${isPro ? "pro" : "free"} interests=${interestsLabel}`,
@@ -1965,10 +2247,11 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
   }
 
   // ── DynamoDB'e yaz ────────────────────────────────────────────────────────
+  // Koşulsuz Put: "generating" placeholder'ının üstüne gerçek içerik yazılır.
   const now = new Date();
   const item: DailyArticles = {
     PK: Keys.userPK(userId),
-    SK: Keys.dateSK(now),
+    SK: todaySK,
     articles: articles,
     podcast: podcasts[0] ?? null, // geriye uyumluluk (eski dashboard tekil okur)
     podcasts: podcasts,
@@ -1978,7 +2261,7 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
 
   await dynamo.send(new PutCommand({ TableName: ARTICLES_TABLE, Item: item }));
   console.log(
-    `Wrote ${articles.length} article(s) + ${podcasts.length} podcast(s) for user=${userId} date=${Keys.dateSK(now)}`,
+    `Wrote ${articles.length} article(s) + ${podcasts.length} podcast(s) for user=${userId} date=${todaySK}`,
   );
 
   // ── Email ─────────────────────────────────────────────────────────────────

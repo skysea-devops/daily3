@@ -44,9 +44,9 @@ resource "aws_iam_role_policy" "generate_trend_report_policy" {
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = "${aws_cloudwatch_log_group.generate_trend_report.arn}:*"
       },
-      # Rapor artik kullanicinin haftalik DATE# kayitlarini okuyor (Query) ve
-      # ortak bonus okumayi BONUS#weekly altinda conditional-write ile
-      # uretiyor (GetItem/PutItem/UpdateItem). Sadece PutItem yeterli degil.
+      # Pazar Eki SUNDAY#issue altinda conditional-write ile uretiliyor ve
+      # SUNDAY#history tekrar korumasi okunup yaziliyor
+      # (GetItem/PutItem/UpdateItem). Sadece PutItem yeterli degil.
       {
         Sid      = "ReadWriteArticles"
         Effect   = "Allow"
@@ -214,7 +214,10 @@ resource "aws_iam_role_policy" "get_trend_report_policy" {
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = "${aws_cloudwatch_log_group.get_trend_report.arn}:*"
       },
-      { Sid = "QueryArticles", Effect = "Allow", Action = ["dynamodb:Query"], Resource = aws_dynamodb_table.articles.arn },
+      # GetItem: bu haftanin eki artik Query yerine dogrudan anahtarla okunuyor.
+      { Sid = "ReadArticles", Effect = "Allow", Action = ["dynamodb:GetItem", "dynamodb:Query"], Resource = aws_dynamodb_table.articles.arn },
+      # Pazar Eki bir Pro ozelligi; plan kontrolu icin PROFILE okunur.
+      { Sid = "ReadUsers", Effect = "Allow", Action = ["dynamodb:GetItem"], Resource = aws_dynamodb_table.users.arn },
     ]
   })
 }
@@ -238,6 +241,7 @@ resource "aws_lambda_function" "get_trend_report" {
   environment {
     variables = {
       ARTICLES_TABLE_NAME = aws_dynamodb_table.articles.name
+      USERS_TABLE_NAME    = aws_dynamodb_table.users.name
       CORS_ORIGIN         = var.cors_origin
       NODE_OPTIONS        = "--enable-source-maps"
     }

@@ -333,7 +333,7 @@ function InterestsForm() {
             <a href="/register#pro" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
               Upgrade to Pro
             </a>{" "}
-            to follow 3 topics with an article for each, plus sub-topics and weekly trend reports.
+            to follow 3 topics with an article for each, plus sub-topics and The Sunday Supplement.
           </p>
         )}
 

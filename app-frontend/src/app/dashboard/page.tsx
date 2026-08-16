@@ -7,7 +7,7 @@ import ShareCard from "@/components/ShareCard";
 import { getDailyArticles, getTrendReport } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
-import type { Article, Podcast, TrendPick, WeeklyTrendReport } from "@/lib/types";
+import type { Article, Podcast, SundayPick, SundayIssue } from "@/lib/types";
 import { categoryEmoji, categoryLabel } from "@/lib/categories";
 
 const UNSPLASH_ACCESS_KEY = "rp-OBp3MMcxOlSCIV6GyPh3DOkX4IgmEGq8XBJQVnvs";
@@ -240,19 +240,19 @@ function isWeeklyReviewDay(): boolean {
   return new Date().getDay() === 0;
 }
 
-function PickRow({ pick, index, isFirst }: { pick: TrendPick; index: number; isFirst: boolean }) {
+function SundayItem({ pick, kind, isFirst }: { pick: SundayPick; kind: "read" | "listen"; isFirst: boolean }) {
   return (
-    <div style={{ borderTop: isFirst ? "none" : "1px solid var(--rule)", paddingTop: isFirst ? 0 : 20 }}>
-      <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.08em", color: "var(--rule)" }}>
-        {String(index + 1).padStart(2, "0")}
+    <div style={{ borderTop: isFirst ? "none" : "1px solid var(--rule)", paddingTop: isFirst ? 0 : 22, marginTop: isFirst ? 0 : 22 }}>
+      <span style={{ fontSize: "0.6875rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-muted)" }}>
+        {kind === "read" ? "The Read" : "The Listen"}
       </span>
-      <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1.0625rem", fontWeight: 600, lineHeight: 1.4, margin: "6px 0 4px" }}>
+      <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1.0625rem", fontWeight: 600, lineHeight: 1.4, margin: "8px 0 4px" }}>
         <a href={pick.url} target="_blank" rel="noreferrer" style={{ color: "var(--ink)", textDecoration: "none" }}>
           {pick.title}
         </a>
       </h3>
       <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", margin: "0 0 8px" }}>
-        {pick.source} · {pick.readingTime}
+        {pick.source} · {pick.duration}
       </p>
       <p style={{ fontSize: "0.9375rem", lineHeight: 1.65, color: "var(--ink-soft)", margin: 0 }}>
         {pick.summary}
@@ -262,76 +262,29 @@ function PickRow({ pick, index, isFirst }: { pick: TrendPick; index: number; isF
 }
 
 /**
- * Pazar kartı. Kategori etiketi BİLİNÇLİ olarak gösterilmiyor — kartlar farklı
- * ilgi alanlarından seçiliyor ama okuyucuya konu başlığı sunulmuyor.
- * `interests` dalı 2026-08-09 öncesi kayıtlar içindir (TTL 30 gün).
+ * Pazar Eki kartı. Hafta içi kartlarından ayrışması için kategori rozeti YOK —
+ * ekin tamamı kullanıcının ilgi alanlarından bağımsız.
  */
-function TrendCard({ report }: { report: WeeklyTrendReport }) {
-  const picks = report.picks ?? [];
-  const isLegacy = picks.length === 0 && (report.interests?.length ?? 0) > 0;
+function SundayCard({ issue }: { issue: SundayIssue }) {
+  if (!issue.article && !issue.podcast) return null;
 
   return (
-    <div style={{
-      background: "var(--white)", border: "1px solid var(--rule)",
-      borderRadius: 16, padding: 28,
-    }}>
+    <div style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: 16, padding: 28 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 4 }}>
         <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--accent)" }}>
-          ✦ This week
+          ✦ Sunday
         </span>
-        <span style={{ fontSize: "0.8125rem", color: "var(--ink-muted)" }}>{report.weekLabel}</span>
+        <span style={{ fontSize: "0.8125rem", color: "var(--ink-muted)" }}>{issue.weekLabel}</span>
       </div>
       <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.375rem", fontWeight: 600, color: "var(--ink)", margin: "0 0 6px" }}>
-        This week&apos;s selections
+        The Sunday Supplement
       </h2>
-      <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", margin: "0 0 26px", lineHeight: 1.5 }}>
-        A few pieces from your week worth a second look{report.bonus ? ", plus one on us" : ""}.
+      <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", margin: "0 0 24px", lineHeight: 1.5 }}>
+        Something to read, something to listen to. Enjoy your Sunday.
       </p>
 
-      {isLegacy ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-          {report.interests!.map((t, i) => (
-            <div key={i} style={{ borderTop: i === 0 ? "none" : "1px solid var(--rule)", paddingTop: i === 0 ? 0 : 20 }}>
-              <ul style={{ margin: "0 0 12px", paddingLeft: 18 }}>
-                {t.themes.map((th, j) => (
-                  <li key={j} style={{ fontSize: "0.9375rem", lineHeight: 1.65, color: "var(--ink-soft)", marginBottom: 6 }}>{th}</li>
-                ))}
-              </ul>
-              {t.topUrl && (
-                <a href={t.topUrl} target="_blank" rel="noreferrer" style={{ fontSize: "0.875rem", color: "var(--ink)", textDecoration: "none" }}>
-                  <span style={{ fontWeight: 600 }}>{t.topTitle}</span>
-                  <span style={{ color: "var(--ink-muted)" }}> ({t.topSource}) →</span>
-                </a>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-          {picks.map((p, i) => (
-            <PickRow key={p.url} pick={p} index={i} isFirst={i === 0} />
-          ))}
-        </div>
-      )}
-
-      {report.bonus && (
-        <div style={{ marginTop: 26, background: "var(--paper, #f9fafb)", borderRadius: 12, padding: 22 }}>
-          <span style={{ fontSize: "0.6875rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--ink-muted)" }}>
-            Bonus read
-          </span>
-          <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1rem", fontWeight: 600, lineHeight: 1.4, margin: "8px 0 4px" }}>
-            <a href={report.bonus.url} target="_blank" rel="noreferrer" style={{ color: "var(--ink)", textDecoration: "none" }}>
-              {report.bonus.title}
-            </a>
-          </h3>
-          <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", margin: "0 0 8px" }}>
-            {report.bonus.source} · {report.bonus.readingTime}
-          </p>
-          <p style={{ fontSize: "0.9rem", lineHeight: 1.6, color: "var(--ink-soft)", margin: 0 }}>
-            {report.bonus.summary}
-          </p>
-        </div>
-      )}
+      {issue.article && <SundayItem pick={issue.article} kind="read" isFirst />}
+      {issue.podcast && <SundayItem pick={issue.podcast} kind="listen" isFirst={!issue.article} />}
     </div>
   );
 }
@@ -345,7 +298,7 @@ function DashboardContent() {
   const [podcasts, setPodcasts]       = useState<Podcast[]>([]);
   const [status, setStatus]           = useState<"loading" | "ready" | "pending" | "error">("loading");
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
-  const [trend, setTrend]             = useState<WeeklyTrendReport | null>(null);
+  const [trend, setTrend]             = useState<SundayIssue | null>(null);
 
   // Haftalık trend raporu (sadece Pro) — dashboard'un üstünde "This week" kartı
   useEffect(() => {
@@ -456,7 +409,7 @@ function DashboardContent() {
         {/* Ready */}
         {status === "ready" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {plan === "pro" && isWeeklyReviewDay() && trend && <TrendCard report={trend} />}
+            {plan === "pro" && isWeeklyReviewDay() && trend && <SundayCard issue={trend} />}
             {articles.map((a, i) => <ArticleCard key={`a-${i}`} article={a} />)}
             {plan !== "pro" && <ProNudge />}
             {podcasts.map((p, i) => <PodcastCard key={`p-${i}`} podcast={p} />)}

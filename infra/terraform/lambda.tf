@@ -202,9 +202,11 @@ resource "aws_iam_role_policy" "generate_articles_lambda_policy" {
         Resource = "${aws_cloudwatch_log_group.generate_articles.arn}:*"
       },
       {
+        # GetItem/UpdateItem: uretim kilidi (idempotency) icin gerekli —
+        # koşullu placeholder yazma, bayat kilidi devralma.
         Sid      = "DynamoWriteArticles"
         Effect   = "Allow"
-        Action   = ["dynamodb:PutItem", "dynamodb:Query"]
+        Action   = ["dynamodb:PutItem", "dynamodb:Query", "dynamodb:GetItem", "dynamodb:UpdateItem"]
         Resource = aws_dynamodb_table.articles.arn
       },
       {
