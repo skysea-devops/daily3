@@ -214,7 +214,10 @@ resource "aws_iam_role_policy" "get_trend_report_policy" {
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = "${aws_cloudwatch_log_group.get_trend_report.arn}:*"
       },
-      { Sid = "QueryArticles", Effect = "Allow", Action = ["dynamodb:Query"], Resource = aws_dynamodb_table.articles.arn },
+      # GetItem: bu haftanin eki artik Query yerine dogrudan anahtarla okunuyor.
+      { Sid = "ReadArticles", Effect = "Allow", Action = ["dynamodb:GetItem", "dynamodb:Query"], Resource = aws_dynamodb_table.articles.arn },
+      # Pazar Eki bir Pro ozelligi; plan kontrolu icin PROFILE okunur.
+      { Sid = "ReadUsers", Effect = "Allow", Action = ["dynamodb:GetItem"], Resource = aws_dynamodb_table.users.arn },
     ]
   })
 }
@@ -238,6 +241,7 @@ resource "aws_lambda_function" "get_trend_report" {
   environment {
     variables = {
       ARTICLES_TABLE_NAME = aws_dynamodb_table.articles.name
+      USERS_TABLE_NAME    = aws_dynamodb_table.users.name
       CORS_ORIGIN         = var.cors_origin
       NODE_OPTIONS        = "--enable-source-maps"
     }

@@ -27,11 +27,28 @@ variable "min_daily_emails" {
 }
 
 locals {
-  # E-posta gönderen Lambda'ların log group'ları — resource referansı,
-  # apply sırasında log group'un filter'dan önce oluşmasını garanti eder.
-  email_sender_log_groups = {
+  # Resource referansı, apply sırasında log group'un filter'dan önce
+  # oluşmasını garanti eder.
+  #
+  # Gunluk e-posta hattinin log group'lari. "adres yok" / "icerik yok" /
+  # "gonderildi" sayaclari yalnizca bunlara uygulanir.
+  daily_email_log_groups = {
     generate_articles = aws_cloudwatch_log_group.generate_articles.name
     deliver_daily     = aws_cloudwatch_log_group.deliver_daily.name
+  }
+
+  # E-posta GONDEREN tum Lambda'lar — yalnizca gonderim HATASI filtresi icin.
+  #
+  # Pazar Eki de mail gonderiyor ve SES yuzunden tum Pazar mailleri patlasa
+  # haberimiz olmali. Ama diger uc filtreye eklemiyoruz: CloudWatch custom
+  # metric ucretsiz kotasi ayda 10 ve metrikler log group BASINA olusuyor.
+  # 4 filtre x 3 grup = 12 (kota asilir); 3x2 + 1x3 = 9 (kota icinde kalir).
+  # Pazar tarafinda diger sayaclar zaten anlamsiz: icerik yoksa mail hic
+  # gonderilmiyor ve bu "Sunday issue ... incomplete" olarak loglaniyor.
+  email_sender_log_groups = {
+    generate_articles     = aws_cloudwatch_log_group.generate_articles.name
+    deliver_daily         = aws_cloudwatch_log_group.deliver_daily.name
+    generate_trend_report = aws_cloudwatch_log_group.generate_trend_report.name
   }
 }
 
@@ -53,7 +70,8 @@ resource "aws_cloudwatch_log_metric_filter" "email_send_failures" {
   for_each       = local.email_sender_log_groups
   name           = "${var.project_name}-${var.environment}-email-send-failures-${each.key}"
   log_group_name = each.value
-  pattern        = "\"Failed to send email notification\""
+  # 2026-08-16: kod EMAIL_SEND_FAILED logluyor; eski kalip hicbir zaman eslesmiyordu.
+  pattern        = "\"EMAIL_SEND_FAILED\""
 
   metric_transformation {
     name          = "EmailSendFailures"
@@ -64,7 +82,7 @@ resource "aws_cloudwatch_log_metric_filter" "email_send_failures" {
 }
 
 resource "aws_cloudwatch_log_metric_filter" "emails_skipped_no_address" {
-  for_each       = local.email_sender_log_groups
+  for_each       = local.daily_email_log_groups
   name           = "${var.project_name}-${var.environment}-emails-skipped-no-address-${each.key}"
   log_group_name = each.value
   pattern        = "\"No email found\""
@@ -78,7 +96,7 @@ resource "aws_cloudwatch_log_metric_filter" "emails_skipped_no_address" {
 }
 
 resource "aws_cloudwatch_log_metric_filter" "emails_skipped_no_content" {
-  for_each       = local.email_sender_log_groups
+  for_each       = local.daily_email_log_groups
   name           = "${var.project_name}-${var.environment}-emails-skipped-no-content-${each.key}"
   log_group_name = each.value
   pattern        = "\"No real article to email\""
@@ -92,7 +110,7 @@ resource "aws_cloudwatch_log_metric_filter" "emails_skipped_no_content" {
 }
 
 resource "aws_cloudwatch_log_metric_filter" "daily_emails_sent" {
-  for_each       = local.email_sender_log_groups
+  for_each       = local.daily_email_log_groups
   name           = "${var.project_name}-${var.environment}-daily-emails-sent-${each.key}"
   log_group_name = each.value
   pattern        = "\"Email sent to\""
