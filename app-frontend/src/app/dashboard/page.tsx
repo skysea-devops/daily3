@@ -280,7 +280,7 @@ function SundayCard({ issue }: { issue: SundayIssue }) {
         The Sunday Supplement
       </h2>
       <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", margin: "0 0 24px", lineHeight: 1.5 }}>
-        Something a little lighter — off the beaten track of your weekday reading.
+        Something to read, something to listen to. Enjoy your Sunday.
       </p>
 
       {issue.article && <SundayItem pick={issue.article} kind="read" isFirst />}
