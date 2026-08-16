@@ -145,10 +145,10 @@ export async function createCheckout(
   return body as CreateCheckoutResult;
 }
 
-// ─── Weekly trend report (Pro) ────────────────────────────────────────────────
+// ─── The Sunday Supplement (Pro) ──────────────────────────────────────────────
 export async function getTrendReport(
   accessToken: string
-): Promise<{ report: import("./types").WeeklyTrendReport | null }> {
+): Promise<{ report: import("./types").SundayIssue | null }> {
   if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
 
   const response = await fetch(`${API_BASE_URL}/me/trend-report`, {

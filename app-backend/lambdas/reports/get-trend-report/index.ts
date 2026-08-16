@@ -21,17 +21,24 @@ export const handler = async (
       return { statusCode: 401, headers, body: JSON.stringify({ message: "Unauthorized" }) };
     }
 
-    // En son TREND# kaydını çek (SK ters sıralı, ilk sonuç en güncel hafta)
+    // Pazar Eki TÜM Pro üyeler için ortaktır: kayıt kullanıcı altında değil,
+    // sabit SUNDAY#issue partition'ında durur. Bu yüzden burada userId yalnızca
+    // kimlik doğrulaması için kullanılır, sorguda değil.
+    //
+    // Not: bu uç nokta plan kontrolü YAPMAZ. İçerik hassas değil ve tüm Pro
+    // üyelerde aynı; erişim sınırı arayüzde (Pro kartı yalnızca Pro'ya görünür).
+    // Sıkı kapatmak gerekirse USERS_TABLE okuma izni eklenip plan bakılmalı.
     const res = await dynamo.send(new QueryCommand({
       TableName: ARTICLES_TABLE,
       KeyConditionExpression: "PK = :pk AND begins_with(SK, :prefix)",
-      ExpressionAttributeValues: { ":pk": Keys.userPK(userId), ":prefix": "TREND#" },
+      ExpressionAttributeValues: { ":pk": Keys.sundayPK(), ":prefix": "TREND#" },
       ScanIndexForward: false,
       Limit: 1,
     }));
 
-    const report = res.Items?.[0];
-    if (!report) {
+    const issue = res.Items?.[0];
+    // "generating" placeholder henüz içerik taşımaz — hazır değil say.
+    if (!issue || issue.status === "generating") {
       return { statusCode: 200, headers, body: JSON.stringify({ report: null }) };
     }
 
@@ -40,9 +47,10 @@ export const handler = async (
       headers,
       body: JSON.stringify({
         report: {
-          weekLabel:   report.weekLabel ?? "",
-          interests:   report.interests ?? [],
-          generatedAt: report.generatedAt ?? null,
+          weekLabel:   issue.weekLabel ?? "",
+          article:     issue.article ?? null,
+          podcast:     issue.podcast ?? null,
+          generatedAt: issue.generatedAt ?? null,
         },
       }),
     };

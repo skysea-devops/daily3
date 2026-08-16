@@ -44,9 +44,9 @@ resource "aws_iam_role_policy" "generate_trend_report_policy" {
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = "${aws_cloudwatch_log_group.generate_trend_report.arn}:*"
       },
-      # Rapor artik kullanicinin haftalik DATE# kayitlarini okuyor (Query) ve
-      # ortak bonus okumayi BONUS#weekly altinda conditional-write ile
-      # uretiyor (GetItem/PutItem/UpdateItem). Sadece PutItem yeterli degil.
+      # Pazar Eki SUNDAY#issue altinda conditional-write ile uretiliyor ve
+      # SUNDAY#history tekrar korumasi okunup yaziliyor
+      # (GetItem/PutItem/UpdateItem). Sadece PutItem yeterli degil.
       {
         Sid      = "ReadWriteArticles"
         Effect   = "Allow"

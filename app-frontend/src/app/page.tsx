@@ -412,7 +412,7 @@ export default function HomePage() {
             <h2 className="lp-h2">Simple by design. Powerful under the hood.</h2>
             <div className="lp-steps">
               {[
-                { n: "01", title: "Choose your topics", body: "Pick your interest area from 15 categories — history, economics, science, world politics, and more. Pro readers follow three." },
+                { n: "01", title: "Choose your topics", body: "Pick your interest area from nine categories — history, economics, science, geopolitics, and more. Pro readers follow three." },
                 { n: "02", title: "We scan the web for you", body: "Every day, hundreds of sources are scanned. Only the best article per category makes the cut." },
                 { n: "03", title: "Ready every morning", body: "Your article and podcast episode arrive every morning — on your dashboard and in your inbox, ready to read." },
               ].map(s => (
