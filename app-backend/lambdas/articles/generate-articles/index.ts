@@ -1,5 +1,5 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand, QueryCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, PutCommand, QueryCommand, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { createHash } from "crypto";
@@ -2092,6 +2092,70 @@ interface GenerateEvent {
   email?: string;
 }
 
+
+// ─── Üretim kilidi (idempotency) ──────────────────────────────────────────────
+//
+// Bu Lambda sistemin EN PAHALI işi: Pro kullanıcı için 3 pickArticle +
+// 2 pickPodcast = 5 Bedrock çağrısı, üstelik her biri onlarca RSS feed çekiyor.
+//
+// Kilit ÇAĞIRANLARDA değil BURADA olmalı. Daha önce get-articles ve
+// daily-trigger kilitliyordu ama update-interests doğrudan invoke ediyordu:
+// art arda gönderilen PUT /me/interests istekleri, ilk üretim DailyArticles'ı
+// yazmadan önce hepsi "bugün içerik yok" görüp paralel üretim başlatabiliyordu.
+// N istek = 5N Bedrock çağrısı + N e-posta. Pahalı işlemin kendi sınırında
+// idempotent olması, hangi uç noktanın kaç kez çağırdığından bağımsız güvence
+// sağlar.
+const GEN_STALE_MS        = 3 * 60 * 1000;
+const GEN_PLACEHOLDER_TTL = 6 * 60 * 60;
+
+/**
+ * Üretim hakkını atomik olarak alır.
+ *  - Kayıt yoksa: koşullu yazma ile placeholder oluşturulur → true
+ *  - Kayıt varsa ve içerik hazırsa: false (yeniden üretme)
+ *  - Kayıt "generating" ve tazeyse: false (başkası üretiyor)
+ *  - Kayıt "generating" ama bayatsa: devral → true
+ */
+async function acquireGenerationLock(userId: string, sk: string): Promise<boolean> {
+  const pk = Keys.userPK(userId);
+  try {
+    await dynamo.send(new PutCommand({
+      TableName: ARTICLES_TABLE,
+      Item: { PK: pk, SK: sk, status: "generating", generatingAt: Date.now(),
+              ttl: Math.floor(Date.now() / 1000) + GEN_PLACEHOLDER_TTL },
+      ConditionExpression: "attribute_not_exists(PK)",
+    }));
+    return true;
+  } catch (err: any) {
+    if (err?.name !== "ConditionalCheckFailedException") throw err;
+  }
+
+  const existing = await dynamo.send(new GetCommand({
+    TableName: ARTICLES_TABLE, Key: { PK: pk, SK: sk },
+    ProjectionExpression: "#s, generatingAt",
+    ExpressionAttributeNames: { "#s": "status" },
+  }));
+  const item = existing.Item;
+  if (!item) return false;
+  if (item.status !== "generating") return false;             // içerik hazır
+  const startedAt = Number(item.generatingAt ?? 0);
+  if (Date.now() - startedAt <= GEN_STALE_MS) return false;   // üretim sürüyor
+
+  try {
+    await dynamo.send(new UpdateCommand({
+      TableName: ARTICLES_TABLE, Key: { PK: pk, SK: sk },
+      UpdateExpression: "SET generatingAt = :now",
+      ConditionExpression: "#s = :generating AND generatingAt = :prev",
+      ExpressionAttributeNames:  { "#s": "status" },
+      ExpressionAttributeValues: { ":now": Date.now(), ":generating": "generating", ":prev": startedAt },
+    }));
+    console.warn(`Stale generation lock taken over for user=${userId} ${sk}`);
+    return true;
+  } catch (err: any) {
+    if (err?.name === "ConditionalCheckFailedException") return false;
+    throw err;
+  }
+}
+
 export const handler = async (event: GenerateEvent): Promise<void> => {
   const { userId, interests, subTopics = {} } = event;
 
@@ -2101,6 +2165,14 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
 
   const interestsLabel = interests.join(", ");
   const isPro = (event.plan ?? "free").toLowerCase() === "pro";
+  const todaySK = Keys.dateSK(new Date());
+
+  // Pahalı üretimden ÖNCE kilit al. Kilit alınamazsa içerik ya hazır ya da
+  // üretiliyor demektir — sessizce çık, Bedrock'a hiç gitme.
+  if (!(await acquireGenerationLock(userId, todaySK))) {
+    console.log(`Generation skipped for user=${userId} ${todaySK} (already done or in progress)`);
+    return;
+  }
 
   console.log(
     `Generating for user=${userId} plan=${isPro ? "pro" : "free"} interests=${interestsLabel}`,
@@ -2175,10 +2247,11 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
   }
 
   // ── DynamoDB'e yaz ────────────────────────────────────────────────────────
+  // Koşulsuz Put: "generating" placeholder'ının üstüne gerçek içerik yazılır.
   const now = new Date();
   const item: DailyArticles = {
     PK: Keys.userPK(userId),
-    SK: Keys.dateSK(now),
+    SK: todaySK,
     articles: articles,
     podcast: podcasts[0] ?? null, // geriye uyumluluk (eski dashboard tekil okur)
     podcasts: podcasts,
@@ -2188,7 +2261,7 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
 
   await dynamo.send(new PutCommand({ TableName: ARTICLES_TABLE, Item: item }));
   console.log(
-    `Wrote ${articles.length} article(s) + ${podcasts.length} podcast(s) for user=${userId} date=${Keys.dateSK(now)}`,
+    `Wrote ${articles.length} article(s) + ${podcasts.length} podcast(s) for user=${userId} date=${todaySK}`,
   );
 
   // ── Email ─────────────────────────────────────────────────────────────────

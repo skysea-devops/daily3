@@ -1,5 +1,5 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { Keys } from "../../../shared/types";
 import type { SundayPick, SundayIssue, SundayHistory } from "../../../shared/types";
@@ -191,6 +191,38 @@ async function ensureIssue(sk: string): Promise<SundayIssue | null> {
     pickSundayItem(SUNDAY_PODCAST_SOURCES, true,  history.urls, history.sources),
   ]);
 
+  // EKSIK ISSUE HAFTAYI KILITLEMEMELI.
+  //
+  // pickSundayItem gecici bir sorunda null donebiliyor: RSS timeout, tum
+  // feed'lerin ayni anda basarisiz olmasi, Bedrock hatasi, gecersiz JSON ya da
+  // modelin -1 secmesi. Eksik issue'yu yine de "hazir" kaydetseydik o hafta
+  // bir daha denenmezdi; ikisi de null ise tum Pro uyeler Pazar mailini
+  // kacirirdi. Bu yuzden eksikse kilidi BIRAKIYORUZ (kaydi siliyoruz) ve bir
+  // sonraki invocation bastan deniyor.
+  //
+  // Pazar Eki'nin vaadi "bir okuma + bir dinleme": ikisi de olmadan gonderim
+  // yapilmaz.
+  if (!article || !podcast) {
+    console.warn(
+      `Sunday issue ${sk} incomplete (article=${article ? "ok" : "MISSING"}, ` +
+      `podcast=${podcast ? "ok" : "MISSING"}); releasing lock so it can be retried`,
+    );
+    try {
+      await dynamo.send(new DeleteCommand({
+        TableName: ARTICLES_TABLE,
+        Key: { PK: Keys.sundayPK(), SK: sk },
+        // Yalnizca kendi placeholder'imizi sil: bu arada baskasi gercek icerik
+        // yazdiysa dokunma.
+        ConditionExpression: "#s = :generating",
+        ExpressionAttributeNames:  { "#s": "status" },
+        ExpressionAttributeValues: { ":generating": "generating" },
+      }));
+    } catch (err: any) {
+      if (err?.name !== "ConditionalCheckFailedException") throw err;
+    }
+    return null;
+  }
+
   const issue: SundayIssue = {
     PK: Keys.sundayPK(), SK: sk,
     weekLabel: weekLabel(),
@@ -201,7 +233,7 @@ async function ensureIssue(sk: string): Promise<SundayIssue | null> {
   await dynamo.send(new PutCommand({ TableName: ARTICLES_TABLE, Item: issue }));
   await writeHistory(history, [article, podcast]);
 
-  console.log(`Sunday issue ${sk} ready — article=${article ? "yes" : "no"}, podcast=${podcast ? "yes" : "no"}`);
+  console.log(`Sunday issue ${sk} ready — ${article.source} / ${podcast.source}`);
   return issue;
 }
 
@@ -257,6 +289,45 @@ function buildEmail(issue: SundayIssue): { html: string; text: string } {
   return { html, text };
 }
 
+
+/**
+ * Gonderim hakkini atomik olarak alir: USER#<id> / SUNDAY_SENT#<hafta>.
+ *
+ * Neden gerekli: SES hatasini yukari firlatiyoruz ki AWS invocation'i yeniden
+ * denesin. Ama isaret olmadan retry, maili ZATEN ALMIS kullaniciya ikinci kez
+ * gonderirdi. Once isareti koyuyoruz, sonra gonderiyoruz; gonderim kalici
+ * olarak basarisiz olursa isaret siliniyor ki bir sonraki deneme calissin.
+ */
+async function claimSend(userId: string, sk: string): Promise<boolean> {
+  try {
+    await dynamo.send(new PutCommand({
+      TableName: ARTICLES_TABLE,
+      Item: {
+        PK: Keys.userPK(userId),
+        SK: `SUNDAY_SENT#${sk.replace("TREND#", "")}`,
+        sentAt: new Date().toISOString(),
+        ttl: Keys.ttl30Days(),
+      },
+      ConditionExpression: "attribute_not_exists(PK)",
+    }));
+    return true;
+  } catch (err: any) {
+    if (err?.name === "ConditionalCheckFailedException") return false;
+    throw err;
+  }
+}
+
+async function releaseSend(userId: string, sk: string): Promise<void> {
+  try {
+    await dynamo.send(new DeleteCommand({
+      TableName: ARTICLES_TABLE,
+      Key: { PK: Keys.userPK(userId), SK: `SUNDAY_SENT#${sk.replace("TREND#", "")}` },
+    }));
+  } catch (err) {
+    console.warn(`Could not release send marker for user=${userId}:`, err);
+  }
+}
+
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export const handler = async (event: SundayEvent): Promise<void> => {
@@ -284,6 +355,11 @@ export const handler = async (event: SundayEvent): Promise<void> => {
     return;
   }
 
+  if (!(await claimSend(userId, sk))) {
+    console.log(`Sunday email already sent to user=${userId} for ${sk}; skipping`);
+    return;
+  }
+
   try {
     const { html, text } = buildEmail(issue);
     await ses.send(new SendEmailCommand({
@@ -296,7 +372,11 @@ export const handler = async (event: SundayEvent): Promise<void> => {
     }));
     console.log(`Sunday email sent to ${to}`);
   } catch (err) {
-    // EMAIL_SEND_FAILED: CloudWatch metric filter bu ifadeye baglanabilir.
+    // EMAIL_SEND_FAILED: CloudWatch metric filter bu ifadeye baglanir.
     console.error(`EMAIL_SEND_FAILED user=${userId} reason=${(err as Error)?.name ?? "unknown"}`, err);
+    // Isareti geri al ve HATAYI FIRLAT: aksi halde Lambda basarili sayilir,
+    // AWS yeniden denemez ve kullanici maili kalici olarak kaybeder.
+    await releaseSend(userId, sk);
+    throw err;
   }
 };
