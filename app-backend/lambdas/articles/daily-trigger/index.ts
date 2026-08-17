@@ -2,6 +2,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { RSS_SOURCES } from "../generate-articles";
+import { randomUUID } from "crypto";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const lambda = new LambdaClient({});
@@ -306,6 +307,9 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
       subTopics: user.subTopics,
       email: user.email,
       plan: user.plan,
+      // Sahiplik jetonu: AWS async retry'da ayni payload gonderildigi icin
+      // worker kendi kilidini tanir ve retry uretimi atlamaz.
+      generationId: randomUUID(),
     },
     label: `fallback generate user=${user.userId}`,
   }));

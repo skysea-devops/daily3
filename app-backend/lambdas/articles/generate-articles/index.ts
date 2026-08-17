@@ -2,7 +2,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand, QueryCommand, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-import { createHash } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { Article, Podcast, DailyArticles, Keys } from "../../../shared/types";
 import type { SundayPick } from "../../../shared/types";
 import {
@@ -2085,6 +2085,15 @@ function buildSubTopicContext(
 
 interface GenerateEvent {
   userId: string;
+  /**
+   * Cagiranin urettigi sahiplik jetonu. AWS ayni async event'i yeniden
+   * denediginde payload AYNI kalir, dolayisiyla bu deger de aynidir — boylece
+   * bir retry KENDI kilidine takilmaz. Yoksa suna dusuyorduk: worker 08:00'de
+   * claimedAt yazip 08:02:30'da timeout oldu, AWS retry etti, retry
+   * "claimedAt 2.5 dk once, taze" deyip cikti; gercekte calisan kimse yok ve
+   * o gunun uretimi kayboldu.
+   */
+  generationId?: string;
   interests: string[];
   subTopics?: Record<string, string[]>;
   plan?: string;
@@ -2097,31 +2106,45 @@ interface GenerateEvent {
 //
 // Bu Lambda sistemin EN PAHALI işi: Pro kullanıcı için 3 pickArticle +
 // 2 pickPodcast = 5 Bedrock çağrısı, üstelik her biri onlarca RSS feed çekiyor.
+// Kilit ÇAĞIRANLARDA değil BURADA olmalı; update-interests doğrudan invoke
+// ediyor ve orada hiç kilit yok (art arda PUT = N paralel üretim).
 //
-// Kilit ÇAĞIRANLARDA değil BURADA olmalı. Daha önce get-articles ve
-// daily-trigger kilitliyordu ama update-interests doğrudan invoke ediyordu:
-// art arda gönderilen PUT /me/interests istekleri, ilk üretim DailyArticles'ı
-// yazmadan önce hepsi "bugün içerik yok" görüp paralel üretim başlatabiliyordu.
-// N istek = 5N Bedrock çağrısı + N e-posta. Pahalı işlemin kendi sınırında
-// idempotent olması, hangi uç noktanın kaç kez çağırdığından bağımsız güvence
-// sağlar.
+// İKİ KATMAN VAR, karıştırılmamalı:
+//
+//   generatingAt → REZERVASYON. get-articles bu Lambda'yı çağırmadan ÖNCE
+//                  "bu kullanıcı/gün için üretim başlatılıyor" diye placeholder
+//                  yazıyor. Yani biz çalışmaya başladığımızda kayıt ZATEN VAR.
+//   claimedAt    → SAHİPLENME. Yalnızca bu Lambda yazar. "Bir worker gerçekten
+//                  üretime başladı" demek.
+//
+// Tek alan kullanılsaydı (ilk sürümdeki hata) get-articles'ın rezervasyonunu
+// "başkası üretiyor" sanıp hemen çıkardık — hiç kimse üretmez, dashboard
+// sonsuza kadar "Curating your content..." ekranında kalırdı.
 const GEN_STALE_MS        = 3 * 60 * 1000;
 const GEN_PLACEHOLDER_TTL = 6 * 60 * 60;
 
 /**
  * Üretim hakkını atomik olarak alır.
- *  - Kayıt yoksa: koşullu yazma ile placeholder oluşturulur → true
- *  - Kayıt varsa ve içerik hazırsa: false (yeniden üretme)
- *  - Kayıt "generating" ve tazeyse: false (başkası üretiyor)
- *  - Kayıt "generating" ama bayatsa: devral → true
+ *  - Kayıt yoksa            → koşullu yazma, sahiplenerek başla (true)
+ *  - İçerik hazırsa         → false (yeniden üretme)
+ *  - Rezerve ama sahipsizse → sahiplen (true)   ← get-articles yolu
+ *  - Sahipli ve tazeyse     → false (gerçekten başka bir worker üretiyor)
+ *  - Sahipli ama bayatsa    → devral (true)
  */
-async function acquireGenerationLock(userId: string, sk: string): Promise<boolean> {
-  const pk = Keys.userPK(userId);
+async function acquireGenerationLock(
+  userId: string,
+  sk: string,
+  generationId: string,
+): Promise<boolean> {
+  const pk  = Keys.userPK(userId);
+  const now = Date.now();
+
+  // 1) Hiç kayıt yoksa: doğrudan sahiplenerek oluştur.
   try {
     await dynamo.send(new PutCommand({
       TableName: ARTICLES_TABLE,
-      Item: { PK: pk, SK: sk, status: "generating", generatingAt: Date.now(),
-              ttl: Math.floor(Date.now() / 1000) + GEN_PLACEHOLDER_TTL },
+      Item: { PK: pk, SK: sk, status: "generating", generatingAt: now, claimedAt: now,
+              generationId, ttl: Math.floor(now / 1000) + GEN_PLACEHOLDER_TTL },
       ConditionExpression: "attribute_not_exists(PK)",
     }));
     return true;
@@ -2129,24 +2152,62 @@ async function acquireGenerationLock(userId: string, sk: string): Promise<boolea
     if (err?.name !== "ConditionalCheckFailedException") throw err;
   }
 
+  // ConsistentRead: koşullu yazma "kayıt var" dedi; eventually consistent bir
+  // okuma o kaydı henüz göremeyip gereksiz yere üretimi atlayabilirdi.
   const existing = await dynamo.send(new GetCommand({
     TableName: ARTICLES_TABLE, Key: { PK: pk, SK: sk },
-    ProjectionExpression: "#s, generatingAt",
+    ProjectionExpression: "#s, claimedAt, generationId",
     ExpressionAttributeNames: { "#s": "status" },
+    ConsistentRead: true,
   }));
   const item = existing.Item;
   if (!item) return false;
-  if (item.status !== "generating") return false;             // içerik hazır
-  const startedAt = Number(item.generatingAt ?? 0);
-  if (Date.now() - startedAt <= GEN_STALE_MS) return false;   // üretim sürüyor
+  if (item.status !== "generating") return false;   // içerik hazır, dokunma
 
+  const claimedAt = Number(item.claimedAt ?? 0);
+
+  // 2) Rezerve edilmiş ama henüz sahiplenilmemiş (get-articles bizi çağırdı).
+  //    generatingAt de güncelleniyor: get-articles bayatlık hesabını ONUN
+  //    üzerinden yapıyor, iki ayrı saat tutmak gereksiz invoke üretiyordu.
+  if (!claimedAt) {
+    try {
+      await dynamo.send(new UpdateCommand({
+        TableName: ARTICLES_TABLE, Key: { PK: pk, SK: sk },
+        UpdateExpression: "SET claimedAt = :now, generatingAt = :now, generationId = :gid",
+        ConditionExpression: "#s = :generating AND attribute_not_exists(claimedAt)",
+        ExpressionAttributeNames:  { "#s": "status" },
+        ExpressionAttributeValues: { ":now": now, ":generating": "generating", ":gid": generationId },
+      }));
+      return true;
+    } catch (err: any) {
+      if (err?.name === "ConditionalCheckFailedException") return false;
+      throw err;
+    }
+  }
+
+  // 3) Kilit ZATEN BİZİM: bu, aynı event'in AWS tarafından yeniden denenmesi.
+  //    Kendi kilidimize takılmadan devam etmeliyiz.
+  if (generationId && item.generationId === generationId) {
+    console.warn(`Retry of generation ${generationId} for user=${userId}; resuming`);
+    await dynamo.send(new UpdateCommand({
+      TableName: ARTICLES_TABLE, Key: { PK: pk, SK: sk },
+      UpdateExpression: "SET claimedAt = :now, generatingAt = :now",
+      ExpressionAttributeValues: { ":now": now },
+    }));
+    return true;
+  }
+
+  // 4) Başka bir worker sahipli ve taze → gerçekten üretim sürüyor.
+  if (now - claimedAt <= GEN_STALE_MS) return false;
+
+  // 5) Sahipli ama bayat → önceki worker çökmüş olabilir, devral.
   try {
     await dynamo.send(new UpdateCommand({
       TableName: ARTICLES_TABLE, Key: { PK: pk, SK: sk },
-      UpdateExpression: "SET generatingAt = :now",
-      ConditionExpression: "#s = :generating AND generatingAt = :prev",
+      UpdateExpression: "SET claimedAt = :now, generatingAt = :now, generationId = :gid",
+      ConditionExpression: "#s = :generating AND claimedAt = :prev",
       ExpressionAttributeNames:  { "#s": "status" },
-      ExpressionAttributeValues: { ":now": Date.now(), ":generating": "generating", ":prev": startedAt },
+      ExpressionAttributeValues: { ":now": now, ":generating": "generating", ":prev": claimedAt, ":gid": generationId },
     }));
     console.warn(`Stale generation lock taken over for user=${userId} ${sk}`);
     return true;
@@ -2167,9 +2228,13 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
   const isPro = (event.plan ?? "free").toLowerCase() === "pro";
   const todaySK = Keys.dateSK(new Date());
 
+  // Cagiran jeton gondermediyse uret: o zaman retry korumasi olmaz ama
+  // davranis eski haliyle ayni kalir (bayatlik zaman asimina duser).
+  const generationId = event.generationId ?? randomUUID();
+
   // Pahalı üretimden ÖNCE kilit al. Kilit alınamazsa içerik ya hazır ya da
   // üretiliyor demektir — sessizce çık, Bedrock'a hiç gitme.
-  if (!(await acquireGenerationLock(userId, todaySK))) {
+  if (!(await acquireGenerationLock(userId, todaySK, generationId))) {
     console.log(`Generation skipped for user=${userId} ${todaySK} (already done or in progress)`);
     return;
   }
@@ -2259,7 +2324,24 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
     ttl: Keys.ttl30Days(),
   };
 
-  await dynamo.send(new PutCommand({ TableName: ARTICLES_TABLE, Item: item }));
+  // Kosullu yazma: bu arada bayat kilit devralinip BASKA bir worker icerik
+  // yazdiysa onun uzerine yazma. Normalde Lambda timeout'u (150s) bayatlik
+  // esiginden (180s) kisa oldugu icin bu senaryo beklenmez, ama sessizce
+  // icerigin ezilmesi kotu bir basarisizlik bicimi olurdu.
+  try {
+    await dynamo.send(new PutCommand({
+      TableName: ARTICLES_TABLE,
+      Item: { ...item, status: "ready", generationId },
+      ConditionExpression: "attribute_not_exists(PK) OR generationId = :gid OR attribute_not_exists(generationId)",
+      ExpressionAttributeValues: { ":gid": generationId },
+    }));
+  } catch (err: any) {
+    if (err?.name === "ConditionalCheckFailedException") {
+      console.warn(`Generation ${generationId} superseded for user=${userId} ${todaySK}; discarding result`);
+      return;
+    }
+    throw err;
+  }
   console.log(
     `Wrote ${articles.length} article(s) + ${podcasts.length} podcast(s) for user=${userId} date=${todaySK}`,
   );
