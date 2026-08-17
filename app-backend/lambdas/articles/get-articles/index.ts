@@ -10,6 +10,7 @@ import type {
   APIGatewayProxyEventV2WithJWTAuthorizer,
   APIGatewayProxyResultV2,
 } from "aws-lambda";
+import { randomUUID } from "crypto";
 import { Keys } from "../../../shared/types";
 import { isCategoryId } from "../../../shared/categories";
 
@@ -53,6 +54,8 @@ const PLACEHOLDER_TTL_SEC = 6 * 60 * 60;   // her ihtimale karşı placeholder 6
 
 interface GeneratePayload {
   userId: string;
+  /** Sahiplik jetonu — generate-articles retry'da kendi kilidine takilmasin. */
+  generationId?: string;
   interests: string[];
   subTopics: Record<string, string[]>;
   email?: string;
@@ -151,6 +154,9 @@ async function refreshStaleLock(pk: string, sk: string, previousGeneratingAt: nu
 }
 
 async function invokeGenerate(payload: GeneratePayload): Promise<void> {
+  // Jeton BURADA uretiliyor: AWS async retry'da ayni payload'i tekrar
+  // gonderdigi icin jeton da ayni kalir ve worker kendi kilidini taniyabilir.
+  payload = { ...payload, generationId: payload.generationId ?? randomUUID() };
   await lambda.send(
     new InvokeCommand({
       FunctionName:   GENERATE_ARTICLES_FUNCTION,
