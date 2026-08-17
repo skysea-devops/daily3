@@ -6,6 +6,7 @@ import type {
   APIGatewayProxyResultV2,
 } from "aws-lambda";
 import { isCategoryId, isSubTopicOf, subTopicsFor } from "../../../shared/categories";
+import { randomUUID } from "crypto";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const lambda = new LambdaClient({});
@@ -235,7 +236,8 @@ export const handler = async (
       new InvokeCommand({
         FunctionName:   GENERATE_ARTICLES_FN,
         InvocationType: "Event", // fire-and-forget
-        Payload:        Buffer.from(JSON.stringify({ userId, interests, subTopics, email, plan })),
+        // generationId: generate-articles retry'da kendi kilidine takilmasin.
+        Payload:        Buffer.from(JSON.stringify({ userId, interests, subTopics, email, plan, generationId: randomUUID() })),
       })
     );
 
