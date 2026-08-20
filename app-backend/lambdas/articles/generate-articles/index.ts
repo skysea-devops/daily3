@@ -30,6 +30,7 @@ const ses     = new SESClient({
 const ARTICLES_TABLE   = process.env.ARTICLES_TABLE_NAME!;
 const USERS_TABLE      = process.env.USERS_TABLE_NAME!;
 const SES_FROM_EMAIL   = process.env.SES_FROM_EMAIL!;
+const APP_URL          = process.env.APP_URL ?? "https://cogletta.com";
 
 // ─── Article RSS source map ───────────────────────────────────────────────────
 //
@@ -97,7 +98,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
 
   // Business & Economics
   business_economics: [
-    { name: "MIT Sloan Review",      url: "https://sloanreview.mit.edu/feed/" },
+    
     { name: "Noema Magazine",        url: "https://www.noemamag.com/?feed=noemarss" },
     { name: "Knowledge at Wharton",  url: "https://knowledge.wharton.upenn.edu/feed/" },
     { name: "Fast Company",          url: "https://www.fastcompany.com/latest/rss" },
@@ -796,7 +797,35 @@ function podcastEmailBlock(podcast: Podcast): string {
               </tr>`;
 }
 
-function buildEmailHtml(articles: Article[], podcasts: Podcast[]): string {
+
+/**
+ * Free kullanicilara gunluk e-postanin sonunda gosterilen Pro daveti.
+ *
+ * Iki kural:
+ *  - YALNIZCA Free plana gider. Pro kullanici zaten odedigi seyin reklamini
+ *    gormemeli.
+ *  - Icerigin ALTINDA durur, ustunde degil. E-postanin isi once okuma sunmak;
+ *    davet okuma bittikten sonra gelir.
+ */
+function upgradeBlock(): string {
+  return `
+              <tr>
+                <td style="padding:8px 0 4px 0;">
+                  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border-radius:12px;">
+                    <tr><td style="padding:22px 24px;">
+                      <p style="margin:0 0 14px 0;font-size:15px;line-height:1.65;color:#374151;">
+                        <strong style="color:#111827;">Want more each morning?</strong> Cogletta Pro brings three articles across three interests, two podcast episodes, sub-topics you choose — and The Sunday Supplement, a lighter read and listen every Sunday.
+                      </p>
+                      <a href="${APP_URL}/settings" style="display:inline-block;padding:11px 22px;background:#111827;color:#ffffff;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">
+                        See Cogletta Pro &rarr;
+                      </a>
+                    </td></tr>
+                  </table>
+                </td>
+              </tr>`;
+}
+
+function buildEmailHtml(articles: Article[], podcasts: Podcast[], isPro: boolean): string {
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
     day: "numeric",
@@ -822,6 +851,7 @@ function buildEmailHtml(articles: Article[], podcasts: Podcast[]): string {
     .map((a, i) => articleEmailBlock(a, i > 0))
     .join("");
   const podcastBlocks = podcasts.map(podcastEmailBlock).join("");
+  const upsellBlock   = isPro ? "" : upgradeBlock();
 
   return `<!DOCTYPE html>
 <html>
@@ -845,7 +875,7 @@ function buildEmailHtml(articles: Article[], podcasts: Podcast[]): string {
         </tr>
         <tr>
           <td style="padding:0 36px;">
-            <table width="100%" cellpadding="0" cellspacing="0">${articleBlocks}${podcastBlocks}
+            <table width="100%" cellpadding="0" cellspacing="0">${articleBlocks}${podcastBlocks}${upsellBlock}
             </table>
           </td>
         </tr>
@@ -864,7 +894,7 @@ function buildEmailHtml(articles: Article[], podcasts: Podcast[]): string {
 </html>`;
 }
 
-function buildEmailText(articles: Article[], podcasts: Podcast[]): string {
+function buildEmailText(articles: Article[], podcasts: Podcast[], isPro: boolean): string {
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
     day: "numeric",
@@ -888,14 +918,19 @@ function buildEmailText(articles: Article[], podcasts: Podcast[]): string {
     articles.length > 1
       ? "Your articles for today:"
       : "Your article for today:";
-  return `Cogletta — ${today}\n\n${intro}\n\n${articleLines}${podcastLines}\n\nNew content arrives every morning at 07:00.`;
+  const upsell = isPro ? "" :
+    `\n\n---\n\nWant more each morning? Cogletta Pro brings three articles across three interests, ` +
+    `two podcast episodes, sub-topics you choose — and The Sunday Supplement every Sunday.\n${APP_URL}/settings`;
+  return `Cogletta — ${today}\n\n${intro}\n\n${articleLines}${podcastLines}${upsell}\n\nNew content arrives every morning at 07:00.`;
 }
 
 export async function sendDailyEmail(
   toEmail: string,
   articles: Article[],
   podcasts: Podcast[],
+  plan: string = "free",
 ): Promise<void> {
+  const isPro = plan.toLowerCase() === "pro";
   // Fallback dışında gerçek makalesi olanları tut
   const real = articles.filter(
     (a) => a.url && a.url !== "https://news.ycombinator.com",
@@ -918,8 +953,8 @@ export async function sendDailyEmail(
           Charset: "UTF-8",
         },
         Body: {
-          Html: { Data: buildEmailHtml(real, podcasts), Charset: "UTF-8" },
-          Text: { Data: buildEmailText(real, podcasts), Charset: "UTF-8" },
+          Html: { Data: buildEmailHtml(real, podcasts, isPro), Charset: "UTF-8" },
+          Text: { Data: buildEmailText(real, podcasts, isPro), Charset: "UTF-8" },
         },
       },
     }),
@@ -2352,7 +2387,7 @@ export const handler = async (event: GenerateEvent): Promise<void> => {
       event.userEmail ?? event.email ?? (await fetchUserEmail(userId));
     if (userEmail) {
       try {
-        await sendDailyEmail(userEmail, articles, podcasts);
+        await sendDailyEmail(userEmail, articles, podcasts, isPro ? "pro" : "free");
       } catch (err) {
         // EMAIL_SEND_FAILED: CloudWatch metric filter bu ifadeye baglanabilir.
         // Gonderim sessizce kaybolmamali — SES throttling'i burada goruntur.
