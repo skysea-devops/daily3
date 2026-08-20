@@ -264,6 +264,8 @@ resource "aws_lambda_function" "generate_articles" {
       SES_FROM_EMAIL      = var.ses_from_email
       CORS_ORIGIN         = var.cors_origin
       BEDROCK_REGION      = var.aws_region
+      # Free plana gonderilen gunluk e-postadaki Pro davetinin linki icin.
+      APP_URL             = var.app_url
       NODE_OPTIONS        = "--enable-source-maps"
     }
   }
