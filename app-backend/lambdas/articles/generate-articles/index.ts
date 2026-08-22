@@ -425,6 +425,10 @@ export const SUNDAY_MAX_AGE_DAYS = 90;
 
 export interface RSSItem {
   title: string;
+  /** Feed'deki <category> etiketleri — sponsorlu/bulten ogelerini elemek icin. */
+  categories?: string[];
+  /** Ghost'un uye duvari isareti bulundu mu (bkz. GATED_CONTENT_MARKERS). */
+  gated?: boolean;
   url: string;
   description: string;
   pubDate: string;
@@ -563,6 +567,33 @@ function stripHtml(input: string): string {
     .trim();
 }
 
+/**
+ * Feed icinde UYE DUVARI oldugunu KESIN olarak gosteren isaretler.
+ *
+ * Ghost tabanli yayincilar ucretsiz onizlemenin bittigi yere bu yorumu koyuyor.
+ * Tahmin degil, yayincinin kendi beyani — bu yuzden guvenle elenebilir.
+ * (2026-08-22: Hyperallergic'in bazi yazilari abonelik istiyordu; kaynagi
+ * tamamen cikarmak yerine yalnizca duvarli ogeleri elemek yeterli.)
+ */
+const GATED_CONTENT_MARKERS = ["<!--members-only-->", "<!--paid-members-only-->"];
+
+/**
+ * Editoryal olmayan oge turleri. Sponsorlu icerik ve gunluk bulten
+ * roundup'lari makale degil: birincisi reklam, ikincisi baska yazilara
+ * yonlendiren link listesi — ikisi de urun tezine aykiri.
+ */
+const NON_EDITORIAL_CATEGORIES = new Set([
+  "sponsored",
+  "announcement",
+  "exhibition announcement",
+  "newsletter",
+  "daily newsletter",
+]);
+
+function isNonEditorial(item: Pick<RSSItem, "categories">): boolean {
+  return (item.categories ?? []).some(c => NON_EDITORIAL_CATEGORIES.has(c.trim().toLowerCase()));
+}
+
 function extractItems(xml: string, sourceName: string): RSSItem[] {
   const itemTag = xml.includes("<entry") ? "entry" : "item";
   const segments = xml.split(`<${itemTag}`).slice(1).slice(0, 20);
@@ -632,6 +663,19 @@ function extractItems(xml: string, sourceName: string): RSSItem[] {
         if (!url && enclosureUrl && enclosureIsAudio) finalUrl = enclosureUrl;
       }
 
+      // <category> etiketleri: Ghost/WordPress feed'lerinde ogenin turu burada.
+      // Hyperallergic ornegi: "Sponsored", "Announcement", "Daily Newsletter".
+      const categories = [...seg.matchAll(/<category[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/category>/gi)]
+        .map(m => m[1].trim())
+        .filter(Boolean);
+
+      // Ghost, ucretsiz onizlemenin bittigi yere content:encoded icine
+      // <!--members-only--> yerlestiriyor. Yani UYE DUVARI FEED'DEN OKUNABILIYOR:
+      // makale sayfasini acmadan, tahmin etmeden. Ghost kullanan her yayinci
+      // icin gecerli (Hyperallergic, 404 Media, The Pragmatic Engineer...).
+      const rawContent = extractText(seg, "content:encoded") || extractText(seg, "content");
+      const gated = GATED_CONTENT_MARKERS.some(marker => rawContent.includes(marker));
+
       const description =
         extractText(seg, "description") ||
         extractText(seg, "summary") ||
@@ -677,6 +721,8 @@ function extractItems(xml: string, sourceName: string): RSSItem[] {
         pubTimestamp: parsePubDate(pubDateRaw),
         sourceName,
         duration,
+        categories,
+        gated,
       };
     })
     .filter((i) => i.title && i.url);
@@ -831,13 +877,14 @@ function podcastEmailBlock(podcast: Podcast): string {
 
 
 /**
- * Free kullanicilara gunluk e-postanin sonunda gosterilen Pro daveti.
+ * Free kullanicilara gunluk e-postada gosterilen Pro daveti.
  *
  * Iki kural:
  *  - YALNIZCA Free plana gider. Pro kullanici zaten odedigi seyin reklamini
  *    gormemeli.
- *  - Icerigin ALTINDA durur, ustunde degil. E-postanin isi once okuma sunmak;
- *    davet okuma bittikten sonra gelir.
+ *  - Makale ile podcast ARASINA girer. En altta, podcast'in da altinda
+ *    kalinca goz atlayip geciyordu; iki icerik arasindaki dogal duraklama
+ *    okurun zaten durdugu yer.
  */
 function upgradeBlock(): string {
   return `
@@ -846,7 +893,7 @@ function upgradeBlock(): string {
                   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border-radius:12px;">
                     <tr><td style="padding:22px 24px;">
                       <p style="margin:0 0 14px 0;font-size:15px;line-height:1.65;color:#374151;">
-                        <strong style="color:#111827;">Want more each morning?</strong> Cogletta Pro brings three articles across three interests, two podcast episodes, sub-topics you choose — and The Sunday Supplement, a lighter read and listen every Sunday.
+                        <strong style="color:#111827;">One good read is a start.</strong> With Cogletta Pro, every morning brings 3 thoughtful articles and 2 podcast episodes across the topics you care about.
                       </p>
                       <a href="${APP_URL}/settings" style="display:inline-block;padding:11px 22px;background:#111827;color:#ffffff;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">
                         See Cogletta Pro &rarr;
@@ -907,7 +954,7 @@ function buildEmailHtml(articles: Article[], podcasts: Podcast[], isPro: boolean
         </tr>
         <tr>
           <td style="padding:0 36px;">
-            <table width="100%" cellpadding="0" cellspacing="0">${articleBlocks}${podcastBlocks}${upsellBlock}
+            <table width="100%" cellpadding="0" cellspacing="0">${articleBlocks}${upsellBlock}${podcastBlocks}
             </table>
           </td>
         </tr>
@@ -951,9 +998,10 @@ function buildEmailText(articles: Article[], podcasts: Podcast[], isPro: boolean
       ? "Your articles for today:"
       : "Your article for today:";
   const upsell = isPro ? "" :
-    `\n\n---\n\nWant more each morning? Cogletta Pro brings three articles across three interests, ` +
-    `two podcast episodes, sub-topics you choose — and The Sunday Supplement every Sunday.\n${APP_URL}/settings`;
-  return `Cogletta — ${today}\n\n${intro}\n\n${articleLines}${podcastLines}${upsell}\n\nNew content arrives every morning at 07:00.`;
+    `\n\n---\n\nOne good read is a start. With Cogletta Pro, every morning brings 3 thoughtful ` +
+    `articles and 2 podcast episodes across the topics you care about.\n${APP_URL}/settings\n\n---`;
+  // Sira HTML ile ayni: makale → davet → podcast.
+  return `Cogletta — ${today}\n\n${intro}\n\n${articleLines}${upsell}${podcastLines}\n\nNew content arrives every morning at 07:00.`;
 }
 
 export async function sendDailyEmail(
@@ -1159,6 +1207,10 @@ function scoreAndFilter(
     .filter((item) => isPodcast || !PODCAST_PATTERNS.test(item.title))
     .filter((item) => isPodcast || !PODCAST_URL_PATTERN.test(item.url))
     .filter((item) => isPodcast || !isPaywalledUrl(item.url))
+    // Uye duvarli ve editoryal olmayan ogeler: ikisi de feed'den okunuyor,
+    // makale sayfasini acmaya gerek yok.
+    .filter((item) => !item.gated)
+    .filter((item) => !isNonEditorial(item))
     .sort((a, b) => {
       const freshnessScore = (f: string) =>
         f === "today" ? 2 : f === "recent" ? 1 : 0;
