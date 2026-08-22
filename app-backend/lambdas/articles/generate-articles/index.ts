@@ -15,6 +15,22 @@ import {
 } from "../../../shared/categories";
 
 
+
+// ─── Yakalanamayan promise reddi koruması ─────────────────────────────────────
+//
+// Node 20'de yakalanamayan bir promise reddi SÜRECİ ÖLDÜRÜR. Lambda bunu
+// "Runtime.NodeJsExit" olarak raporlar ve o çalıştırmanın tüm işi kaybolur —
+// üretimin 30. saniyesinde çöken bir invocation, o kullanıcı ya da kategori
+// için hiçbir şey yazamaz.
+//
+// Asıl sebep (tüketilmeyen fetch gövdesi) fetchRSSFeed ve resolveFinalUrl
+// içinde kapatıldı. Bu kayıt ikinci savunma katmanı: benzer bir kaçak
+// ileride başka bir yerde oluşursa çalıştırmayı öldürmesin, ama SESSİZ de
+// kalmasın — belirgin bir işaretle loglanır ki CloudWatch'ta aranabilsin.
+process.on("unhandledRejection", (reason) => {
+  console.error("UNHANDLED_REJECTION — invocation continues, investigate:", reason);
+});
+
 const dynamo  = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const bedrock = new BedrockRuntimeClient({ region: process.env.AWS_REGION });
 // retryMode "adaptive": SDK'nin client-side rate limiter'i devreye girer —
@@ -491,6 +507,9 @@ async function resolveFinalUrl(url: string): Promise<string> {
       redirect: "follow",
       signal: AbortSignal.timeout(5000),
     });
+    // HEAD yanitinin govdesi okunmuyor; ayni undici sizintisini onlemek icin
+    // acikca kapatiliyor.
+    await res.body?.cancel().catch(() => {});
     if (res.url && res.url !== url) return canonicalizeUrl(res.url);
     return url;
   } catch {
@@ -689,7 +708,20 @@ export async function fetchRSSFeed(source: {
     },
     signal: AbortSignal.timeout(8000),
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status} from ${source.url}`);
+  if (!res.ok) {
+    // GOVDEYI KAPATMADAN THROW ETME.
+    //
+    // undici (Node 20 fetch) yaniti tuketilmeyen bir baglantiyi acik tutuyor;
+    // o soket daha sonra hata verirse ortaya YAKALANAMAYAN bir promise reddi
+    // cikiyor ve Node varsayilan olarak SURECI OLDURUYOR. Lambda bunu
+    // "Runtime.NodeJsExit — a Promise that was not resolved" diye raporluyor.
+    //
+    // 2026-08-22: generate-category-picks tam bu yuzden coktu; 6 kategoriden
+    // 3'unun havuzu uretilemedi, iki Pro kullanici pahali legacy yoluna dustu.
+    // Tetikleyici, 403 donen feed'lerdi (econlib, cupblog).
+    await res.body?.cancel().catch(() => {});
+    throw new Error(`HTTP ${res.status} from ${source.url}`);
+  }
   const xml = await res.text();
   return extractItems(xml, source.name);
 }
