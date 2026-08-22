@@ -16,15 +16,15 @@ function setPlanIntent(billing: "monthly" | "yearly") {
 }
 
 const FREE_FEATURES = [
-  "1 curated article daily on your chosen topic",
+  "1 curated article every morning",
   "1 podcast recommendation daily",
-  "Choose 1 of 9 interest categories",
+  "A different topic each morning, across all nine",
   "Daily email digest",
   "Editorial commentary on each article",
 ];
 
 const PRO_FEATURES = [
-  "3 interests",
+  "Choose your own 3 interests",
   "3 curated articles for each interest",
   "Personalized sub-topics",
   "2 daily podcast recommendations",

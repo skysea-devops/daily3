@@ -250,6 +250,26 @@ export const PODCAST_MAX_AGE_DAYS = 90;
  * Hafif tonlu kategoriler — Bedrock prompt'una "uplifting, warm, practical;
  * avoid grief, trauma, serious illness" yönergesi bunlar için eklenir.
  */
+
+/**
+ * Free planın günlük konusu — "bugün sırada ne varsa".
+ *
+ * Free kullanıcılar konu SEÇMEZ (seçim bir Pro özelliğidir); herkese aynı
+ * kategoriden aynı makale ve podcast gider, kategori her gün değişir. 9
+ * kategori olduğu için tur 9 günde bir başa döner.
+ *
+ * Tarihten türetiliyor, kayıt tutulmuyor: hangi bölgede hangi cron çalışırsa
+ * çalışsın aynı sonucu verir, geriye dönük olarak da hesaplanabilir. Bir
+ * "sıradaki" işaretçisi saklamak, bölgeler arası yarış ve kayıp güncelleme
+ * riski getirirdi.
+ *
+ * UTC epoch gününü kullanır ki cron'un çalıştığı yerel saat sonucu kaydırmasın.
+ */
+export function rotationCategoryFor(date: Date = new Date()): CategoryId {
+  const epochDay = Math.floor(date.getTime() / 86_400_000);
+  return CATEGORY_IDS[((epochDay % CATEGORY_IDS.length) + CATEGORY_IDS.length) % CATEGORY_IDS.length];
+}
+
 export const LIGHT_CATEGORY_IDS: CategoryId[] = ["life_work"];
 
 /**
