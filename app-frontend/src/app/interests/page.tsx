@@ -7,7 +7,7 @@ import { updateUserInterests } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import { CATEGORIES, SUB_TOPICS } from "@/lib/constants";
-import { isCategoryId, rotationCategoryFor, categoryLabel } from "@/lib/categories";
+import { isCategoryId, categoryLabel } from "@/lib/categories";
 
 // ─── Saat dilimi → gönderim bölgesi ───────────────────────────────────────────
 // Kullanıcının tarayıcı saat dilimini 4 kovadan birine eşler. Backend her bölge
@@ -204,8 +204,6 @@ function InterestsForm() {
   const { user, plan, markInterestsSaved } = useAuth();
 
   const isPro = plan === "pro";
-  // Free planin bugunku konusu — backend ile AYNI fonksiyondan turetiliyor.
-  const todaysTopic = rotationCategoryFor(new Date());
   const maxTopics = isPro ? 3 : 1;
 
   const [selected, setSelected]           = useState<string[]>([]);
@@ -339,11 +337,10 @@ function InterestsForm() {
         <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: isPro ? 32 : 8 }}>
           {isPro
             ? "Pick 3 topics. Your content refreshes every morning"
-            : "A different topic every morning — today it's " + categoryLabel(todaysTopic) + "."}
+            : "A different topic every morning."}
         </p>
         {!isPro && (
-          <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", marginBottom: 32 }}>
-            On the free plan we choose the topic for you, rotating through all nine.{" "}
+          <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", lineHeight: 1.6, marginBottom: 32 }}>
             <a href="/register#pro" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
               Upgrade to Pro
             </a>{" "}
@@ -440,6 +437,9 @@ function InterestsForm() {
           })}
         </div>
 
+        {/* Free planda secim yok: sayac ve kaydet butonu gosterilmez, aksi halde
+            "0/1 selected" kullaniciya secim yapmasi gerekiyormus gibi gorunur. */}
+        {isPro && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>
             {selected.length === maxTopics
@@ -456,6 +456,7 @@ function InterestsForm() {
             {loading ? "Saving..." : saved ? "Saved! ✓" : "Save interests"}
           </button>
         </div>
+        )}
       </main>
     </div>
   );
