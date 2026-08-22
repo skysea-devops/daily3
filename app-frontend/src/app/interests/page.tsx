@@ -60,7 +60,7 @@ function ProSubtopicOverlay({ category, onClose }: { category: string; onClose: 
             {category} — sub-topics
           </h3>
           <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.6 }}>
-            With Pro, choose the areas within {category} you want to focus on. Every article will be even more relevant.
+            With Pro, choose the areas within {category} you want to focus on. 
           </p>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>

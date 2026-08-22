@@ -170,13 +170,17 @@ function ChangePasswordForm({ onDone }: { onDone: () => void }) {
 
 // ─── Modals ───────────────────────────────────────────────────────────────────
 
-function DeleteModal({ onConfirm, onCancel, deleting }: { onConfirm: () => void; onCancel: () => void; deleting: boolean }) {
+function DeleteModal({ onConfirm, onCancel, deleting, isPro }: { onConfirm: () => void; onCancel: () => void; deleting: boolean; isPro: boolean }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 20px" }}>
       <div style={{ background: "var(--white)", borderRadius: 12, padding: "32px", maxWidth: 400, width: "100%", boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
         <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1.25rem", color: "var(--ink)", margin: "0 0 12px" }}>Delete your account?</h3>
         <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", margin: "0 0 24px", lineHeight: 1.6 }}>
-          This will cancel future subscription renewals first, then permanently delete your account and all your data. Your current payment will not be refunded, and access ends immediately because the account is removed.
+          {/* Metin plana gore ayrilir: Free kullanici hicbir odeme yapmadi,
+              ona "paraniz iade edilmeyecek" demek yaniltici ve endise verici. */}
+          {isPro
+            ? "This will first stop your subscription from renewing, then permanently delete your account and all your data. Your current payment won't be refunded, and access ends immediately because the account is removed."
+            : "This will permanently delete your account and all your data. This can't be undone."}
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
           <button onClick={onCancel} disabled={deleting} style={{ padding: "9px 20px", borderRadius: 6, border: "1px solid var(--rule)", background: "none", fontSize: "0.875rem", color: "var(--ink-soft)", cursor: "pointer" }}>Cancel</button>
@@ -529,7 +533,7 @@ function SettingsContent() {
 
       </main>
 
-      {modal === "delete" && <DeleteModal onConfirm={handleDeleteAccount} onCancel={() => setModal(null)} deleting={deleting} />}
+      {modal === "delete" && <DeleteModal onConfirm={handleDeleteAccount} onCancel={() => setModal(null)} deleting={deleting} isPro={plan === "pro"} />}
       {modal === "cancelPro" && <CancelProModal onConfirm={handleCancelSubscription} onCancel={() => setModal(null)} busy={billingBusy} />}
     </div>
   );
