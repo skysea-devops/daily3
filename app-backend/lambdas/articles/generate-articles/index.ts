@@ -257,7 +257,6 @@ export const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = 
   technology: [
     { name: "Lex Fridman Podcast",        url: "https://lexfridman.com/feed/podcast/" },
     { name: "Hard Fork",                  url: "https://feeds.simplecast.com/l2i9YnTd" },
-    { name: "StarTalk Radio",             url: "https://feeds.simplecast.com/4T39_jAj" },
     { name: "Acquired",                   url: "https://feeds.transistor.fm/acquired" },
     { name: "Search Engine",              url: "https://rss.amperwave.net/v2/feed/audacynetwork/search-engine" },
     { name: "Software Engineering Daily", url: "https://softwareengineeringdaily.com/feed/podcast/" },
@@ -284,7 +283,6 @@ export const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = 
   // Business & Economics
   business_economics: [
     { name: "The Tim Ferriss Show",  url: "https://rss.art19.com/tim-ferriss-show" },
-    { name: "How I Built This",      url: "https://rss.art19.com/how-i-built-this" },
     { name: "Masters of Scale",      url: "https://rss.art19.com/masters-of-scale" },
     { name: "Invest Like the Best",  url: "https://feeds.megaphone.fm/investlikethebest" },
     { name: "The Knowledge Project", url: "https://fs.blog/knowledge-project-podcast/feed/" },
@@ -356,8 +354,6 @@ export const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = 
   history: [
     { name: "In Our Time",                url: "https://podcasts.files.bbci.co.uk/b006qykl.rss" },
     { name: "Throughline",                url: "https://feeds.npr.org/510333/podcast.xml" },
-    { name: "American History Tellers",   url: "https://rss.art19.com/american-history-tellers" },
-    { name: "Tides of History",           url: "https://rss.art19.com/tides-of-history" },
     { name: "HistoryExtra Podcast",       url: "https://feeds.megaphone.fm/GLT5697813216" },
     { name: "Off the Page (Columbia UP)", url: "https://feeds.megaphone.fm/NBN2998548382" },
   ],
@@ -370,7 +366,7 @@ export const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = 
     { name: "The Peter Attia Drive",                      url: "https://rss.libsyn.com/shows/121729/destinations/713489.xml" },
     { name: "Health & Veritas",                           url: "https://rss.libsyn.com/shows/371540/destinations/3052370.xml" },
     { name: "Yale Cancer Answers",                        url: "https://medicine.yale.edu/cancer/podcast/feed.xml" },
-    { name: "Cleveland Clinic Health Essentials Podcast", url: "https://feeds.megaphone.fm/IAIIL7971610262" },
+  
   ],
 
 };
