@@ -4,6 +4,23 @@ import { Article, Podcast, CategoryDailyPicks, Keys } from "../../../shared/type
 import { RSS_SOURCES, canonicalizeUrl, pickArticlePool, pickPodcastPool } from "../generate-articles";
 import type { RecentHistory } from "../generate-articles";
 
+// ─── Yakalanamayan promise reddi koruması ─────────────────────────────────────
+//
+// Node 20'de yakalanamayan bir promise reddi SÜRECİ ÖLDÜRÜR. Lambda bunu
+// "Runtime.NodeJsExit" olarak raporlar ve o çalıştırmanın tüm işi kaybolur —
+// üretimin 30. saniyesinde çöken bir invocation, o kullanıcı ya da kategori
+// için hiçbir şey yazamaz.
+//
+// Asıl sebep (tüketilmeyen fetch gövdesi) fetchRSSFeed ve resolveFinalUrl
+// içinde kapatıldı. Bu kayıt ikinci savunma katmanı: benzer bir kaçak
+// ileride başka bir yerde oluşursa çalıştırmayı öldürmesin, ama SESSİZ de
+// kalmasın — belirgin bir işaretle loglanır ki CloudWatch'ta aranabilsin.
+process.on("unhandledRejection", (reason) => {
+  console.error("UNHANDLED_REJECTION — invocation continues, investigate:", reason);
+});
+
+
+
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const ARTICLES_TABLE = process.env.ARTICLES_TABLE_NAME!;
 const STALE_MS = 5 * 60 * 1000;
