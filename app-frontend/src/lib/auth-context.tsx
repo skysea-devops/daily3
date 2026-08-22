@@ -101,15 +101,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // sessizce fallback kartlarina mahkum ediyordu: hasInterests true
             // kaliyor, onboarding'e yonlendirilmiyor, ama backend o kategori
             // icin hicbir kaynak bulamiyor.
+            const profileIsPro = profile.plan === "pro";
             const validInterests = (profile.interests ?? []).filter(isCategoryId);
+
+            // Free planda konu SEÇİMİ YOK: her sabah rotasyondan bir konu gelir.
+            // Dolayısıyla Free kullanıcı onboarding'e hiç uğramaz; kayıt sonrası
+            // doğrudan dashboard'a gider. Pro'ya yükselirse interests boş olduğu
+            // için hasInterests false olur ve seçim ekranına yönlendirilir —
+            // istediğimiz davranış tam olarak bu.
             if (validInterests.length >= 1) {
               localStorage.setItem("cogletta-categories", JSON.stringify(validInterests));
-              setHasInterests(true);
             } else {
               localStorage.removeItem("cogletta-categories");
-              setHasInterests(false);
             }
-            setPlan(profile.plan === "pro" ? "pro" : "free");
+            setHasInterests(profileIsPro ? validInterests.length >= 1 : true);
+            setPlan(profileIsPro ? "pro" : "free");
           } catch (err) {
             // Profil gecici olarak yuklenemedi: kullaniciyi DEMOTE ETME. Son bilinen
             // plani koru (Pro kullaniciyi gecici hatada Free'ye dusurme). Free yalnizca

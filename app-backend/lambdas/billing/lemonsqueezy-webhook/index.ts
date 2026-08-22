@@ -60,11 +60,25 @@ async function setPlan(
     values[`:${key}`] = val;
   }
 
+  // Free'ye dususte konu secimleri TEMIZLENIR.
+  //
+  // Free planda konu secimi yok: herkes o gunun rotasyon kategorisini alir ve
+  // teslimat `interests` alanina hic bakmaz. Secimler kayitta kalirsa yalnizca
+  // olu veri olmakla kalmiyor, Interests sayfasinda secili gorunup kullaniciyi
+  // yaniltiyordu (3 kart isaretli ama hicbiri kullanilmiyor).
+  //
+  // Bedeli: kullanici tekrar Pro olursa uc konuyu yeniden secer. Kucuk bir
+  // surtunme, karsiliginda tutarli bir durum.
+  const updateExpression =
+    plan === "free"
+      ? `SET ${sets.join(", ")} REMOVE interests, subTopics`
+      : `SET ${sets.join(", ")}`;
+
   await dynamo.send(
     new UpdateCommand({
       TableName: USERS_TABLE_NAME,
       Key: { PK: `USER#${userId}`, SK: "PROFILE" },
-      UpdateExpression: "SET " + sets.join(", "),
+      UpdateExpression: updateExpression,
       ExpressionAttributeNames: names,
       ExpressionAttributeValues: values,
     })

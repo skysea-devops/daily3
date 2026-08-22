@@ -3,6 +3,7 @@ import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { RSS_SOURCES } from "../generate-articles";
 import { randomUUID } from "crypto";
+import { rotationCategoryFor } from "../../../shared/categories";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const lambda = new LambdaClient({});
@@ -223,13 +224,22 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
   const legacy:     TriggerUser[] = [];
 
   for (const user of users) {
-    const validInterests = user.interests.every(category => Boolean(RSS_SOURCES[category]));
     const isPro = user.plan.toLowerCase() === "pro";
 
-    if (isPro && validInterests) {
-      pooledPro.push(user);
-    } else if (!isPro && user.interests.length === 1 && validInterests) {
+    if (!isPro) {
+      // Free planda konu SEÇİMİ YOK: herkes o günün rotasyon kategorisini alır.
+      // Kullanıcının kayıtlı `interests` alanına hiç bakılmaz — bu, Pro'dan
+      // düşen kullanıcının 3 ilgi alanıyla pahalı legacy yoluna düşmesini de
+      // ortadan kaldırıyor (kullanıcı başına günde 2 Bedrock çağrısıydı).
+      // Alan silinmiyor: kullanıcı tekrar Pro olursa seçimleri yerinde durur.
       pooledFree.push(user);
+      continue;
+    }
+
+    const validInterests =
+      user.interests.length > 0 && user.interests.every(category => Boolean(RSS_SOURCES[category]));
+    if (validInterests) {
+      pooledPro.push(user);
     } else {
       legacy.push(user);
       console.warn(
@@ -246,7 +256,12 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
   // Yalnızca gerçekten seçilmiş topic'ler için havuz oluşturulur. EU ilk cron
   // olduğundan tüm bölgelerin aktif topic ve alt-topic kapsamını kullanır.
   // Sonraki bölge cron'ları aynı kayıtları ready-check ile tekrar üretmez.
+  // Rotasyon kategorisinin havuzu HER GÜN üretilmeli: hiçbir Pro kullanıcı onu
+  // seçmemiş olsa bile o günün Free içeriği oradan geliyor.
+  const rotationCategory = rotationCategoryFor(new Date());
+  activeCategories.add(rotationCategory);
   const categories = [...activeCategories].sort();
+  console.log(`Rotation category for today: ${rotationCategory}`);
   const readyCategories = await ensureCategoryPicks(categories, activeSubTopicsByCategory);
 
   // ── Faz B ───────────────────────────────────────────────────────────────────
@@ -257,7 +272,7 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
   const fallbackUsers: TriggerUser[] = [...legacy];
 
   for (const user of pooledFree) {
-    const category = user.interests[0];
+    const category = rotationCategory;
     if (!readyCategories.has(category)) {
       console.warn(`Pool unavailable; routing free user=${user.userId} to legacy generation — category=${category}`);
       fallbackUsers.push(user);

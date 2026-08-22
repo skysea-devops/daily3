@@ -12,7 +12,7 @@ import type {
 } from "aws-lambda";
 import { randomUUID } from "crypto";
 import { Keys } from "../../../shared/types";
-import { isCategoryId } from "../../../shared/categories";
+import { isCategoryId, rotationCategoryFor } from "../../../shared/categories";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const lambda = new LambdaClient({});
@@ -173,20 +173,25 @@ async function invokeGenerate(payload: GeneratePayload): Promise<void> {
  * teslimat olusur.
  */
 async function routeGeneration(payload: GeneratePayload, sk: string): Promise<void> {
-  const { userId, interests, plan } = payload;
+  const { userId, plan } = payload;
   const isPro = plan.toLowerCase() === "pro";
 
-  if (DELIVER_DAILY_FUNCTION && interests.length > 0 && interests.every(isCategoryId)) {
-    const readiness = await Promise.all(interests.map((c) => poolReady(c, sk)));
-    const missing = interests.filter((_, i) => !readiness[i]);
+  // Free planda konu seçimi yok: o günün rotasyon kategorisi kullanılır.
+  // daily-trigger ile AYNI fonksiyon çağrılıyor, yani cron'dan önce dashboard
+  // açan kullanıcı da cron'un üreteceği içeriğin aynısını alır.
+  const needed = isPro ? payload.interests : [rotationCategoryFor(new Date())];
+
+  if (DELIVER_DAILY_FUNCTION && needed.length > 0 && needed.every(isCategoryId)) {
+    const readiness = await Promise.all(needed.map((c) => poolReady(c, sk)));
+    const missing = needed.filter((_, i) => !readiness[i]);
 
     if (missing.length === 0) {
       await invokeDeliver(
         isPro
-          ? { userId, interests, subTopics: payload.subTopics, email: payload.email, plan: "pro" }
-          : { userId, category: interests[0], email: payload.email, plan: "free" },
+          ? { userId, interests: needed, subTopics: payload.subTopics, email: payload.email, plan: "pro" }
+          : { userId, category: needed[0], email: payload.email, plan: "free" },
       );
-      console.log(`Routed user=${userId} to pool delivery (${interests.join(", ")})`);
+      console.log(`Routed user=${userId} to pool delivery (${needed.join(", ")})`);
       return;
     }
     console.warn(`Pool unavailable for user=${userId}; falling back to generation — missing=${missing.join(", ")}`);
@@ -239,7 +244,11 @@ export const handler = async (
 
     const generatePayload: GeneratePayload = {
       userId,
-      interests: userInterests ?? [],
+      // Free'de kayitli interests teslimatta kullanilmaz; legacy uretim yoluna
+      // dusulurse de rotasyon kategorisi gecerli olmali.
+      interests: userPlan.toLowerCase() === "pro"
+        ? (userInterests ?? [])
+        : [rotationCategoryFor(new Date())],
       subTopics: userSubTopics,
       email:     userEmail,
       plan:      userPlan,
