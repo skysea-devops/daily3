@@ -6,8 +6,7 @@ import {
   PutCommand,
   GetCommand,
   QueryCommand,
-  BatchWriteCommand,
-} from "@aws-sdk/lib-dynamodb";
+  BatchWriteCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import type { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyResultV2 } from "aws-lambda";
 
 const cognito = new CognitoIdentityProviderClient({});
@@ -176,6 +175,43 @@ export const handler = async (
     //    Tombstone ile webhook "silinmiş kullanıcı" olduğunu görüp 200/ignore döner;
     //    ayrıca hayalet kullanıcı diriltmesi de engellenir. Kayıt ~90 gün sonra TTL
     //    ile temizlenir.
+    // Profilde lsSubscriptionId YOKSA da esleme kalmis olabilir: abonelik daha
+    // once sona erip webhook alani temizlediyse, silme sirasinda LSSUB# kaydi
+    // sahipsiz kaliyor ve userId'si duruyordu. Bu durumda tombstone hic
+    // yazilmiyordu. Tabloda az sayida LSSUB# kaydi var, tarama ucuz.
+    let orphanIds: string[] = [];
+    if (!subscriptionId) {
+      try {
+        const scan = await dynamo.send(new ScanCommand({
+          TableName: USERS_TABLE_NAME,
+          FilterExpression: "SK = :map AND userId = :uid AND attribute_not_exists(deleted)",
+          ExpressionAttributeValues: { ":map": "MAP", ":uid": userId },
+          ProjectionExpression: "PK",
+        }));
+        orphanIds = (scan.Items ?? [])
+          .map(i => String(i.PK ?? "").replace("LSSUB#", ""))
+          .filter(Boolean);
+        if (orphanIds.length) {
+          console.log(`Found ${orphanIds.length} orphan LSSUB mapping(s) for user=${userId}`);
+        }
+      } catch (err) {
+        console.warn("Orphan LSSUB scan failed:", err);
+      }
+    }
+
+    for (const orphanId of orphanIds) {
+      const TTL_90_DAYS = 90 * 24 * 60 * 60;
+      await dynamo.send(new PutCommand({
+        TableName: USERS_TABLE_NAME,
+        Item: {
+          PK: `LSSUB#${orphanId}`, SK: "MAP",
+          deleted: true,
+          deletedAt: new Date().toISOString(),
+          ttl: Math.floor(Date.now() / 1000) + TTL_90_DAYS,
+        },
+      }));
+    }
+
     if (subscriptionId) {
       const TTL_90_DAYS = 90 * 24 * 60 * 60;
       await dynamo.send(

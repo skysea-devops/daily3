@@ -69,20 +69,44 @@ async function setPlan(
   //
   // Bedeli: kullanici tekrar Pro olursa uc konuyu yeniden secer. Kucuk bir
   // surtunme, karsiliginda tutarli bir durum.
-  const updateExpression =
-    plan === "free"
-      ? `SET ${sets.join(", ")} REMOVE interests, subTopics`
-      : `SET ${sets.join(", ")}`;
+  // Odeme yapan kullanici artik "trial" degil: deneme alanlari temizlenir,
+  // boylece daily-trigger onu 14. gunde dusurmeye calismaz.
+  const removals = plan === "free"
+    ? ["interests", "subTopics", "planSource", "trialEndsAt"]
+    : ["trialEndsAt"];
 
-  await dynamo.send(
-    new UpdateCommand({
-      TableName: USERS_TABLE_NAME,
-      Key: { PK: `USER#${userId}`, SK: "PROFILE" },
-      UpdateExpression: updateExpression,
-      ExpressionAttributeNames: names,
-      ExpressionAttributeValues: values,
-    })
-  );
+  if (plan === "pro") {
+    sets.push("planSource = :paid");
+    values[":paid"] = "paid";
+  }
+
+  const updateExpression = `SET ${sets.join(", ")} REMOVE ${removals.join(", ")}`;
+
+  try {
+    await dynamo.send(
+      new UpdateCommand({
+        TableName: USERS_TABLE_NAME,
+        Key: { PK: `USER#${userId}`, SK: "PROFILE" },
+        UpdateExpression: updateExpression,
+        // PROFIL YOKSA OLUSTURMA.
+        //
+        // UpdateCommand kosulsuz calistiginda var olmayan kaydi YARATIR: silinmis
+        // bir hesaba gelen gecikmeli webhook, hayalet bir kullanici diriltiyordu.
+        // Tombstone kontrolu bunu yalnizca esleme kaydi tombstone'a cevrilebildiginde
+        // yakaliyor; profilde lsSubscriptionId yoksa esleme sahipsiz kaliyor ve
+        // kontrol devreye girmiyor. Bu kosul son savunma hatti.
+        ConditionExpression: "attribute_exists(PK)",
+        ExpressionAttributeNames: names,
+        ExpressionAttributeValues: values,
+      })
+    );
+  } catch (err: any) {
+    if (err?.name === "ConditionalCheckFailedException") {
+      console.warn(`LS webhook: profile USER#${userId} does not exist; ignoring (deleted account?)`);
+      return;
+    }
+    throw err;
+  }
 }
 
 // subscription_created'da subscriptionId → userId eşlemesini sakla; sonraki

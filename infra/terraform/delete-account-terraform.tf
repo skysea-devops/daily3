@@ -43,6 +43,9 @@ resource "aws_iam_role_policy" "delete_account_lambda_policy" {
         Action = [
           "dynamodb:GetItem",
           "dynamodb:Query",
+          # Scan: profilde lsSubscriptionId yoksa sahipsiz kalmis LSSUB#
+          # eslemelerini bulmak icin.
+          "dynamodb:Scan",
           "dynamodb:DeleteItem",
           "dynamodb:BatchWriteItem",
         ]

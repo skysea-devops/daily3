@@ -1,14 +1,19 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { RSS_SOURCES } from "../generate-articles";
 import { randomUUID } from "crypto";
 import { rotationCategoryFor } from "../../../shared/categories";
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const lambda = new LambdaClient({});
 
 const USERS_TABLE                     = process.env.USERS_TABLE_NAME!;
+const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL ?? "";
+const APP_URL        = process.env.APP_URL ?? "https://cogletta.com";
+
+const ses = new SESClient({ maxAttempts: 5, retryMode: "adaptive" });
 const GENERATE_ARTICLES_FUNCTION      = process.env.GENERATE_ARTICLES_FUNCTION_NAME!;
 const GENERATE_CATEGORY_PICKS_FUNCTION = process.env.GENERATE_CATEGORY_PICKS_FUNCTION_NAME!;
 const DELIVER_DAILY_FUNCTION          = process.env.DELIVER_DAILY_FUNCTION_NAME!;
@@ -31,6 +36,12 @@ interface TriggerUser {
   subTopics:  Record<string, string[]>;
   email?:     string;
   plan:       string;
+  /** "trial" = 14 gunluk deneme, "paid" = Lemon Squeezy aboneligi. */
+  planSource?:       string;
+  /** ISO tarih; yalnizca planSource === "trial" iken anlamli. */
+  trialEndsAt?:      string;
+  /** Varsa kullanici gercekten odeme yapmis demektir. */
+  lsSubscriptionId?: string;
 }
 
 interface EnsureResult {
@@ -157,6 +168,118 @@ async function fanOut(
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
+
+
+/**
+ * Deneme bittiğinde gönderilen tek e-posta.
+ *
+ * Ton bilinçli olarak sakin: kullanıcı bir şey kaybetmedi, ücretsiz plana
+ * geçti. Kaybı abartmak yerine ne değiştiğini açıkça söylüyoruz.
+ */
+async function sendTrialEndedEmail(to: string): Promise<void> {
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Your Pro trial has ended</title></head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;"><tr><td style="padding:32px 20px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+      <tr><td style="padding:32px 36px 24px;border-bottom:1px solid #f3f4f6;">
+        <span style="font-size:13px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#111827;">Cogletta</span>
+        <p style="margin:16px 0 0;font-size:22px;font-weight:700;color:#111827;line-height:1.3;">Your Pro trial has ended</p>
+      </td></tr>
+      <tr><td style="padding:28px 36px;">
+        <p style="margin:0 0 18px;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+          For the last two weeks you've had three articles and two podcast episodes every morning, across the topics you chose — plus The Sunday Supplement.
+        </p>
+        <p style="margin:0 0 22px;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+          From tomorrow you'll keep getting one article and one podcast each morning, free, on a different topic each day. If you'd rather keep choosing your own three, Pro is there whenever you want it.
+        </p>
+        <a href="${APP_URL}/settings" style="display:inline-block;padding:12px 24px;background:#111827;color:#ffffff;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">Continue with Pro &rarr;</a>
+      </td></tr>
+      <tr><td style="padding:24px 36px;background:#f9fafb;border-top:1px solid #f3f4f6;">
+        <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">Cogletta &nbsp;·&nbsp; a curated read every morning.</p>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+
+  const text = `Your Pro trial has ended
+
+For the last two weeks you've had three articles and two podcast episodes every morning, across the topics you chose — plus The Sunday Supplement.
+
+From tomorrow you'll keep getting one article and one podcast each morning, free, on a different topic each day. If you'd rather keep choosing your own three, Pro is there whenever you want it.
+
+${APP_URL}/settings`;
+
+  await ses.send(new SendEmailCommand({
+    Source: SES_FROM_EMAIL,
+    Destination: { ToAddresses: [to] },
+    Message: {
+      Subject: { Data: "Your Cogletta Pro trial has ended", Charset: "UTF-8" },
+      Body: { Html: { Data: html, Charset: "UTF-8" }, Text: { Data: text, Charset: "UTF-8" } },
+    },
+  }));
+}
+
+// ─── 14 günlük Pro denemesinin sona ermesi ────────────────────────────────────
+//
+// Neden ayrı bir cron yok: daily-trigger zaten her sabah tüm kullanıcıları
+// tarıyor. Denemeyi burada sonlandırmak yeni bir Lambda, yeni bir zamanlayıcı
+// ve yeni bir hata yüzeyi eklemeden aynı işi görüyor.
+//
+// Düşürme fan-out'tan ÖNCE yapılır: aksi halde süresi dolmuş kullanıcı o sabah
+// bir kez daha Pro içeriği alırdı.
+async function expireFinishedTrials(users: TriggerUser[]): Promise<void> {
+  const now = Date.now();
+
+  const expired = users.filter(u =>
+    u.plan.toLowerCase() === "pro" &&
+    u.planSource === "trial" &&
+    // Ödeme yapmış kullanıcıya ASLA dokunma: kullanıcı deneme sırasında
+    // yükseltmişse webhook planSource'u "paid" yapar, ama sıralama ters
+    // giderse bu kontrol ikinci güvence.
+    !u.lsSubscriptionId &&
+    u.trialEndsAt &&
+    Date.parse(u.trialEndsAt) <= now
+  );
+
+  if (expired.length === 0) return;
+  console.log(`Expiring ${expired.length} finished Pro trial(s)`);
+
+  for (const user of expired) {
+    try {
+      // Koşullu yazma: aynı anda başka bir bölgenin cron'u da düşürmeye
+      // çalışırsa yalnızca biri başarılı olur ve tek e-posta gider.
+      await dynamo.send(new UpdateCommand({
+        TableName: USERS_TABLE,
+        Key: { PK: `USER#${user.userId}`, SK: "PROFILE" },
+        UpdateExpression:
+          "SET #plan = :free, updatedAt = :now REMOVE planSource, trialEndsAt, interests, subTopics",
+        ConditionExpression:
+          "#planSource = :trial AND attribute_not_exists(lsSubscriptionId)",
+        ExpressionAttributeNames:  { "#plan": "plan", "#planSource": "planSource" },
+        ExpressionAttributeValues: { ":free": "free", ":trial": "trial", ":now": new Date().toISOString() },
+      }));
+    } catch (err: any) {
+      if (err?.name === "ConditionalCheckFailedException") continue; // başkası halletti
+      console.error(`Trial expiry failed for user=${user.userId}:`, err);
+      continue;
+    }
+
+    // Kayıttaki plan artık free — fan-out doğru yolu seçsin.
+    user.plan = "free";
+    user.interests = [];
+    user.subTopics = {};
+
+    if (!SES_FROM_EMAIL || !user.email) continue;
+    try {
+      await sendTrialEndedEmail(user.email);
+      console.log(`Trial-ended email sent to ${user.email}`);
+    } catch (err) {
+      // EMAIL_SEND_FAILED: CloudWatch metric filter bu ifadeye baglanir.
+      console.error(`EMAIL_SEND_FAILED user=${user.userId} reason=trial-ended`, err);
+    }
+  }
+}
+
 export const handler = async (event: { region?: string } = {}): Promise<void> => {
   const region = event.region ?? "EU"; // EventBridge her bölge için ayrı cron ile region geçer
   console.log(`Daily trigger started — region=${region} —`, new Date().toISOString());
@@ -175,17 +298,25 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
     const result = await dynamo.send(
       new ScanCommand({
         TableName:                 USERS_TABLE,
-        FilterExpression:          "SK = :profile AND attribute_exists(interests)",
+        // attribute_exists(interests) KALDIRILDI.
+        //
+        // Free planda konu secimi yok, yani o kullanicilarin `interests` alani
+        // hic olmuyor. Filtre yerinde kaldiginda TUM Free kullanicilar taramanin
+        // disinda kaliyor ve hicbir e-posta almiyorlardi — sessiz, cunku hata
+        // yok, sadece kimse listeye girmiyor.
+        FilterExpression:          "SK = :profile",
         ExpressionAttributeValues: { ":profile": "PROFILE" },
         ExpressionAttributeNames:  { "#plan": "plan", "#region": "region" },
-        ProjectionExpression:      "PK, interests, subTopics, email, #plan, #region",
+        ProjectionExpression:      "PK, interests, subTopics, email, #plan, #region, planSource, trialEndsAt, lsSubscriptionId",
         ExclusiveStartKey:         lastEvaluatedKey,
       })
     );
 
     for (const item of result.Items ?? []) {
-      const interests = item.interests as string[] | undefined;
-      if (!Array.isArray(interests) || interests.length < 1 || interests.length > 3) continue;
+      // Free kullanicida interests YOK — bu normal, atlama sebebi degil.
+      // Gecerlilik kontrolu asagida yalnizca Pro icin yapiliyor.
+      const rawInterests = item.interests as string[] | undefined;
+      const interests = Array.isArray(rawInterests) ? rawInterests.slice(0, 3) : [];
 
       const subTopics = (item.subTopics as Record<string, string[]> | undefined) ?? {};
 
@@ -210,13 +341,19 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
         userId,
         interests,
         subTopics,
-        email: (item.email as string | undefined),
-        plan:  (item.plan as string | undefined) ?? "free",
+        email:            (item.email as string | undefined),
+        plan:             (item.plan as string | undefined) ?? "free",
+        planSource:       (item.planSource as string | undefined),
+        trialEndsAt:      (item.trialEndsAt as string | undefined),
+        lsSubscriptionId: (item.lsSubscriptionId as string | undefined),
       });
     }
 
     lastEvaluatedKey = result.LastEvaluatedKey as Record<string, unknown> | undefined;
   } while (lastEvaluatedKey);
+
+  // Süresi dolan denemeleri fan-out'tan ÖNCE sonlandır.
+  await expireFinishedTrials(users);
 
   // ── Kullanıcıları yollara ayır ──────────────────────────────────────────────
   const pooledFree: TriggerUser[] = [];

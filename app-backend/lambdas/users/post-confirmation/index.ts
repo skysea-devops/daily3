@@ -13,6 +13,9 @@ const APP_URL        = process.env.APP_URL!;
 const CONTACT_EMAIL  = process.env.CONTACT_EMAIL!;
 const APP_NAME       = process.env.APP_NAME ?? "Cogletta";
 
+/** Kayit sonrasi ucretsiz Pro deneme suresi (gun). */
+const TRIAL_DAYS     = 14;
+
 function buildWelcomeHtml(email: string): string {
   return `<!DOCTYPE html>
 <html>
@@ -112,7 +115,7 @@ function buildWelcomeHtml(email: string): string {
               </table>
 
               <p style="margin:0 0 28px 0;font-size:13px;line-height:1.6;color:#9ca3af;font-style:italic;">
-                You're on the free plan. ${APP_NAME} Pro adds 3 articles per interest, 2 podcasts, sub-topics, and weekly trend reports — you can upgrade anytime from Settings.
+                You're on ${APP_NAME} Pro free for ${TRIAL_DAYS} days — no card needed. That means 3 articles across 3 topics you choose, 2 podcast episodes, and The Sunday Supplement every week. After that you'll move to the free plan unless you decide to stay.
               </p>
 
               <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px 0;">
@@ -181,7 +184,7 @@ HERE'S WHAT WE SHARE WITH YOU EVERY DAY
 → A podcast episode from top shows in your interest area — paired with your article every morning (2 per day with Pro)
 → A short editorial note on each pick — why this piece, why today, why it matters
 
-You're on the free plan. ${APP_NAME} Pro adds 3 articles per interest, 2 podcasts, sub-topics, and weekly trend reports — you can upgrade anytime from Settings.
+You're on ${APP_NAME} Pro free for ${TRIAL_DAYS} days — no card needed. That means 3 articles across 3 topics you choose, 2 podcast episodes, and The Sunday Supplement every week. After that you'll move to the free plan unless you decide to stay.
 
 WHY ${APP_NAME.toUpperCase()}
 We still spend hours consuming content every day, but it often feels fragmented. We jump from one short video to another, skim headlines, scroll through endless feeds — and by the end of the day it's hard to remember anything we actually learned.
@@ -217,10 +220,33 @@ export const handler = async (event: any): Promise<any> => {
         new UpdateCommand({
           TableName: USERS_TABLE_NAME,
           Key: { PK: `USER#${sub}`, SK: "PROFILE" },
-          UpdateExpression: "SET email = :email, createdAt = if_not_exists(createdAt, :now)",
+          // Yeni kullanici 14 gun boyunca PRO baslar — kredi karti istenmez.
+          //
+          // Neden: Free ile baslayan kullanicinin Pro'nun ne kadar farkli
+          // oldugunu ZIHNINDE canlandirmasi gerekiyordu. Once gercek deneyimi
+          // yasatip sonra eksiltmek, tarif etmekten daha ikna edici.
+          //
+          // `plan` alani DEGISMIYOR ("pro"), boylece tum akis — onboarding,
+          // interests, deliver-daily, Sunday Supplement — hicbir degisiklik
+          // olmadan calisiyor. Ayrimi `planSource` tasiyor:
+          //   "trial" → 14 gun sonra daily-trigger dusurur
+          //   "paid"  → Lemon Squeezy aboneligi, dokunulmaz
+          //
+          // if_not_exists: bu Lambda yeniden denenebilir, mevcut bir kullanicinin
+          // planini ya da deneme bitisini SIFIRLAMAMALI.
+          UpdateExpression:
+            "SET email = :email, " +
+            "createdAt = if_not_exists(createdAt, :now), " +
+            "#plan = if_not_exists(#plan, :pro), " +
+            "planSource = if_not_exists(planSource, :trial), " +
+            "trialEndsAt = if_not_exists(trialEndsAt, :trialEnd)",
+          ExpressionAttributeNames: { "#plan": "plan" },
           ExpressionAttributeValues: {
-            ":email": email,
-            ":now":   new Date().toISOString(),
+            ":email":    email,
+            ":now":      new Date().toISOString(),
+            ":pro":      "pro",
+            ":trial":    "trial",
+            ":trialEnd": new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(),
           },
         })
       );
