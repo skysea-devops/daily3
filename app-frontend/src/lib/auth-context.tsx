@@ -26,6 +26,8 @@ interface AuthContextValue {
   loading:            boolean;
   hasInterests:       boolean;
   plan:               "free" | "pro";
+  planSource:         "trial" | "paid" | null;
+  trialEndsAt:        string | null;
   signOut:            () => void;
   refreshSession:     () => Promise<void>;
   markInterestsSaved: () => void;
@@ -38,6 +40,8 @@ const AuthContext = createContext<AuthContextValue>({
   loading:            true,
   hasInterests:       false,
   plan:               "free",
+  planSource:         null,
+  trialEndsAt:        null,
   signOut:            () => {},
   refreshSession:     async () => {},
   markInterestsSaved: () => {},
@@ -54,6 +58,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading]         = useState(true);
   const [hasInterests, setHasInterests] = useState(false);
   const [plan, setPlan]               = useState<"free" | "pro">("free");
+  /** "trial" iken Pro deneme suresi devam ediyor demektir. */
+  const [planSource, setPlanSource]   = useState<"trial" | "paid" | null>(null);
+  const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null);
 
   const loadSession = useCallback(async () => {
     return new Promise<void>((resolve) => {
@@ -116,6 +123,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
             setHasInterests(profileIsPro ? validInterests.length >= 1 : true);
             setPlan(profileIsPro ? "pro" : "free");
+            setPlanSource((profile.planSource as "trial" | "paid" | null) ?? null);
+            setTrialEndsAt(profile.trialEndsAt ?? null);
           } catch (err) {
             // Profil gecici olarak yuklenemedi: kullaniciyi DEMOTE ETME. Son bilinen
             // plani koru (Pro kullaniciyi gecici hatada Free'ye dusurme). Free yalnizca
@@ -149,6 +158,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setHasInterests(false);
     setPlan("free");
+    setPlanSource(null);
+    setTrialEndsAt(null);
   }, []);
 
   const markInterestsSaved = useCallback(() => {
@@ -157,7 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, hasInterests, plan, signOut, refreshSession, markInterestsSaved }}
+      value={{ user, loading, hasInterests, plan, planSource, trialEndsAt, signOut, refreshSession, markInterestsSaved }}
     >
       {children}
     </AuthContext.Provider>

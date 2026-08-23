@@ -48,6 +48,10 @@ export async function getUserProfile(accessToken: string): Promise<{
   subTopics?: Record<string, string[]>;
   lsPortalUrl?: string | null;
   lsVariantId?: string | null;
+  /** "trial" = 14 gunluk deneme suruyor, "paid" = odeme yapilmis abonelik. */
+  planSource?: "trial" | "paid" | null;
+  /** ISO tarih; yalnizca planSource === "trial" iken anlamli. */
+  trialEndsAt?: string | null;
 }> {
   if (!API_BASE_URL) {
     throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");

@@ -215,7 +215,18 @@ function CancelProModal({ onConfirm, onCancel, busy }: { onConfirm: () => void; 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 function SettingsContent() {
-  const { user, plan, signOut, refreshSession } = useAuth();
+  const { user, plan, planSource, trialEndsAt, signOut, refreshSession } = useAuth();
+
+  // useEffect'lerden ONCE tanimlanmali: asagidaki billing efekti bunu okuyor
+  // ve const TDZ nedeniyle sonra tanimlanirsa calisma aninda ReferenceError olur.
+  /** Deneme suresi devam ediyor mu, kac gun kaldi? */
+  const isTrial = plan === "pro" && planSource === "trial" && Boolean(trialEndsAt);
+  const trialDaysLeft = (() => {
+    if (!isTrial || !trialEndsAt) return 0;
+    const ms = Date.parse(trialEndsAt) - Date.now();
+    // Yukari yuvarla: son gunde "0 gun kaldi" demek yanlis olur.
+    return Math.max(0, Math.ceil(ms / 86_400_000));
+  })();
   const router = useRouter();
 
   const [editName, setEditName]         = useState(false);
@@ -249,7 +260,9 @@ function SettingsContent() {
   }, [user]);
 
   useEffect(() => {
-    if (!user?.accessToken || plan !== "pro") return;
+    // Deneme sirasinda Lemon Squeezy aboneligi YOK: cagri bosuna hata doner
+    // ve "Couldn't load your billing details" gorunurdu.
+    if (!user?.accessToken || plan !== "pro" || isTrial) return;
     void loadBilling();
   }, [user, plan, loadBilling]);
 
@@ -375,6 +388,14 @@ function SettingsContent() {
 
   // "Current plan" satır metni: duruma göre cycle + fiyat / cancels-on / past due.
   function currentPlanText(): string {
+    // Deneme, odeme yapilmis abonelikten AYRI gosterilir: kullanici neyin
+    // gecici oldugunu ve ne zaman bitecegini bilmeli.
+    if (isTrial) {
+      const days = trialDaysLeft;
+      return days === 1
+        ? "Cogletta Pro — free trial, ends tomorrow"
+        : `Cogletta Pro — free trial, ${days} days left`;
+    }
     if (plan !== "pro") return "Free";
     if (billingStatus !== "ready" || !subscription) return "Cogletta Pro";
     const cycleLabel = subscription.billingCycle === "yearly" ? "Yearly"
@@ -460,20 +481,28 @@ function SettingsContent() {
         {/* Plan & Billing */}
         <Section title="Plan & Billing">
           <Row label="Current plan" value={currentPlanText()} />
-          {plan === "free" && (
-            <Row topBorder label="Upgrade to Pro" description="3 articles per interest, sub-topics, The Sunday Supplement. Yearly saves two months.">
+          {(plan === "free" || isTrial) && (
+            <Row
+              topBorder
+              label={isTrial ? "Keep Pro after your trial" : "Upgrade to Pro"}
+              description={
+                isTrial
+                  ? "Your trial ends automatically — no charge, no cancelling. Subscribe to keep choosing your own three topics."
+                  : "3 articles per interest, sub-topics, The Sunday Supplement. Yearly saves two months."
+              }
+            >
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                 <ActionBtn label={billingBusy ? "Redirecting…" : "Yearly · $58"} onClick={() => handleUpgrade("yearly")} disabled={billingBusy} style="accent" />
                 <ActionBtn label="Monthly · $5.80" onClick={() => handleUpgrade("monthly")} disabled={billingBusy} />
               </div>
             </Row>
           )}
-          {plan === "pro" && billingStatus === "error" && (
+          {plan === "pro" && !isTrial && billingStatus === "error" && (
             <Row topBorder label="Billing" description="Couldn't load your billing details.">
               <ActionBtn label={billingBusy ? "Retrying…" : "Retry"} onClick={() => void loadBilling()} disabled={billingBusy} />
             </Row>
           )}
-          {plan === "pro" && billingStatus !== "error" && (
+          {plan === "pro" && !isTrial && billingStatus !== "error" && (
             <>
               <Row topBorder label="Billing cycle" description="Change between monthly and yearly anytime. The switch applies immediately.">
                 {billingStatus !== "ready" || !subscription ? (
@@ -504,7 +533,7 @@ function SettingsContent() {
               </Row>
             </>
           )}
-          {plan === "pro" && billingStatus === "ready" && billingNotice && (
+          {plan === "pro" && !isTrial && billingStatus === "ready" && billingNotice && (
             <div style={{ padding: "0 20px 16px" }}>
               <p style={{ fontSize: "0.8125rem", color: "#166534", margin: 0 }}>{billingNotice}</p>
             </div>

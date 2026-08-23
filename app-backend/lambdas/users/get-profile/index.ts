@@ -70,6 +70,9 @@ export const handler = async (
         subTopics:   result.Item.subTopics ?? {},
         lsPortalUrl: result.Item.lsPortalUrl ?? null,
         lsVariantId: result.Item.lsVariantId ?? null,
+        // Deneme durumu: arayuz kalan gunu gosterebilsin.
+        planSource:  result.Item.planSource ?? null,
+        trialEndsAt: result.Item.trialEndsAt ?? null,
       }),
     };
   } catch (error) {
