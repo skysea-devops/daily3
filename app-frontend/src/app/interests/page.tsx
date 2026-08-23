@@ -7,7 +7,7 @@ import { updateUserInterests } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import { CATEGORIES, SUB_TOPICS } from "@/lib/constants";
-import { isCategoryId } from "@/lib/categories";
+import { isCategoryId, categoryLabel } from "@/lib/categories";
 
 // ─── Saat dilimi → gönderim bölgesi ───────────────────────────────────────────
 // Kullanıcının tarayıcı saat dilimini 4 kovadan birine eşler. Backend her bölge
@@ -60,7 +60,7 @@ function ProSubtopicOverlay({ category, onClose }: { category: string; onClose: 
             {category} — sub-topics
           </h3>
           <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.6 }}>
-            With Pro, choose the areas within {category} you want to focus on. Every article will be even more relevant.
+            With Pro, choose the areas within {category} you want to focus on. 
           </p>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
@@ -222,10 +222,16 @@ function InterestsForm() {
         const profile = await getUserProfile(user!.accessToken);
         // Taninmayan kategori ID'lerini ele: aksi halde secili gorunmeyen ama
         // sayima dahil olan degerler "3 kategori sec" kontrolunu kilitler.
-        const valid = (profile.interests ?? []).filter(isCategoryId);
+        // Free planda hicbir kart secili gorunmez: konu secimi yok, kayitli bir
+        // deger kalmissa (webhook henuz islememis ya da eski kayit) gostermek
+        // kullaniciyi yanildir. Downgrade'de webhook zaten alani siliyor.
+        const valid = isPro ? (profile.interests ?? []).filter(isCategoryId) : [];
         if (valid.length >= 1) {
           setSelected(valid);
           localStorage.setItem("cogletta-categories", JSON.stringify(valid));
+        } else if (!isPro) {
+          setSelected([]);
+          localStorage.removeItem("cogletta-categories");
         } else {
           const stored = localStorage.getItem("cogletta-categories");
           if (stored) setSelected(JSON.parse(stored));
@@ -248,6 +254,12 @@ function InterestsForm() {
   }, [user]);
 
   function toggleCategory(id: string) {
+    // Free planda konu secimi YOK — sayfa salt okunur, karta tiklamak Pro
+    // davetini acar. Secim bir Pro ozelligi oldugu icin burada erken cikilir.
+    if (!isPro) {
+      setFreeOverlay(categoryLabel(id));
+      return;
+    }
     if (selected.includes(id)) {
       setSelected(selected.filter(c => c !== id));
       setSaved(false);
@@ -325,15 +337,14 @@ function InterestsForm() {
         <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", marginBottom: isPro ? 32 : 8 }}>
           {isPro
             ? "Pick 3 topics. Your content refreshes every morning"
-            : "Pick your topic. Your content refreshes every morning"}
+            : "A different topic every morning."}
         </p>
         {!isPro && (
-          <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", marginBottom: 32 }}>
-            Free plan follows one topic.{" "}
+          <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", lineHeight: 1.6, marginBottom: 32 }}>
             <a href="/register#pro" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
               Upgrade to Pro
             </a>{" "}
-            to follow 3 topics with an article for each, plus sub-topics and The Sunday Supplement.
+            to pick your own three, with an article for each — plus sub-topics and The Sunday Supplement.
           </p>
         )}
 
@@ -426,6 +437,9 @@ function InterestsForm() {
           })}
         </div>
 
+        {/* Free planda secim yok: sayac ve kaydet butonu gosterilmez, aksi halde
+            "0/1 selected" kullaniciya secim yapmasi gerekiyormus gibi gorunur. */}
+        {isPro && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>
             {selected.length === maxTopics
@@ -442,6 +456,7 @@ function InterestsForm() {
             {loading ? "Saving..." : saved ? "Saved! ✓" : "Save interests"}
           </button>
         </div>
+        )}
       </main>
     </div>
   );
