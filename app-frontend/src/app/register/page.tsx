@@ -15,30 +15,29 @@ function setPlanIntent(billing: "monthly" | "yearly") {
   } catch {}
 }
 
-// Kayit sirasinda gosterilen ilk sutun artik DENEME: yeni kullanici 14 gun
-// boyunca Pro. Ikinci sutun denemeden sonra ne olacagini anlatiyor.
+// Sol sutun: yeni kullanici 14 gun boyunca tam Pro deneyimini ucretsiz kullanir,
+// ardindan otomatik olarak Free plana gecer. Sag sutun: Pro deneyimini kesintisiz surdurur.
 const TRIAL_FEATURES = [
-  "Choose your own 3 topics",
-  "3 curated articles every morning, one per topic",
+  "Choose 3 topics",
+  "3 curated articles every morning — one per topic",
   "2 podcast recommendations daily",
-  "Sub-topics, so each pick lands closer",
-  "The Sunday Supplement — a lighter read and listen each week",
+  "Personalized sub-topics",
+  "The Sunday Supplement every week",
 ];
 
-const AFTER_TRIAL_FEATURES = [
-  "1 curated article every morning",
+const FREE_FEATURES = [
+  "1 article every morning",
   "1 podcast recommendation daily",
-  "A different topic each morning, across all nine",
-  "Editorial commentary on each pick",
-  "Keep Pro anytime from Settings — $5.80/mo or $58/yr",
+  "No topics can be choosen",
+  
 ];
 
 const PRO_FEATURES = [
-  "Choose your own 3 interests",
-  "3 curated articles for each interest",
+  "Choose 3 topics",
+  "3 curated articles every morning — one per topic",
+  "2 podcast recommendations daily",
   "Personalized sub-topics",
-  "2 daily podcast recommendations",
-  "The Sunday Supplement — a lighter read and listen each week",
+  "The Sunday Supplement every week",
 ];
 
 const input: React.CSSProperties = {
@@ -106,7 +105,7 @@ function RegisterModal({ plan, onClose }: { plan: "free" | "pro"; onClose: () =>
             </h2>
             <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)", marginTop: 4 }}>
               Starting with <strong style={{ color: plan === "pro" ? "var(--accent)" : "var(--ink)" }}>
-                {plan === "pro" ? "Pro" : "Free"} plan
+                {plan === "pro" ? "Pro" : "a 14-day Pro trial"}
               </strong>
             </p>
           </div>
@@ -176,7 +175,7 @@ function ProNotifyButton({ onStart }: { onStart: (billing: "monthly" | "yearly")
           fontSize: "0.9375rem", fontWeight: 600, cursor: "pointer",
         }}
       >
-        Start with Pro &mdash; $58/year &rarr;
+        Choose yearly &mdash; $58/year &rarr;
       </button>
       <button
         onClick={() => {
@@ -189,7 +188,7 @@ function ProNotifyButton({ onStart }: { onStart: (billing: "monthly" | "yearly")
           fontSize: "0.875rem", fontWeight: 600, cursor: "pointer",
         }}
       >
-        or monthly &middot; $5.80
+        Choose monthly &middot; $5.80/month
       </button>
     </div>
   );
@@ -210,10 +209,10 @@ export default function RegisterPage() {
             Join Cogletta
           </span>
           <h1 style={{ fontFamily: "'Lora', serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 600, color: "var(--ink)", marginTop: 16, marginBottom: 16, lineHeight: 1.2 }}>
-            A daily reading habit, made simple.
+            Start with the full Cogletta experience.
           </h1>
           <p style={{ fontSize: "1.0625rem", color: "var(--ink-soft)", maxWidth: 500, margin: "0 auto", lineHeight: 1.75 }}>
-            Every morning, a curated article and a podcast episode selected for your interests — delivered to your inbox before you start your day.
+            Try Cogletta Pro free for 14 days. No credit card required. After your trial, continue free or keep the full experience with Pro.
           </p>
         </div>
       </div>
@@ -222,14 +221,21 @@ export default function RegisterPage() {
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "60px 5vw" }}>
         <div style={{ display: "grid", gap: 20, gridTemplateColumns: "repeat(2, 1fr)" }}>
 
-          {/* Free */}
+          {/* Free + 14-day Pro trial */}
           <div style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: 16, padding: 36, display: "flex", flexDirection: "column" }}>
             <div style={{ marginBottom: 24 }}>
-              <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)" }}>14 days free</span>
-              <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)", marginTop: 8, marginBottom: 8 }}>Start with everything</h2>
-              <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.65 }}>Every new reader gets the full Cogletta experience free for two weeks. No credit card, no cancelling — it simply becomes the free plan afterwards.</p>
+              <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)" }}>
+                14 days of Pro — free
+              </span>
+              <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)", marginTop: 8, marginBottom: 8 }}>
+                Try the full experience first
+              </h2>
+              <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.65 }}>
+                Every new reader starts with Cogletta Pro for 14 days. No credit card required and nothing to cancel.
+              </p>
             </div>
-            <ul style={{ flex: 1, listStyle: "none", marginBottom: 28, display: "flex", flexDirection: "column", gap: 12 }}>
+
+            <ul style={{ listStyle: "none", marginBottom: 24, display: "flex", flexDirection: "column", gap: 12 }}>
               {TRIAL_FEATURES.map(f => (
                 <li key={f} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                   <span style={{ color: "var(--accent)", marginTop: 1, fontWeight: 700 }}>✓</span>
@@ -237,13 +243,38 @@ export default function RegisterPage() {
                 </li>
               ))}
             </ul>
+
+            <div style={{ borderTop: "1px solid var(--rule)", paddingTop: 22, marginTop: 2, marginBottom: 26 }}>
+              <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)" }}>
+                After your 14-day trial
+              </span>
+              <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1.05rem", fontWeight: 600, color: "var(--ink)", marginTop: 7, marginBottom: 7 }}>
+                Continue free, automatically
+              </h3>
+              <p style={{ fontSize: "0.8125rem", color: "var(--ink-soft)", lineHeight: 1.6, marginBottom: 14 }}>
+                You’ll move to the Free plan automatically. Upgrade only if you want to keep the full Pro experience.
+              </p>
+
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
+                {FREE_FEATURES.map(f => (
+                  <li key={f} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <span style={{ color: "var(--ink-muted)", marginTop: 1, fontWeight: 700 }}>✓</span>
+                    <span style={{ fontSize: "0.8125rem", color: "var(--ink-soft)" }}>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
             <button onClick={() => setModal("free")} style={{
               width: "100%", background: "var(--ink)", color: "var(--white)",
               border: "none", borderRadius: 10, padding: "13px 24px",
               fontSize: "0.9375rem", fontWeight: 600, cursor: "pointer",
             }}>
-              Get started for free →
+              Start my 14-day free trial →
             </button>
+            <p style={{ marginTop: 10, textAlign: "center", fontSize: "0.75rem", color: "var(--ink-muted)" }}>
+              No credit card required
+            </p>
           </div>
 
           {/* Pro */}
@@ -254,31 +285,43 @@ export default function RegisterPage() {
               fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em",
               textTransform: "uppercase", padding: "4px 12px", borderRadius: 20,
             }}>
-              Two months free yearly
+              Save 17% with yearly
             </div>
+
             <div style={{ marginBottom: 24 }}>
-              <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink-muted)" }}>After your trial</span>
-              <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)", marginTop: 8, marginBottom: 4 }}>Keep Pro, or stay free</h2>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
-                <span style={{ fontFamily: "'Lora', serif", fontSize: "2rem", fontWeight: 600, color: "var(--ink)" }}>$5.80</span>
-                <span style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>/ month</span>
-              </div>
-              <p style={{ fontSize: "0.8125rem", color: "var(--accent)", fontWeight: 600, marginBottom: 8 }}>
-                or $58 / year — two months free
+              <span style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)" }}>
+                Cogletta Pro
+              </span>
+              <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)", marginTop: 8, marginBottom: 8 }}>
+                Keep the full experience
+              </h2>
+              <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.65, marginBottom: 18 }}>
+                Keep all three topics, three daily articles, personalized sub-topics, two podcasts, and the Sunday Supplement.
               </p>
-              <p style={{ fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.65 }}>On day 15 you move to the free plan automatically — one article and one podcast each morning. Keep Pro if you’d rather choose your own topics.</p>
+
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 }}>
+                <span style={{ fontFamily: "'Lora', serif", fontSize: "2rem", fontWeight: 600, color: "var(--ink)" }}>$58</span>
+                <span style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>/ year</span>
+              </div>
+              <p style={{ fontSize: "0.8125rem", color: "var(--accent)", fontWeight: 600, marginBottom: 4 }}>
+                Save 17% vs monthly
+              </p>
+              <p style={{ fontSize: "0.78rem", color: "var(--ink-muted)" }}>
+                Equivalent to $4.83/month · Monthly plan $5.80
+              </p>
             </div>
+
             <ul style={{ flex: 1, listStyle: "none", marginBottom: 28, display: "flex", flexDirection: "column", gap: 12 }}>
-              {AFTER_TRIAL_FEATURES.map(f => (
+              {PRO_FEATURES.map(f => (
                 <li key={f} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                   <span style={{ color: "var(--accent)", marginTop: 1, fontWeight: 700 }}>✓</span>
                   <span style={{ fontSize: "0.875rem", color: "var(--ink-soft)" }}>{f}</span>
                 </li>
               ))}
             </ul>
+
             <ProNotifyButton onStart={(billing) => { setPlanIntent(billing); setModal("pro"); }} />
           </div>
-
         </div>
 
         <p style={{ marginTop: 32, textAlign: "center", fontSize: "0.875rem", color: "var(--ink-muted)" }}>

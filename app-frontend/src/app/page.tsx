@@ -246,14 +246,15 @@ export default function HomePage() {
             Thoughtfully curated articles and podcast recommendations based on the interests you choose, delivered to your inbox every morning.
           </p>
           <button onClick={() => setShowModal(true)} className="lp-cta">
-            Try Pro free for 14 days →
+            Start your 14-day free trial →
           </button>
+          <span className="lp-note">No credit card required. Continue free plan after 14 days.</span>
           <div style={{ marginTop: 14 }}>
             <Link href="/demo" style={{ color: "var(--ink-soft)", fontSize: "1.1575rem", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
               or see a demo →
             </Link>
           </div>
-          <span className="lp-note">Subscribe to get a curated article and podcast every morning.</span>
+          <span className="lp-note">Preview the full Pro experience — 3 topics, 3 daily articles, podcasts, and more.</span>
         </section>
          <div className="lp-divider" />
         {/* TESTIMONIALS */}
@@ -412,7 +413,7 @@ export default function HomePage() {
             <h2 className="lp-h2">Simple by design. Powerful under the hood.</h2>
             <div className="lp-steps">
               {[
-                { n: "01", title: "Pick your topics", body: "Every new reader starts with 14 days of Pro — no credit card — and chooses three topics from nine: history, economics, science, geopolitics, and more. Afterwards the free plan sends one topic a day, rotating through all nine." },
+                { n: "01", title: "Pick your topics", body: "14 DAYS FREE - Every new reader starts with 14 days of Pro — no credit card needed — and chooses three topics from nine: history, economics, science, geopolitics, and more. Afterwards the free plan sends one topic a day, rotating through all nine." },
                 { n: "02", title: "We scan the web for you", body: "Every day, hundreds of sources are scanned. Only the best article per category makes the cut." },
                 { n: "03", title: "Ready every morning", body: "Your article and podcast episode arrive every morning — on your dashboard and in your inbox, ready to read." },
               ].map(s => (
