@@ -245,11 +245,9 @@ export default function HomePage() {
           <p className="lp-sub">
             Thoughtfully curated articles and podcast recommendations based on the interests you choose, delivered to your inbox every morning.
           </p>
-          <button onClick={() => setShowModal(true)} className="lp-cta">
-            <Link href="/register" className="lp-cta">
+          <Link href="/register" className="lp-cta">
             Start your morning reading habit →
           </Link>
-          </button>
           <span className="lp-note">No credit card required. </span>
           <div style={{ marginTop: 14 }}>
             <Link href="/demo" style={{ color: "var(--ink-soft)", fontSize: "1.1575rem", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
