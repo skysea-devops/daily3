@@ -188,7 +188,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Public Books",         url: "https://www.publicbooks.org/feed/" },
     { name: "JSTOR Daily",          url: "https://daily.jstor.org/feed/" },
     { name: "Eurozine",             url: "https://www.eurozine.com/feed/" },
-    { name: "Hyperallergic",        url: "https://hyperallergic.com/rss/" },
     { name: "Arts & Letters Daily", url: "https://www.aldaily.com/feed/" },
     { name: "Kottke",               url: "https://feeds.kottke.org/main" },
     { name: "The Sunday Long Read", url: "https://sundaylongread.com/feed/" },
@@ -205,6 +204,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Heddels",              url: "https://heddels.com/feed" },
     { name: "Fashionista",          url: "https://fashionista.com/.rss/feed/28e21eb8-20ac-4617-a448-e845081591ca.xml" },
     { name: "Yale News (Arts & Humanities)", url: "https://news.yale.edu/topics/arts-humanities/rss" },
+    { name: "Literary Hub",          url: "https://lithub.com/feed/" },
   ],
 
   // Philosophy & Ethics
