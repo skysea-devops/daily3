@@ -28,7 +28,7 @@ const TRIAL_FEATURES = [
 const FREE_FEATURES = [
   "1 article every morning",
   "1 podcast recommendation daily",
-  "No topics can be choosen",
+  "Random topics",
   
 ];
 
@@ -203,7 +203,7 @@ export default function RegisterPage() {
       {modal && <RegisterModal plan={modal} onClose={() => setModal(null)} />}
 
       {/* Hero */}
-      <div style={{ borderBottom: "1px solid var(--rule)", background: "var(--white)" }}>
+      <div style={{ borderBottom: "1px solid var(--rule)" }}>
         <div style={{ maxWidth: 800, margin: "0 auto", padding: "72px 5vw 64px", textAlign: "center" }}>
           <span style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--accent)" }}>
             Join Cogletta
