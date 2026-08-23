@@ -204,6 +204,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Heddels",              url: "https://heddels.com/feed" },
     { name: "Fashionista",          url: "https://fashionista.com/.rss/feed/28e21eb8-20ac-4617-a448-e845081591ca.xml" },
     { name: "Yale News (Arts & Humanities)", url: "https://news.yale.edu/topics/arts-humanities/rss" },
+    { name: "Literary Hub",          url: "https://lithub.com/feed/" },
   ],
 
   // Philosophy & Ethics
