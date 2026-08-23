@@ -89,7 +89,7 @@ export default function DemoPage() {
           {SAMPLE_ARTICLES.map((a, i) => <DemoCard key={i} item={a} kind="article" />)}
           <DemoCard item={SAMPLE_PODCAST} kind="podcast" />
           <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--ink-muted)", paddingTop: 4 }}>
-            Curated at 07:00 &middot; Refreshes tomorrow morning
+            Curated for you &middot; Refreshes tomorrow morning
           </p>
         </div>
       </main>
@@ -100,7 +100,7 @@ export default function DemoPage() {
           Every morning, in your inbox
         </h2>
         <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", textAlign: "center", marginBottom: 24, maxWidth: 520, marginLeft: "auto", marginRight: "auto" }}>
-          The same picks arrive as a clean email at 7am &mdash; read them there or on your dashboard.
+          Your daily picks arrive in a clean email — read them there or on your dashboard.
         </p>
 
         {/* Inbox frame */}
@@ -144,16 +144,16 @@ export default function DemoPage() {
           Free vs Pro
         </h2>
         <p style={{ fontSize: "0.9375rem", color: "var(--ink-soft)", textAlign: "center", marginBottom: 24 }}>
-          Start free with one interest, or unlock the full experience.
+          Start with 14 days of Pro. Then continue free or keep the full experience.
         </p>
 
         <div style={{ background: "var(--white)", border: "1px solid var(--rule)", borderRadius: 16, overflow: "hidden" }}>
           {[
-            ["Interests you can follow", "1", "3"],
+            ["Interests you can follow", "-", "3"],
             ["Sub-topics within each interest", "—", "Yes"],
-            ["Daily curated article", "Yes", "Yes"],
+            ["Daily curated article", "1", "3"],
             ["Daily podcast pick", "1", "2"],
-            ["Weekly trend report", "—", "Yes"],
+            ["Sunday Supplement", "—", "Yes"],
           ].map((row, i) => (
             <div key={i} style={{
               display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr",
@@ -217,7 +217,7 @@ export default function DemoPage() {
           Build your reading habit
         </h2>
         <p style={{ fontSize: "1rem", color: "var(--ink-soft)", lineHeight: 1.7, marginBottom: 24, maxWidth: 500, marginLeft: "auto", marginRight: "auto" }}>
-          Start free with one interest, or go Pro for the full daily selection tailored to you.
+          Start your free trial today with all  Pro features. Preview the full Pro experience — 3 topics, 3 daily articles, podcasts, and more.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           <Link href="/register" style={{
@@ -230,7 +230,7 @@ export default function DemoPage() {
             background: "var(--accent)", color: "var(--white)", fontWeight: 600,
             padding: "13px 28px", borderRadius: 8, textDecoration: "none", fontSize: "0.9375rem",
           }}>
-            See Pro plans
+            See plans
           </Link>
         </div>
       </section>

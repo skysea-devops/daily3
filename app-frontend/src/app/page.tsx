@@ -246,14 +246,15 @@ export default function HomePage() {
             Thoughtfully curated articles and podcast recommendations based on the interests you choose, delivered to your inbox every morning.
           </p>
           <button onClick={() => setShowModal(true)} className="lp-cta">
-            Start reading for free →
+            Start your 14-day free trial →
           </button>
+          <span className="lp-note">No credit card required. Continue free plan after 14 days.</span>
           <div style={{ marginTop: 14 }}>
             <Link href="/demo" style={{ color: "var(--ink-soft)", fontSize: "1.1575rem", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
               or see a demo →
             </Link>
           </div>
-          <span className="lp-note">Subscribe to get a curated article and podcast every morning.</span>
+          <span className="lp-note">Preview the full Pro experience — 3 topics, 3 daily articles, podcasts, and more.</span>
         </section>
          <div className="lp-divider" />
         {/* TESTIMONIALS */}
@@ -409,12 +410,12 @@ export default function HomePage() {
         <div className="lp-band">
           <div className="lp-band-inner">
             <p className="lp-label lp-accent-label">How it works</p>
-            <h2 className="lp-h2">Simple by design. Powerful under the hood.</h2>
+            <h2 className="lp-h2">Simple for you. Thoughtful behind the scenes.</h2>
             <div className="lp-steps">
               {[
-                { n: "01", title: "Pick your topics", body: "Free readers get a different topic each morning, rotating through all nine — history, economics, science, geopolitics, and more. Pro readers choose their own three." },
-                { n: "02", title: "We scan the web for you", body: "Every day, hundreds of sources are scanned. Only the best article per category makes the cut." },
-                { n: "03", title: "Ready every morning", body: "Your article and podcast episode arrive every morning — on your dashboard and in your inbox, ready to read." },
+                { n: "01", title: "Pick your topics", body: "Pick three topics you genuinely want to read more about — from history and economics to science, philosophy, and more." },
+                { n: "02", title: "We scan the web for you", body: "Every day, Cogletta searches trusted publications and selects one thoughtful article for each of your topics." },
+                { n: "03", title: "Ready every morning", body: "Your three articles and podcast recommendations are waiting in your inbox and dashboard every morning." },
               ].map(s => (
                 <div key={s.n} className="lp-step">
                   <div className="lp-step-num">{s.n}</div>
@@ -431,7 +432,7 @@ export default function HomePage() {
           <h2>Start your morning ritual.</h2>
           
           <button onClick={() => setShowModal(true)} className="lp-cta">
-            Start reading for free →
+            Try Pro free for 14 days →
           </button>
           <span className="lp-note">Takes 30 seconds to set up</span>
         </div>

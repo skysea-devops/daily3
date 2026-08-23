@@ -404,9 +404,10 @@ resource "aws_iam_role_policy" "daily_trigger_lambda_policy" {
         Resource = "${aws_cloudwatch_log_group.daily_trigger.arn}:*"
       },
       {
+        # UpdateItem: 14 gunluk Pro denemesi bitenleri free'ye dusurmek icin.
         Sid      = "DynamoScanUsers"
         Effect   = "Allow"
-        Action   = ["dynamodb:Scan"]
+        Action   = ["dynamodb:Scan", "dynamodb:UpdateItem"]
         Resource = aws_dynamodb_table.users.arn
       },
       {
@@ -428,6 +429,13 @@ resource "aws_iam_role_policy" "daily_trigger_lambda_policy" {
         Effect   = "Allow"
         Action   = ["lambda:InvokeFunction"]
         Resource = aws_lambda_function.deliver_daily.arn
+      },
+          {
+        # Deneme bittiginde tek bir bilgilendirme e-postasi gonderilir.
+        Sid      = "SendTrialEndedEmail"
+        Effect   = "Allow"
+        Action   = ["ses:SendEmail", "ses:SendRawEmail"]
+        Resource = "*"
       },
     ]
   })
@@ -452,6 +460,9 @@ resource "aws_lambda_function" "daily_trigger" {
   environment {
     variables = {
       USERS_TABLE_NAME                      = aws_dynamodb_table.users.name
+      # Deneme sonu bildirimi icin.
+      SES_FROM_EMAIL                        = var.ses_from_email
+      APP_URL                               = var.app_url
       GENERATE_ARTICLES_FUNCTION_NAME       = aws_lambda_function.generate_articles.function_name
       GENERATE_CATEGORY_PICKS_FUNCTION_NAME = aws_lambda_function.generate_category_picks.function_name
       DELIVER_DAILY_FUNCTION_NAME           = aws_lambda_function.deliver_daily.function_name

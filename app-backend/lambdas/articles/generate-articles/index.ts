@@ -224,14 +224,14 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "1000-Word Philosophy",      url: "https://1000wordphilosophy.com/feed/" },
     { name: "The Prindle Post",          url: "https://www.prindleinstitute.org/feed/" },
     { name: "Blog of the APA",           url: "https://blog.apaonline.org/feed/" },
-    { name: "3 Quarks Daily",            url: "https://3quarksdaily.com/feed" },
+    { name: "The Ideas Letter",          url: "https://www.theideasletter.org/feed/" },
    
   ],
 
   // History
   history: [
     { name: "Aeon",                      url: "https://aeon.co/feed.rss" },
-    { name: "History Today",             url: "https://www.historytoday.com/feed/rss.xml" },
+    //{ name: "History Today",             url: "https://www.historytoday.com/feed/rss.xml" }, subscription istiyor
     { name: "JSTOR Daily",               url: "https://daily.jstor.org/feed/" },
     { name: "Lapham's Quarterly",        url: "https://www.laphamsquarterly.org/rss.xml" },
     { name: "The Public Domain Review",  url: "https://publicdomainreview.org/rss.xml" },
