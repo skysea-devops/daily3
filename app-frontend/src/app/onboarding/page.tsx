@@ -10,7 +10,7 @@ import { CATEGORIES } from "@/lib/constants";
 
 function OnboardingForm() {
   const router = useRouter();
-  const { user, plan, markInterestsSaved } = useAuth();
+  const { user, plan, markInterestsSaved, planSource } = useAuth();
 
   const isPro = plan === "pro";
   const maxTopics = isPro ? 3 : 1;
@@ -18,11 +18,15 @@ function OnboardingForm() {
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Register'dan Pro niyetiyle gelen ve henüz Pro olmayan kullanıcı, Free onboarding'i
-  // görmeden cogletta içindeki checkout hub'ına yönlensin. isPro ise (ödeme tamamlanmış)
-  // bu effect devre dışı kalır ve kullanıcı 3 interest seçer.
+  // Register'dan Pro niyetiyle gelen kullanıcı, checkout hub'ına yönlensin.
+  //
+  // Kontrol `isPro` DEĞİL `planSource`: yeni kullanıcı artık 14 günlük deneme
+  // ile zaten "pro" başlıyor, dolayısıyla isPro'ya bakmak yönlendirmeyi
+  // tamamen devre dışı bırakıyordu — "Choose monthly" diyen kullanıcı ödeme
+  // sayfasını hiç görmeden doğrudan onboarding'e düşüyordu.
+  // Ödemesi tamamlanmış kullanıcıda planSource "paid" olur ve effect durur.
   useEffect(() => {
-    if (!user || isPro) return;
+    if (!user || planSource === "paid") return;
     let intent: "monthly" | "yearly" | null = null;
     try {
       const raw = localStorage.getItem("cogletta_plan_intent");
@@ -37,7 +41,7 @@ function OnboardingForm() {
     if (!intent) return;
     localStorage.removeItem("cogletta_plan_intent"); // tek seferlik
     router.replace(`/checkout-complete?plan=${intent}`);
-  }, [isPro, user, router]);
+  }, [planSource, user, router]);
 
   function toggleCategory(id: string) {
     if (selected.includes(id)) { setSelected(selected.filter(c => c !== id)); return; }

@@ -39,7 +39,17 @@ const ghostBtn: React.CSSProperties = {
 
 function CheckoutCompleteContent() {
   const router = useRouter();
-  const { user, plan, hasInterests, refreshSession } = useAuth();
+  const { user, plan, planSource, hasInterests, refreshSession } = useAuth();
+
+  /**
+   * ODEME YAPILMIS Pro mu?
+   *
+   * `plan === "pro"` ARTIK YETMIYOR: yeni kullanici 14 gunluk deneme ile zaten
+   * "pro" basliyor. Bu sayfanin tum mantigi "Pro degilse odeme akisi" varsayimi
+   * uzerine kuruluydu; deneme kullanicisi geldiginde sayfa onu Pro sanip
+   * odemeye hic ulastirmadan geri gonderiyordu.
+   */
+  const isPaidPro = plan === "pro" && planSource === "paid";
 
   const intent = useMemo(readIntent, []);
   // paid=1 => post-payment return from checkout. Checkout now opens in the SAME tab
@@ -69,14 +79,17 @@ function CheckoutCompleteContent() {
 
   // Already Pro and this is not a paid return (e.g. navigated back) => move on
   useEffect(() => {
-    if (plan !== "pro") return;
+    if (!isPaidPro) return;
     localStorage.removeItem("cogletta_plan_intent");
     if (!paid) router.replace(hasInterests ? "/dashboard" : "/interests");
-  }, [plan, paid, hasInterests, router]);
+  }, [isPaidPro, paid, hasInterests, router]);
 
   // On paid return, wait for the webhook to confirm: refresh the profile until plan is pro.
   useEffect(() => {
-    if (plan === "pro") return;
+    // Deneme kullanicisi zaten "pro": webhook'un odemeyi onaylamasini
+    // planSource uzerinden bekliyoruz, yoksa hicbir sorgu yapilmadan
+    // "odeme tamam" gosterilirdi.
+    if (isPaidPro) return;
     if (!paid) return;
     const delays = [0, 1500, 3000, 5000, 8000, 12000, 18000, 25000, 40000, 60000];
     const timers = delays.map((delay, index) =>
@@ -87,7 +100,7 @@ function CheckoutCompleteContent() {
       }, delay)
     );
     return () => timers.forEach((t) => window.clearTimeout(t));
-  }, [plan, paid, refreshSession]);
+  }, [isPaidPro, paid, refreshSession]);
 
   // Open checkout in the SAME tab. window.location.href needs no user gesture, so there
   // is no popup problem. After payment, checkout redirects back here with paid=1.
@@ -115,7 +128,7 @@ function CheckoutCompleteContent() {
   // ---- View states ----
 
   // Payment confirmed => Pro
-  if (paid && plan === "pro") {
+  if (paid && isPaidPro) {
     return (
       <Shell>
         <div style={{ ...card }}>

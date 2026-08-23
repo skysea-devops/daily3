@@ -21,7 +21,10 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
     const result = await dynamo.send(
       new ScanCommand({
         TableName:                 USERS_TABLE,
-        FilterExpression:          "SK = :profile AND attribute_exists(interests)",
+        // attribute_exists(interests) KALDIRILDI: Pazar Eki kullanicinin ilgi
+        // alanlarina HIC bakmiyor (tum Pro uyelere ayni icerik gider). Filtre
+        // yerinde kaldiginda, ilgi alani secmemis bir Pro uye eki hic almiyordu.
+        FilterExpression:          "SK = :profile",
         // NOT: Pro filtresi bilinçli olarak kodda (plan !== "pro" → continue).
         // Expression'da kullanılmayan değer bırakmak ValidationException üretir —
         // 2026-07-12'de tüm Pro trend raporlarının atlanmasının nedeni buydu.
@@ -33,7 +36,8 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
     );
 
     for (const item of result.Items ?? []) {
-      const interests  = item.interests as string[] | undefined;
+      // Pazar Eki tum Pro uyelere AYNI icerigi gonderir; interests kullanilmaz.
+      const interests  = (item.interests as string[] | undefined) ?? [];
       const userRegion = (item.region as string | undefined) ?? "EU";
       const plan       = (item.plan as string | undefined) ?? "free";
 
@@ -41,10 +45,8 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
       if (userRegion !== region) continue;
       if (plan !== "pro") continue;
 
-      if (Array.isArray(interests) && interests.length >= 1) {
-        const userId = (item.PK as string).replace("USER#", "");
-        users.push({ userId, interests, email: item.email as string | undefined });
-      }
+      const userId = (item.PK as string).replace("USER#", "");
+      users.push({ userId, interests, email: item.email as string | undefined });
     }
 
     lastEvaluatedKey = result.LastEvaluatedKey as Record<string, unknown> | undefined;
