@@ -246,14 +246,15 @@ export default function HomePage() {
             Thoughtfully curated articles and podcast recommendations based on the interests you choose, delivered to your inbox every morning.
           </p>
           <button onClick={() => setShowModal(true)} className="lp-cta">
-            Try free for 14 days →
+            Start your 14-day free trial →
           </button>
+          <span className="lp-note">No credit card required. Continue free plan after 14 days.</span>
           <div style={{ marginTop: 14 }}>
             <Link href="/demo" style={{ color: "var(--ink-soft)", fontSize: "1.1575rem", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
               or see a demo →
             </Link>
           </div>
-          <span className="lp-note">Subscribe to get a curated article and podcast every morning.</span>
+          <span className="lp-note">Preview the full Pro experience — 3 topics, 3 daily articles, podcasts, and more.</span>
         </section>
          <div className="lp-divider" />
         {/* TESTIMONIALS */}
