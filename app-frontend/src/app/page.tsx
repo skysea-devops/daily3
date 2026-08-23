@@ -410,12 +410,12 @@ export default function HomePage() {
         <div className="lp-band">
           <div className="lp-band-inner">
             <p className="lp-label lp-accent-label">How it works</p>
-            <h2 className="lp-h2">Simple by design. Powerful under the hood.</h2>
+            <h2 className="lp-h2">Simple for you. Thoughtful behind the scenes.</h2>
             <div className="lp-steps">
               {[
-                { n: "01", title: "Pick your topics", body: "14 DAYS FREE - Every new reader starts with 14 days of Pro — no credit card needed — and chooses three topics from nine: history, economics, science, geopolitics, and more. Afterwards the free plan sends one topic a day, rotating through all nine." },
-                { n: "02", title: "We scan the web for you", body: "Every day, hundreds of sources are scanned. Only the best article per category makes the cut." },
-                { n: "03", title: "Ready every morning", body: "Your article and podcast episode arrive every morning — on your dashboard and in your inbox, ready to read." },
+                { n: "01", title: "Pick your topics", body: "Pick three topics you genuinely want to read more about — from history and economics to science, philosophy, and more." },
+                { n: "02", title: "We scan the web for you", body: "Every day, Cogletta searches trusted publications and selects one thoughtful article for each of your topics." },
+                { n: "03", title: "Ready every morning", body: "Your three articles and podcast recommendations are waiting in your inbox and dashboard every morning." },
               ].map(s => (
                 <div key={s.n} className="lp-step">
                   <div className="lp-step-num">{s.n}</div>
