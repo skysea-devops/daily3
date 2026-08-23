@@ -193,6 +193,30 @@ async function sendTrialEndedEmail(to: string): Promise<void> {
           From tomorrow you'll keep getting one article and one podcast each morning, free, on a different topic each day. If you'd rather keep choosing your own three, Pro is there whenever you want it.
         </p>
         <a href="${APP_URL}/settings" style="display:inline-block;padding:12px 24px;background:#111827;color:#ffffff;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">Continue with Pro &rarr;</a>
+
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:32px 0 24px 0;">
+          <tr><td style="border-top:1px solid #f3f4f6;"></td></tr>
+        </table>
+
+        <p style="margin:0 0 8px 0;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9ca3af;">Why Cogletta</p>
+        <p style="margin:0 0 18px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+          There’s already more to read than any of us have time for. The challenge is finding what’s actually worth our attention.
+        </p>
+        <p style="margin:0 0 28px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+          That’s the idea behind Cogletta. Every morning, we narrow the noise down to a small selection of thoughtful articles and podcasts around the topics you care about — so you can spend less time searching and more time reading.
+        </p>
+
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px 0;">
+          <tr><td style="border-top:1px solid #f3f4f6;"></td></tr>
+        </table>
+
+        <p style="margin:0 0 8px 0;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9ca3af;">Know someone who’d enjoy Cogletta?</p>
+        <p style="margin:0 0 16px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+          If Cogletta feels like something a friend would enjoy too, send it their way. The best way for Cogletta to grow is one curious reader introducing it to another.
+        </p>
+        <p style="margin:0;font-size:15px;">
+          <a href="${APP_URL}" style="color:#111827;font-weight:600;text-decoration:none;">Share Cogletta with a friend &rarr;</a>
+        </p>
       </td></tr>
       <tr><td style="padding:24px 36px;background:#f9fafb;border-top:1px solid #f3f4f6;">
         <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">Cogletta &nbsp;·&nbsp; a curated read every morning.</p>
@@ -207,7 +231,16 @@ For the last two weeks you've had three articles and two podcast episodes every 
 
 From tomorrow you'll keep getting one article and one podcast each morning, free, on a different topic each day. If you'd rather keep choosing your own three, Pro is there whenever you want it.
 
-${APP_URL}/settings`;
+${APP_URL}/settings
+
+WHY COGLETTA
+There’s already more to read than any of us have time for. The challenge is finding what’s actually worth our attention.
+
+That’s the idea behind Cogletta. Every morning, we narrow the noise down to a small selection of thoughtful articles and podcasts around the topics you care about — so you can spend less time searching and more time reading.
+
+KNOW SOMEONE WHO’D ENJOY COGLETTA?
+If Cogletta feels like something a friend would enjoy too, send it their way. The best way for Cogletta to grow is one curious reader introducing it to another.
+${APP_URL}`;
 
   await ses.send(new SendEmailCommand({
     Source: SES_FROM_EMAIL,

@@ -93,7 +93,7 @@ function buildWelcomeHtml(email: string): string {
                     <span style="font-size:14px;color:#9ca3af;">→</span>
                   </td>
                   <td style="padding:0 0 10px 16px;">
-                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">A carefully selected article based on your interests — substantive pieces from think-tanks, academic journals, and quality publications <span style="color:#9ca3af;">(3 per day, one for each interest, with Pro)</span></p>
+                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">Three carefully selected articles — one for each topic you chose — from think-tanks, academic journals, and quality publications</p>
                   </td>
                 </tr>
                 <tr>
@@ -101,7 +101,7 @@ function buildWelcomeHtml(email: string): string {
                     <span style="font-size:14px;color:#9ca3af;">→</span>
                   </td>
                   <td style="padding:0 0 10px 16px;">
-                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">A podcast episode from top shows in your interest area — paired with your article every morning <span style="color:#9ca3af;">(2 per day with Pro)</span></p>
+                    <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">Two podcast episodes from top shows in your topics, paired with your reading each morning</p>
                   </td>
                 </tr>
                 <tr>
@@ -115,7 +115,7 @@ function buildWelcomeHtml(email: string): string {
               </table>
 
               <p style="margin:0 0 28px 0;font-size:13px;line-height:1.6;color:#9ca3af;font-style:italic;">
-                You're on ${APP_NAME} Pro free for ${TRIAL_DAYS} days — no card needed. That means 3 articles across 3 topics you choose, 2 podcast episodes, and The Sunday Supplement every week. After that you'll move to the free plan unless you decide to stay.
+                You’re starting with the full ${APP_NAME} Pro experience: three curated articles every morning — one for each of your chosen topics — plus two podcast recommendations and the Sunday Supplement each week.<br><br>If you’re starting with the ${TRIAL_DAYS}-day free trial, no credit card is required. When your trial ends, you’ll automatically continue on the Free plan unless you choose to keep Pro.
               </p>
 
               <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px 0;">
@@ -124,24 +124,30 @@ function buildWelcomeHtml(email: string): string {
 
               <p style="margin:0 0 8px 0;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9ca3af;">Why ${APP_NAME}</p>
               <p style="margin:0 0 20px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                We still spend hours consuming content every day, but it often feels fragmented. We jump from one short video to another, skim headlines, scroll through endless feeds — and by the end of the day it's hard to remember anything we actually learned.
+                There’s already more to read than any of us have time for. The challenge is finding what’s actually worth our attention.
               </p>
 
               <p style="margin:0 0 28px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                That's why ${APP_NAME} exists. Every morning, a small collection of thoughtfully selected reads on the topics you actually chose. No algorithms competing for your attention. No endless feed to scroll through. If you think like us — you're in the right place.
+                That’s the idea behind ${APP_NAME}. Every morning, we narrow the noise down to a small selection of thoughtful articles and podcasts around the topics you care about — so you can spend less time searching and more time reading.
+              </p>
+
+              <p style="margin:0 0 28px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+                Your first picks are already waiting. See you tomorrow morning.
               </p>
 
               <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px 0;">
                 <tr><td style="border-top:1px solid #f3f4f6;"></td></tr>
               </table>
 
-              <p style="margin:0 0 20px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                If you enjoy ${APP_NAME}, the best thing you can do is recommend it to a friend. We don't advertise, we don't manipulate algorithms — we grow because readers share us with people they trust.
+              <p style="margin:0 0 8px 0;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9ca3af;">Know someone who’d enjoy ${APP_NAME}?</p>
+              <p style="margin:0 0 16px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+                If ${APP_NAME} feels like something a friend would enjoy too, send it their way. The best way for ${APP_NAME} to grow is one curious reader introducing it to another.
+              </p>
+              <p style="margin:0 0 24px 0;font-size:15px;">
+                <a href="${APP_URL}" style="color:#111827;font-weight:600;text-decoration:none;">Share ${APP_NAME} with a friend &rarr;</a>
               </p>
 
-              <p style="margin:0 0 24px 0;font-size:15px;line-height:1.85;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                Your first articles are already waiting. See you tomorrow morning.
-              </p>
+
 
               <p style="margin:0;font-size:14px;color:#6b7280;">
                 — The ${APP_NAME} Team<br>
@@ -180,20 +186,20 @@ A FEW THINGS TO KNOW
 → You can change your topics anytime from the Interests page. Changes take effect the next morning.
 
 HERE'S WHAT WE SHARE WITH YOU EVERY DAY
-→ A carefully selected article based on your interests — substantive pieces from think-tanks, academic journals, and quality publications (3 per day, one for each interest, with Pro)
-→ A podcast episode from top shows in your interest area — paired with your article every morning (2 per day with Pro)
+→ Three carefully selected articles — one for each topic you chose — from think-tanks, academic journals, and quality publications
+→ Two podcast episodes from top shows in your topics, paired with your reading each morning
 → A short editorial note on each pick — why this piece, why today, why it matters
 
-You're on ${APP_NAME} Pro free for ${TRIAL_DAYS} days — no card needed. That means 3 articles across 3 topics you choose, 2 podcast episodes, and The Sunday Supplement every week. After that you'll move to the free plan unless you decide to stay.
+You’re starting with the full ${APP_NAME} Pro experience: three curated articles every morning — one for each of your chosen topics — plus two podcast recommendations and the Sunday Supplement each week.\n\nIf you’re starting with the ${TRIAL_DAYS}-day free trial, no credit card is required. When your trial ends, you’ll automatically continue on the Free plan unless you choose to keep Pro.
 
 WHY ${APP_NAME.toUpperCase()}
-We still spend hours consuming content every day, but it often feels fragmented. We jump from one short video to another, skim headlines, scroll through endless feeds — and by the end of the day it's hard to remember anything we actually learned.
+There’s already more to read than any of us have time for. The challenge is finding what’s actually worth our attention.
 
-That's why ${APP_NAME} exists. Every morning, a small collection of thoughtfully selected reads on the topics you actually chose. No algorithms competing for your attention. No endless feed to scroll through. If you think like us — you're in the right place.
+That’s the idea behind ${APP_NAME}. Every morning, we narrow the noise down to a small selection of thoughtful articles and podcasts around the topics you care about — so you can spend less time searching and more time reading.
 
-If you enjoy ${APP_NAME}, recommend it to a friend. We grow because readers share us with people they trust.
+Your first picks are already waiting. See you tomorrow morning.
 
-Your first articles are already waiting. See you tomorrow morning.
+KNOW SOMEONE WHO’D ENJOY ${APP_NAME.toUpperCase()}?\nIf ${APP_NAME} feels like something a friend would enjoy too, send it their way. The best way for ${APP_NAME} to grow is one curious reader introducing it to another.\n${APP_URL}
 
 — The ${APP_NAME} Team
 ${CONTACT_EMAIL}`;
