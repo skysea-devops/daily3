@@ -246,9 +246,11 @@ export default function HomePage() {
             Thoughtfully curated articles and podcast recommendations based on the interests you choose, delivered to your inbox every morning.
           </p>
           <button onClick={() => setShowModal(true)} className="lp-cta">
-            Start your 14-day free trial →
+            <Link href="/register" className="lp-cta">
+            Start your morning reading habit →
+          </Link>
           </button>
-          <span className="lp-note">No credit card required. Continue free plan after 14 days.</span>
+          <span className="lp-note">No credit card required. </span>
           <div style={{ marginTop: 14 }}>
             <Link href="/demo" style={{ color: "var(--ink-soft)", fontSize: "1.1575rem", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
               or see a demo →
@@ -257,6 +259,9 @@ export default function HomePage() {
           <span className="lp-note">Preview the full Pro experience — 3 topics, 3 daily articles, podcasts, and more.</span>
         </section>
          <div className="lp-divider" />
+
+        
+
         {/* TESTIMONIALS */}
         <section className="lp-band" style={{ background: "transparent", borderTop: "none", borderBottom: "none", padding: "20px 5vw 72px" }}>
           <div className="lp-band-inner">
@@ -308,6 +313,8 @@ export default function HomePage() {
 
         <div className="lp-divider" />
 
+        
+
         {/* NAME STORY */}
         <section className="lp-section">
           <p className="lp-label">The name</p>
@@ -332,23 +339,24 @@ export default function HomePage() {
 
         {/* FOUNDER STORY */}
         <section className="lp-section">
-          <p className="lp-label">Why Cogletta exists</p>
+          <p className="lp-label">The Story Behind Cogletta</p>
           <p className="lp-p">
-            Somewhere along the way, many of us stopped
-            <strong> reading regularly.</strong> We still spend hours consuming content every day, but it often feels fragmented. We jump from one short video to another, skim headlines, scroll through endless feeds, and by the end of the day it's hard to remember anything we actually learned.
+            Somewhere along the way,
+            <strong> I realized </strong> I was consuming more content than ever — but reading less of what I actually cared about.
           </p>
           <p className="lp-p">
-            Reading itself didn't disappear. The habit did.
+            I missed the habit of discovering something thoughtful, following my curiosity, and learning a little more each day.
           </p>
           <p className="lp-p">
-            I started thinking about how I used to read. I'd pick up a magazine or newspaper, discover thoughtful articles, and gradually build knowledge around  <strong>the topics that interested me.</strong> I wanted that feeling back.
+            So I built Cogletta for myself. What started as a small side project became something I now look forward to every morning: opening my inbox and wondering, <strong>“What will I discover today?”</strong>
           </p>
-          <p className="lp-p">
-            That's why I built Cogletta. Every morning, Cogletta delivers a small collection of thoughtfully selected articles based on your interests. No algorithms competing for your attention. No endless feed to scroll through. If you think like me — you're in the right place.
-          </p>
+          <Link href="/essays/chasing-an-idea" className="lp-p">
+  Read the story behind Cogletta →
+</Link>
           <p className="lp-sig">— Ismail Gokdeniz - Founder, Cogletta</p>
         </section>
-
+        
+        
 
         {/* WHAT YOU GET */}
         <section className="lp-section" style={{maxWidth: 800}}>
@@ -369,6 +377,27 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+
+                {/* HOW IT WORKS */}
+        <div className="lp-band">
+          <div className="lp-band-inner">
+            <p className="lp-label lp-accent-label">How it works</p>
+            <h2 className="lp-h2">Simple for you. Thoughtful behind the scenes.</h2>
+            <div className="lp-steps">
+              {[
+                { n: "01", title: "Pick your topics", body: "Pick three topics you genuinely want to read more about — from history and economics to science, philosophy, and more." },
+                { n: "02", title: "We scan the web for you", body: "Every day, Cogletta searches trusted publications and selects one thoughtful article for each of your topics." },
+                { n: "03", title: "Ready every morning", body: "Your three articles and podcast recommendations are waiting in your inbox and dashboard every morning." },
+              ].map(s => (
+                <div key={s.n} className="lp-step">
+                  <div className="lp-step-num">{s.n}</div>
+                  <h3>{s.title}</h3>
+                  <p>{s.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
         {/* SAMPLE */}
         <div className="lp-band">
@@ -406,26 +435,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* HOW IT WORKS */}
-        <div className="lp-band">
-          <div className="lp-band-inner">
-            <p className="lp-label lp-accent-label">How it works</p>
-            <h2 className="lp-h2">Simple for you. Thoughtful behind the scenes.</h2>
-            <div className="lp-steps">
-              {[
-                { n: "01", title: "Pick your topics", body: "Pick three topics you genuinely want to read more about — from history and economics to science, philosophy, and more." },
-                { n: "02", title: "We scan the web for you", body: "Every day, Cogletta searches trusted publications and selects one thoughtful article for each of your topics." },
-                { n: "03", title: "Ready every morning", body: "Your three articles and podcast recommendations are waiting in your inbox and dashboard every morning." },
-              ].map(s => (
-                <div key={s.n} className="lp-step">
-                  <div className="lp-step-num">{s.n}</div>
-                  <h3>{s.title}</h3>
-                  <p>{s.body}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+
 
         {/* BOTTOM CTA */}
         <div className="lp-cta-bottom">
