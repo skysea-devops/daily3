@@ -392,9 +392,11 @@ function SettingsContent() {
     // gecici oldugunu ve ne zaman bitecegini bilmeli.
     if (isTrial) {
       const days = trialDaysLeft;
-      return days === 1
-        ? "Cogletta Pro — free trial, ends tomorrow"
-        : `Cogletta Pro — free trial, ${days} days left`;
+      // 0 gun: sure dolmus ama sabah cron'u henuz calismamis. "0 days left"
+      // demek yerine ne oldugunu soylemek daha dogru.
+      if (days <= 0) return "Cogletta Pro — free trial, ends today";
+      if (days === 1) return "Cogletta Pro — free trial, ends tomorrow";
+      return `Cogletta Pro — free trial, ${days} days left`;
     }
     if (plan !== "pro") return "Free";
     if (billingStatus !== "ready" || !subscription) return "Cogletta Pro";
