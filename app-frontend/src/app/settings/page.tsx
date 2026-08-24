@@ -392,9 +392,11 @@ function SettingsContent() {
     // gecici oldugunu ve ne zaman bitecegini bilmeli.
     if (isTrial) {
       const days = trialDaysLeft;
-      return days === 1
-        ? "Cogletta Pro — free trial, ends tomorrow"
-        : `Cogletta Pro — free trial, ${days} days left`;
+      // 0 gun: sure dolmus ama sabah cron'u henuz calismamis. "0 days left"
+      // demek yerine ne oldugunu soylemek daha dogru.
+      if (days <= 0) return "Cogletta Pro — free trial, ends today";
+      if (days === 1) return "Cogletta Pro — free trial, ends tomorrow";
+      return `Cogletta Pro — free trial, ${days} days left`;
     }
     if (plan !== "pro") return "Free";
     if (billingStatus !== "ready" || !subscription) return "Cogletta Pro";
@@ -487,7 +489,7 @@ function SettingsContent() {
               label={isTrial ? "Keep Pro after your trial" : "Upgrade to Pro"}
               description={
                 isTrial
-                  ? "Your trial ends automatically — no charge, no cancelling. Subscribe to keep choosing your own three topics."
+                  ? "Your trial ends automatically. Subscribe to keep choosing your own three topics."
                   : "3 articles per interest, sub-topics, The Sunday Supplement. Yearly saves two months."
               }
             >
@@ -546,10 +548,10 @@ function SettingsContent() {
         </Section>
 
         {/* Notifications */}
-        <Section title="Notifications">
-          <Row label="Daily digest email" description="Receive your curated content every morning." />
+        <Section title="Your Emails">
+          <Row label="Daily Cogletta email" description="Your curated articles and podcast recommendations, every morning." />
           {plan === "pro" && (
-            <Row topBorder label="The Sunday Supplement" description="One lighter read and one listen, every Sunday morning." />
+            <Row topBorder label="The Sunday Supplement" description="A lighter article and podcast, every Sunday morning." />
           )}
         </Section>
 
