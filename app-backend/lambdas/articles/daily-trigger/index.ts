@@ -14,6 +14,11 @@ const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL ?? "";
 const APP_URL        = process.env.APP_URL ?? "https://cogletta.com";
 
 const ses = new SESClient({ maxAttempts: 5, retryMode: "adaptive" });
+
+/** Deneme bitmeden kac gun once hatirlatma gonderilecek. */
+const REMINDER_DAYS_BEFORE = 3;
+/** Deneme suresi (gun) — hatirlatma metninde "gecen X gun" icin. */
+const TRIAL_DAYS = 14;
 const GENERATE_ARTICLES_FUNCTION      = process.env.GENERATE_ARTICLES_FUNCTION_NAME!;
 const GENERATE_CATEGORY_PICKS_FUNCTION = process.env.GENERATE_CATEGORY_PICKS_FUNCTION_NAME!;
 const DELIVER_DAILY_FUNCTION          = process.env.DELIVER_DAILY_FUNCTION_NAME!;
@@ -42,6 +47,8 @@ interface TriggerUser {
   trialEndsAt?:      string;
   /** Varsa kullanici gercekten odeme yapmis demektir. */
   lsSubscriptionId?: string;
+  /** Hatirlatma gonderildiyse ISO tarih; mukerrer gonderimi engeller. */
+  trialReminderSentAt?: string;
 }
 
 interface EnsureResult {
@@ -252,6 +259,120 @@ ${APP_URL}`;
   }));
 }
 
+
+/**
+ * Deneme bitmeden 3 gun once gonderilen tek hatirlatma.
+ *
+ * Neden bitiste degil de ONCE: bitis e-postasi kullaniciya olan biteni
+ * bildiriyor, karar anini kaciriyor. Hatirlatma karari kullanicinin elinde
+ * birakiyor.
+ *
+ * Ton baski yapmiyor: "son sans" yok. Kullanicinin aklindaki asil soru
+ * "ucret alinacak mi?" oldugu icin o endise ilk paragrafta kaldiriliyor.
+ */
+async function sendTrialReminderEmail(to: string, daysLeft: number): Promise<void> {
+  const elapsed = Math.max(1, TRIAL_DAYS - daysLeft);
+  const dayWord = daysLeft === 1 ? "day" : "days";
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Your trial ends soon</title></head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;"><tr><td style="padding:32px 20px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+      <tr><td style="padding:32px 36px 24px;border-bottom:1px solid #f3f4f6;">
+        <span style="font-size:13px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#111827;">Cogletta</span>
+        <p style="margin:16px 0 0;font-size:22px;font-weight:700;color:#111827;line-height:1.3;">${daysLeft === 1 ? "One day" : `${daysLeft} ${dayWord}`} left with Cogletta Pro</p>
+      </td></tr>
+      <tr><td style="padding:28px 36px;">
+        <p style="margin:0 0 18px;font-size:15px;line-height:1.8;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+          For the past ${elapsed} days, your mornings have included three curated articles across the topics you chose, two podcast recommendations each day, personalized sub-topics, and the Sunday Supplement.
+        </p>
+        <p style="margin:0 0 18px;font-size:15px;line-height:1.8;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+          In ${daysLeft === 1 ? "one day" : `${daysLeft} ${dayWord}`}, your trial will end and you&rsquo;ll automatically continue on the Free plan. Nothing will be charged, and there&rsquo;s nothing to cancel.
+        </p>
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.8;color:#374151;font-family:Georgia,'Times New Roman',serif;">
+          If you&rsquo;d like to keep your mornings just as they are &mdash; all three topics, three daily articles, two podcasts, personalized sub-topics, and the Sunday Supplement &mdash; you can continue with Pro.
+        </p>
+        <a href="${APP_URL}/register" style="display:inline-block;padding:12px 24px;background:#111827;color:#ffffff;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">Continue with Pro &rarr;</a>
+      </td></tr>
+      <tr><td style="padding:24px 36px;background:#f9fafb;border-top:1px solid #f3f4f6;">
+        <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">Cogletta &nbsp;&middot;&nbsp; a curated read every morning.</p>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+
+  const text = `${daysLeft === 1 ? "One day" : `${daysLeft} ${dayWord}`} left with Cogletta Pro
+
+For the past ${elapsed} days, your mornings have included three curated articles across the topics you chose, two podcast recommendations each day, personalized sub-topics, and the Sunday Supplement.
+
+In ${daysLeft === 1 ? "one day" : `${daysLeft} ${dayWord}`}, your trial will end and you'll automatically continue on the Free plan. Nothing will be charged, and there's nothing to cancel.
+
+If you'd like to keep your mornings just as they are — all three topics, three daily articles, two podcasts, personalized sub-topics, and the Sunday Supplement — you can continue with Pro.
+
+${APP_URL}/register`;
+
+  await ses.send(new SendEmailCommand({
+    Source: SES_FROM_EMAIL,
+    Destination: { ToAddresses: [to] },
+    Message: {
+      Subject: { Data: `Your Cogletta Pro trial ends in ${daysLeft === 1 ? "1 day" : `${daysLeft} days`}`, Charset: "UTF-8" },
+      Body: { Html: { Data: html, Charset: "UTF-8" }, Text: { Data: text, Charset: "UTF-8" } },
+    },
+  }));
+}
+
+/**
+ * Bitmesine 3 gun ve daha az kalan denemeler icin TEK hatirlatma.
+ *
+ * Mukerrer gonderim korumasi profildeki `trialReminderSentAt` alani ile:
+ * kosullu yazma sayesinde iki bolgenin cron'u ayni anda calissa bile yalnizca
+ * biri basarili olur ve tek e-posta gider.
+ */
+async function sendTrialReminders(users: TriggerUser[]): Promise<void> {
+  if (!SES_FROM_EMAIL) return;
+  const now = Date.now();
+
+  const due = users.filter(u =>
+    u.plan.toLowerCase() === "pro" &&
+    u.planSource === "trial" &&
+    !u.lsSubscriptionId &&
+    !u.trialReminderSentAt &&
+    u.email &&
+    u.trialEndsAt &&
+    Date.parse(u.trialEndsAt) > now &&
+    Date.parse(u.trialEndsAt) - now <= REMINDER_DAYS_BEFORE * 24 * 60 * 60 * 1000
+  );
+
+  if (due.length === 0) return;
+  console.log(`Sending trial reminder to ${due.length} user(s)`);
+
+  for (const user of due) {
+    const daysLeft = Math.max(1, Math.ceil((Date.parse(user.trialEndsAt!) - now) / 86_400_000));
+    try {
+      await dynamo.send(new UpdateCommand({
+        TableName: USERS_TABLE,
+        Key: { PK: `USER#${user.userId}`, SK: "PROFILE" },
+        UpdateExpression: "SET trialReminderSentAt = :now",
+        ConditionExpression: "attribute_not_exists(trialReminderSentAt) AND #planSource = :trial",
+        ExpressionAttributeNames:  { "#planSource": "planSource" },
+        ExpressionAttributeValues: { ":now": new Date().toISOString(), ":trial": "trial" },
+      }));
+    } catch (err: any) {
+      if (err?.name === "ConditionalCheckFailedException") continue; // baskasi gonderdi
+      console.error(`Trial reminder claim failed for user=${user.userId}:`, err);
+      continue;
+    }
+
+    try {
+      await sendTrialReminderEmail(user.email!, daysLeft);
+      console.log(`Trial reminder sent to ${user.email} (${daysLeft}d left)`);
+    } catch (err) {
+      // EMAIL_SEND_FAILED: CloudWatch metric filter bu ifadeye baglanir.
+      console.error(`EMAIL_SEND_FAILED user=${user.userId} reason=trial-reminder`, err);
+    }
+  }
+}
+
 // ─── 14 günlük Pro denemesinin sona ermesi ────────────────────────────────────
 //
 // Neden ayrı bir cron yok: daily-trigger zaten her sabah tüm kullanıcıları
@@ -340,7 +461,7 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
         FilterExpression:          "SK = :profile",
         ExpressionAttributeValues: { ":profile": "PROFILE" },
         ExpressionAttributeNames:  { "#plan": "plan", "#region": "region" },
-        ProjectionExpression:      "PK, interests, subTopics, email, #plan, #region, planSource, trialEndsAt, lsSubscriptionId",
+        ProjectionExpression:      "PK, interests, subTopics, email, #plan, #region, planSource, trialEndsAt, lsSubscriptionId, trialReminderSentAt",
         ExclusiveStartKey:         lastEvaluatedKey,
       })
     );
@@ -378,7 +499,8 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
         plan:             (item.plan as string | undefined) ?? "free",
         planSource:       (item.planSource as string | undefined),
         trialEndsAt:      (item.trialEndsAt as string | undefined),
-        lsSubscriptionId: (item.lsSubscriptionId as string | undefined),
+        lsSubscriptionId:    (item.lsSubscriptionId as string | undefined),
+        trialReminderSentAt: (item.trialReminderSentAt as string | undefined),
       });
     }
 
@@ -387,6 +509,10 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
 
   // Süresi dolan denemeleri fan-out'tan ÖNCE sonlandır.
   await expireFinishedTrials(users);
+
+  // Sonra hatırlatmalar: sırası önemli, bugün sona eren bir kullanıcıya
+  // "3 gün kaldı" maili gitmemeli (expire sonrası planı artık free).
+  await sendTrialReminders(users);
 
   // ── Kullanıcıları yollara ayır ──────────────────────────────────────────────
   const pooledFree: TriggerUser[] = [];
