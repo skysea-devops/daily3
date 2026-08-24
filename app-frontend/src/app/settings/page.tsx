@@ -489,7 +489,7 @@ function SettingsContent() {
               label={isTrial ? "Keep Pro after your trial" : "Upgrade to Pro"}
               description={
                 isTrial
-                  ? "Your trial ends automatically — no charge, no cancelling. Subscribe to keep choosing your own three topics."
+                  ? "Your trial ends automatically. Subscribe to keep choosing your own three topics."
                   : "3 articles per interest, sub-topics, The Sunday Supplement. Yearly saves two months."
               }
             >
@@ -548,10 +548,10 @@ function SettingsContent() {
         </Section>
 
         {/* Notifications */}
-        <Section title="Notifications">
-          <Row label="Daily digest email" description="Receive your curated content every morning." />
+        <Section title="Your Emails">
+          <Row label="Daily Cogletta email" description="Your curated articles and podcast recommendations, every morning." />
           {plan === "pro" && (
-            <Row topBorder label="The Sunday Supplement" description="One lighter read and one listen, every Sunday morning." />
+            <Row topBorder label="The Sunday Supplement" description="A lighter article and podcast, every Sunday morning." />
           )}
         </Section>
 
