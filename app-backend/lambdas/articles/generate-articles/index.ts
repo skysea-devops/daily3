@@ -838,7 +838,16 @@ async function fetchRecentHistory(userId: string): Promise<RecentHistory> {
           ":pk": Keys.userPK(userId),
           ":skStart": skStart,
         },
-        ProjectionExpression: "articles, podcast",
+        // "podcasts" DIZISI de okunmali. Pro kullanici gunde IKI podcast aliyor
+        // ve ikisi de bu dizide duruyor; "podcast" alani yalnizca geriye
+        // uyumluluk icin BIRINCI ogeyi tutuyor.
+        //
+        // 2026-08-25: yalnizca "podcast" okundugu icin IKINCI podcast gecmise
+        // hic girmiyordu ve ertesi gun yeniden secilebiliyordu (BoF Podcast
+        // iki gun ust uste geldi). deliver-daily'nin kendi okuyucusu ikisini de
+        // dogru okuyor — ayni isi yapan iki fonksiyondan biri guncellenmis,
+        // digeri unutulmustu.
+        ProjectionExpression: "articles, podcast, podcasts",
       }),
     );
 
@@ -849,13 +858,21 @@ async function fetchRecentHistory(userId: string): Promise<RecentHistory> {
         if (a.source)
           seenSources.set(a.source, (seenSources.get(a.source) ?? 0) + 1);
       }
-      const podcast = item.podcast as Podcast | null;
-      if (podcast?.url) seenUrls.add(canonicalizeUrl(podcast.url));
-      if (podcast?.source)
-        seenSources.set(
-          podcast.source,
-          (seenSources.get(podcast.source) ?? 0) + 1,
-        );
+
+      const storedPodcasts: Podcast[] = Array.isArray(item.podcasts)
+        ? (item.podcasts as Podcast[])
+        : item.podcast
+          ? [item.podcast as Podcast]
+          : [];
+
+      for (const podcast of storedPodcasts) {
+        if (podcast?.url) seenUrls.add(canonicalizeUrl(podcast.url));
+        if (podcast?.source)
+          seenSources.set(
+            podcast.source,
+            (seenSources.get(podcast.source) ?? 0) + 1,
+          );
+      }
     }
   } catch (err) {
     console.warn("Failed to fetch recent history:", err);
