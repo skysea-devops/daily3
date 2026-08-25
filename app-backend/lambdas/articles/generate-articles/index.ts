@@ -188,7 +188,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Public Books",         url: "https://www.publicbooks.org/feed/" },
     { name: "JSTOR Daily",          url: "https://daily.jstor.org/feed/" },
     { name: "Eurozine",             url: "https://www.eurozine.com/feed/" },
-    { name: "Hyperallergic",        url: "https://hyperallergic.com/rss/" },
     { name: "Arts & Letters Daily", url: "https://www.aldaily.com/feed/" },
     { name: "Kottke",               url: "https://feeds.kottke.org/main" },
     { name: "The Sunday Long Read", url: "https://sundaylongread.com/feed/" },
@@ -205,6 +204,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Heddels",              url: "https://heddels.com/feed" },
     { name: "Fashionista",          url: "https://fashionista.com/.rss/feed/28e21eb8-20ac-4617-a448-e845081591ca.xml" },
     { name: "Yale News (Arts & Humanities)", url: "https://news.yale.edu/topics/arts-humanities/rss" },
+    { name: "Literary Hub",          url: "https://lithub.com/feed/" },
   ],
 
   // Philosophy & Ethics
@@ -224,14 +224,13 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "1000-Word Philosophy",      url: "https://1000wordphilosophy.com/feed/" },
     { name: "The Prindle Post",          url: "https://www.prindleinstitute.org/feed/" },
     { name: "Blog of the APA",           url: "https://blog.apaonline.org/feed/" },
-    { name: "3 Quarks Daily",            url: "https://3quarksdaily.com/feed" },
+    { name: "The Ideas Letter",          url: "https://www.theideasletter.org/feed/" },
    
   ],
 
   // History
   history: [
     { name: "Aeon",                      url: "https://aeon.co/feed.rss" },
-    { name: "History Today",             url: "https://www.historytoday.com/feed/rss.xml" },
     { name: "JSTOR Daily",               url: "https://daily.jstor.org/feed/" },
     { name: "Lapham's Quarterly",        url: "https://www.laphamsquarterly.org/rss.xml" },
     { name: "The Public Domain Review",  url: "https://publicdomainreview.org/rss.xml" },
