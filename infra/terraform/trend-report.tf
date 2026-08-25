@@ -7,11 +7,14 @@
 locals {
   # Pazar sabahı bölgesel cron'lar. Asya UTC+8/9 olduğundan Cumartesi 23:00 UTC
   # tetiklenir ki yerelde Pazar sabahına denk gelsin.
+  # 2026-08-25: gunluk cron ile AYNI saatlere cekildi (1.5 saat geri). Aksi
+  # halde Pazar gunu gunluk icerik 05:30'da, Pazar Eki 07:00'de giderdi —
+  # ayni sabah iki ayri gonderim, tutarsiz.
   weekly_schedules = {
-    eu      = { cron = "cron(0 4 ? * SUN *)",  region = "EU" }
-    us_east = { cron = "cron(0 11 ? * SUN *)", region = "US_EAST" }
-    us_west = { cron = "cron(0 14 ? * SUN *)", region = "US_WEST" }
-    asia    = { cron = "cron(0 23 ? * SAT *)", region = "ASIA" }
+    eu      = { cron = "cron(30 2 ? * SUN *)",  region = "EU" }      # TR 05:30
+    us_east = { cron = "cron(30 9 ? * SUN *)",  region = "US_EAST" } # ET ~05:30
+    us_west = { cron = "cron(30 12 ? * SUN *)", region = "US_WEST" } # PT ~05:30
+    asia    = { cron = "cron(30 21 ? * SAT *)", region = "ASIA" }    # CN/SEA/JP ~05:30-06:30
   }
 }
 
