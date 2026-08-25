@@ -476,11 +476,18 @@ resource "aws_lambda_function" "daily_trigger" {
 locals {
   # Her bölge için ayrı cron — hepsi aynı daily-trigger'ı çağırır, region input geçer.
   # Saatler sabit UTC; DST'de yerel saat ±1 kayar (kullanıcıya "her sabah" deniyor).
+  #
+  # 2026-08-25: hepsi 1.5 saat geri çekildi. 07:00 sınırda bir saatti — erken
+  # işe çıkan okur maili kaçırıyor ya da yolda açıyordu. 05:30 kahvaltı/hazırlık
+  # saatine denk geliyor ve gün içinde okumak isteyene de zaman bırakıyor.
+  #
+  # Üretim ~40 saniye sürdüğü için tetikleme ile teslim arasında anlamlı bir
+  # gecikme yok; yazılan saat okuyucunun gördüğü saattir.
   daily_schedules = {
-    eu      = { cron = "cron(0 4 * * ? *)",  region = "EU" }      # TR 07:00, CET 05-06
-    us_east = { cron = "cron(0 11 * * ? *)", region = "US_EAST" } # ET ~07:00
-    us_west = { cron = "cron(0 14 * * ? *)", region = "US_WEST" } # PT ~07:00
-    asia    = { cron = "cron(0 23 * * ? *)", region = "ASIA" }    # CN/SEA/JP ~07-08:00
+    eu      = { cron = "cron(30 2 * * ? *)",  region = "EU" }      # TR 05:30, CET 03:30-04:30
+    us_east = { cron = "cron(30 9 * * ? *)",  region = "US_EAST" } # ET ~05:30
+    us_west = { cron = "cron(30 12 * * ? *)", region = "US_WEST" } # PT ~05:30
+    asia    = { cron = "cron(30 21 * * ? *)", region = "ASIA" }    # CN/SEA/JP ~05:30-06:30
   }
 }
 
