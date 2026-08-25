@@ -231,7 +231,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
   // History
   history: [
     { name: "Aeon",                      url: "https://aeon.co/feed.rss" },
-    //{ name: "History Today",             url: "https://www.historytoday.com/feed/rss.xml" }, subscription istiyor
     { name: "JSTOR Daily",               url: "https://daily.jstor.org/feed/" },
     { name: "Lapham's Quarterly",        url: "https://www.laphamsquarterly.org/rss.xml" },
     { name: "The Public Domain Review",  url: "https://publicdomainreview.org/rss.xml" },
@@ -380,7 +379,6 @@ export const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = 
 
   { name: "The Rest Is History",        url: "https://feeds.megaphone.fm/GLT4787413333" },
   { name: "The Ancients",               url: "https://access.acast.com/rss/f2925f7a-eb08-471a-9958-387cb5ee6353" },
-  { name: "Tides of History",           url: "https://rss.art19.com/tides-of-history" },
   { name: "The History Bureau",         url: "https://podcasts.files.bbci.co.uk/m002q5dk.rss" },
 ],
 
@@ -616,9 +614,37 @@ function isNonEditorial(item: Pick<RSSItem, "categories">): boolean {
   return (item.categories ?? []).some(c => NON_EDITORIAL_CATEGORIES.has(c.trim().toLowerCase()));
 }
 
+/** Bir item bloğundan ham <link> değerini çeker (temizlenmemiş). */
+function rawItemLink(seg: string): string {
+  const cdata = extractText(seg, "link");
+  const href  = seg.match(/<link[^>]+href="([^"]+)"/)?.[1] ?? "";
+  return (cdata || href)
+    .replace(/&#038;/g, "&")
+    .replace(/&amp;/g, "&")
+    .trim();
+}
+
 function extractItems(xml: string, sourceName: string): RSSItem[] {
   const itemTag = xml.includes("<entry") ? "entry" : "item";
   const segments = xml.split(`<${itemTag}`).slice(1).slice(0, 20);
+
+  // PROGRAM SAYFASI TESPİTİ — desen değil, TEKRAR sayısıyla.
+  //
+  // Eski sürüm URL desenine bakıyordu: /(column|show|podcast|podcasts)/<slug>/.
+  // Bu, NYT'nin /column/hard-fork gibi program sayfaları için yazılmıştı ama
+  // Software Engineering Daily'nin GERÇEK bölüm sayfası da aynı kalıba uyuyor:
+  // /podcasts/nanoclaw-and-the-rise-of-personal-ai-agents/. Sonuç: geçerli
+  // bölüm linki "program sayfası" sanılıp <guid>'e düşülüyordu; WordPress'te
+  // guid ?p=23082 biçiminde ve 404 veriyordu.
+  //
+  // Güvenilir sinyal şu: program sayfası linki HER BÖLÜMDE AYNIDIR, bölüm
+  // sayfası linki tekildir. Desen tahminine gerek yok.
+  const linkCounts = new Map<string, number>();
+  for (const seg of segments) {
+    const raw = rawItemLink(seg);
+    if (raw) linkCounts.set(raw, (linkCounts.get(raw) ?? 0) + 1);
+  }
+  const isSharedLink = (raw: string) => (linkCounts.get(raw) ?? 0) > 1;
 
   return segments
     .map((seg) => {
@@ -656,33 +682,28 @@ function extractItems(xml: string, sourceName: string): RSSItem[] {
       // (pathname "/") VEYA showun genel sayfasıdır (ör. NYT Hard Fork → her bölümde
       // aynı nytimes.com/column/hard-fork). Böyle durumda bölüm-özel link olarak
       // enclosure (ses) kullanılır. (#4)
-      const SHOW_PAGE_PATTERN =
-        /\/(column|columns|show|shows|podcast|podcasts)\/[^/]+\/?$/i;
-      // Bölüm permalink'i genelde <guid>'dedir: NYT/Simplecast gibi feed'lerde <link>
-      // show sayfası olsa bile guid bölüm sayfasını verir (Hard Fork vakası).
+      // Bölüm permalink'i bazen <guid>'dedir: Simplecast gibi feed'lerde <link>
+      // program sayfası olsa bile guid bölüm sayfasını verir (Hard Fork vakası).
       const guidRaw = extractText(seg, "guid").trim();
       const guidUrl = /^https?:\/\//i.test(guidRaw) ? canonicalizeUrl(guidRaw) : "";
 
       let finalUrl = url;
       try {
-        const p = new URL(url).pathname;
-        const looksLikeShowPage = p === "/" || SHOW_PAGE_PATTERN.test(p);
+        const path = new URL(url).pathname;
+        // Program sayfası: ya sitenin kökü, ya da AYNI link birden çok bölümde
+        // tekrarlıyor. Tekil bir link her zaman bölüm sayfasıdır — dokunulmaz.
+        const looksLikeShowPage = path === "/" || isSharedLink(rawUrl);
         if (looksLikeShowPage) {
-          // 1) Önce guid (bölüm permalink'i) — geçerli http URL ve kendisi show sayfası
-          //    değilse. 2) Yoksa dinleme için ses enclosure'ı. 3) O da yoksa show sayfası.
-          let guidIsShowPage = false;
-          if (guidUrl) {
-            try {
-              guidIsShowPage = SHOW_PAGE_PATTERN.test(new URL(guidUrl).pathname);
-            } catch {
-              guidIsShowPage = true;
-            }
-          }
-          if (guidUrl && !guidIsShowPage) finalUrl = guidUrl;
+          // 1) guid bölüm permalink'iyse onu kullan (kendisi de paylaşılan bir
+          //    link değilse). 2) Yoksa ses enclosure'ı. 3) O da yoksa link kalır.
+          const guidIsShared = guidUrl ? isSharedLink(guidRaw) : true;
+          if (guidUrl && !guidIsShared) finalUrl = guidUrl;
           else if (enclosureUrl && enclosureIsAudio) finalUrl = enclosureUrl;
         }
       } catch {
-        if (!url && enclosureUrl && enclosureIsAudio) finalUrl = enclosureUrl;
+        // url parse edilemedi (şemasız değer, ör. "siriusxm.com"): bölüm
+        // sayfası yok demektir, sesle devam et.
+        if (enclosureUrl && enclosureIsAudio) finalUrl = enclosureUrl;
       }
 
       // <category> etiketleri: Ghost/WordPress feed'lerinde ogenin turu burada.
@@ -816,7 +837,16 @@ async function fetchRecentHistory(userId: string): Promise<RecentHistory> {
           ":pk": Keys.userPK(userId),
           ":skStart": skStart,
         },
-        ProjectionExpression: "articles, podcast",
+        // "podcasts" DIZISI de okunmali. Pro kullanici gunde IKI podcast aliyor
+        // ve ikisi de bu dizide duruyor; "podcast" alani yalnizca geriye
+        // uyumluluk icin BIRINCI ogeyi tutuyor.
+        //
+        // 2026-08-25: yalnizca "podcast" okundugu icin IKINCI podcast gecmise
+        // hic girmiyordu ve ertesi gun yeniden secilebiliyordu (BoF Podcast
+        // iki gun ust uste geldi). deliver-daily'nin kendi okuyucusu ikisini de
+        // dogru okuyor — ayni isi yapan iki fonksiyondan biri guncellenmis,
+        // digeri unutulmustu.
+        ProjectionExpression: "articles, podcast, podcasts",
       }),
     );
 
@@ -827,13 +857,21 @@ async function fetchRecentHistory(userId: string): Promise<RecentHistory> {
         if (a.source)
           seenSources.set(a.source, (seenSources.get(a.source) ?? 0) + 1);
       }
-      const podcast = item.podcast as Podcast | null;
-      if (podcast?.url) seenUrls.add(canonicalizeUrl(podcast.url));
-      if (podcast?.source)
-        seenSources.set(
-          podcast.source,
-          (seenSources.get(podcast.source) ?? 0) + 1,
-        );
+
+      const storedPodcasts: Podcast[] = Array.isArray(item.podcasts)
+        ? (item.podcasts as Podcast[])
+        : item.podcast
+          ? [item.podcast as Podcast]
+          : [];
+
+      for (const podcast of storedPodcasts) {
+        if (podcast?.url) seenUrls.add(canonicalizeUrl(podcast.url));
+        if (podcast?.source)
+          seenSources.set(
+            podcast.source,
+            (seenSources.get(podcast.source) ?? 0) + 1,
+          );
+      }
     }
   } catch (err) {
     console.warn("Failed to fetch recent history:", err);
