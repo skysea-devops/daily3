@@ -48,6 +48,11 @@ resource "aws_iam_role_policy" "delete_account_lambda_policy" {
           "dynamodb:Scan",
           "dynamodb:DeleteItem",
           "dynamodb:BatchWriteItem",
+          # PutItem: LSSUB# eslemesi SILINMEZ, tombstone'a cevrilir — gecikmeli
+          # bir webhook silinmis hesabi diriltmesin diye. Bu izin eksikti, yani
+          # tombstone yazimi bastan beri AccessDenied aliyordu: eslemeler
+          # tabloda userId'siyle kaliyordu (2026-08-26).
+          "dynamodb:PutItem",
         ]
         Resource = [
           aws_dynamodb_table.users.arn,

@@ -199,33 +199,50 @@ export const handler = async (
       }
     }
 
+    // Tombstone yazimi BEST-EFFORT: basarisiz olursa hesap silme akisi
+    // durmamali. Kalan esleme zararsiz — webhook zaten profil yoksa yazmiyor
+    // (setPlan'daki attribute_exists(PK) kosulu). Onceden bu cagri korumasizdi
+    // ve PutItem izni olmadigi icin tum DELETE /me istegi 500 donuyordu.
     for (const orphanId of orphanIds) {
       const TTL_90_DAYS = 90 * 24 * 60 * 60;
-      await dynamo.send(new PutCommand({
-        TableName: USERS_TABLE_NAME,
-        Item: {
-          PK: `LSSUB#${orphanId}`, SK: "MAP",
-          deleted: true,
-          deletedAt: new Date().toISOString(),
-          ttl: Math.floor(Date.now() / 1000) + TTL_90_DAYS,
-        },
-      }));
-    }
-
-    if (subscriptionId) {
-      const TTL_90_DAYS = 90 * 24 * 60 * 60;
-      await dynamo.send(
-        new PutCommand({
+      try {
+        await dynamo.send(new PutCommand({
           TableName: USERS_TABLE_NAME,
           Item: {
-            PK: `LSSUB#${subscriptionId}`,
-            SK: "MAP",
+            PK: `LSSUB#${orphanId}`, SK: "MAP",
             deleted: true,
             deletedAt: new Date().toISOString(),
             ttl: Math.floor(Date.now() / 1000) + TTL_90_DAYS,
           },
-        })
-      );
+        }));
+      } catch (err) {
+        console.warn(`Orphan LSSUB tombstone failed for ${orphanId}:`, err);
+      }
+    }
+
+    if (subscriptionId) {
+      // BEST-EFFORT. Abonelik LS tarafinda ZATEN iptal edildi (yukarida, hata
+      // durumunda 502 ile cikiliyor). Bu yazim yalnizca eslemeyi tombstone'a
+      // ceviriyor; basarisiz olursa hesabi silmemek kullaniciyi "aboneligim
+      // iptal ama hesabim duruyor" durumunda birakirdi — daha kotusu.
+      // Kalan esleme zararsiz: webhook profil yoksa yazmiyor.
+      const TTL_90_DAYS = 90 * 24 * 60 * 60;
+      try {
+        await dynamo.send(
+          new PutCommand({
+            TableName: USERS_TABLE_NAME,
+            Item: {
+              PK: `LSSUB#${subscriptionId}`,
+              SK: "MAP",
+              deleted: true,
+              deletedAt: new Date().toISOString(),
+              ttl: Math.floor(Date.now() / 1000) + TTL_90_DAYS,
+            },
+          })
+        );
+      } catch (err) {
+        console.warn(`LSSUB tombstone failed for ${subscriptionId}:`, err);
+      }
     }
 
     // 4. Kullanıcının makalelerini sayfalı + batch'li sil
