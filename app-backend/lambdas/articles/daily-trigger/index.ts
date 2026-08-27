@@ -284,13 +284,13 @@ async function sendTrialReminderEmail(to: string, daysLeft: number): Promise<voi
       </td></tr>
       <tr><td style="padding:28px 36px;">
         <p style="margin:0 0 18px;font-size:15px;line-height:1.8;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-          For the past ${elapsed} days, your mornings have included three curated articles across the topics you chose, two podcast recommendations each day, personalized sub-topics, and the Sunday Supplement.
+          For the past ${elapsed} days, your mornings have included three carefully selected articles on topics you chose, two podcast recommendations, personalized sub-topics, and the Sunday Supplement.
         </p>
         <p style="margin:0 0 18px;font-size:15px;line-height:1.8;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-          In ${daysLeft === 1 ? "one day" : `${daysLeft} ${dayWord}`}, your trial will end and you&rsquo;ll automatically continue on the Free plan. Nothing will be charged, and there&rsquo;s nothing to cancel.
+          Your trial ends in ${daysLeft === 1 ? "one day" : `${daysLeft} ${dayWord}`}, after which you&rsquo;ll automatically switch to the Free plan.
         </p>
         <p style="margin:0 0 24px;font-size:15px;line-height:1.8;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-          If you&rsquo;d like to keep your mornings just as they are &mdash; all three topics, three daily articles, two podcasts, personalized sub-topics, and the Sunday Supplement &mdash; you can continue with Pro.
+          Choose the Pro plan to keep enjoying everything Cogletta has to offer.
         </p>
         <a href="${APP_URL}/register" style="display:inline-block;padding:12px 24px;background:#111827;color:#ffffff;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">Continue with Pro &rarr;</a>
       </td></tr>
@@ -303,11 +303,11 @@ async function sendTrialReminderEmail(to: string, daysLeft: number): Promise<voi
 
   const text = `${daysLeft === 1 ? "One day" : `${daysLeft} ${dayWord}`} left with Cogletta Pro
 
-For the past ${elapsed} days, your mornings have included three curated articles across the topics you chose, two podcast recommendations each day, personalized sub-topics, and the Sunday Supplement.
+For the past ${elapsed} days, your mornings have included three carefully selected articles on topics you chose, two podcast recommendations, personalized sub-topics, and the Sunday Supplement.
 
-In ${daysLeft === 1 ? "one day" : `${daysLeft} ${dayWord}`}, your trial will end and you'll automatically continue on the Free plan. Nothing will be charged, and there's nothing to cancel.
+Your trial ends in ${daysLeft === 1 ? "one day" : `${daysLeft} ${dayWord}`}, after which you'll automatically switch to the Free plan.
 
-If you'd like to keep your mornings just as they are — all three topics, three daily articles, two podcasts, personalized sub-topics, and the Sunday Supplement — you can continue with Pro.
+Choose the Pro plan to keep enjoying everything Cogletta has to offer.
 
 ${APP_URL}/register`;
 
