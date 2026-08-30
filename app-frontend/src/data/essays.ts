@@ -258,6 +258,12 @@ export const ESSAYS: Essay[] = [
         type: "quote",
         text: "Am I seeing reality — or only one of its shadows?",
       },
+      {
+        type: "img",
+        src: "/essays/platonCave/platonCave.jpg",
+        alt: "Working on Cogletta, the app I built to bring reading back into my mornings",
+        caption: "The technology has changed. The problem may not have changed as much as we think",
+      },
     ],
   },
   {
