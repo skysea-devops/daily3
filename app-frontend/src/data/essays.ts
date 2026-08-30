@@ -260,7 +260,7 @@ export const ESSAYS: Essay[] = [
       },
       {
         type: "img",
-        src: "/essays/platonCave/platonCave.jpg",
+        src: "/essays/platonCave/platonCave2.jpg",
         alt: "Working on Cogletta, the app I built to bring reading back into my mornings",
         caption: "The technology has changed. The problem may not have changed as much as we think",
       },
