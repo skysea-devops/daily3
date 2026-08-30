@@ -47,6 +47,17 @@ export interface Essay {
   description: string;   // Used for <meta description> and list page — keep under ~160 chars
   date: string;          // ISO format: "2026-07-09"
   readingMinutes: number;
+  /**
+   * Sosyal paylasim gorseli (og:image / twitter:image).
+   *
+   * Yazi GOVDESINDEKI img bloklari burada ISE YARAMAZ: Twitter, LinkedIn ve
+   * WhatsApp onizlemeyi sayfanin <head> bolumundeki meta etiketlerinden okur,
+   * govdeyi hic taramaz. Gorselin paylasimda cikmasi icin bu alan doldurulmali.
+   *
+   * public/ altindan koke gore yol: "/essays/platonCave/platonCave.jpg".
+   * Bos birakilirsa paylasimda gorselsiz kart cikar.
+   */
+  coverImage?: string;
   /** Bos birakilirsa DEFAULT_AUTHOR kullanilir. Sadece misafir yazarda doldur. */
   author?: Author;
   blocks: EssayBlock[];
@@ -71,6 +82,7 @@ export const ESSAYS: Essay[] = [
       "Plato imagined prisoners who mistook shadows for reality. Twenty-four centuries later, the shadows are algorithmic — and the harder question is whether we are outside the cave at all.",
     date: "2026-08-30",
     readingMinutes: 6,
+    coverImage: "/essays/platonCave/platonCave2.jpg",
     blocks: [
       {
         type: "p",
@@ -261,8 +273,8 @@ export const ESSAYS: Essay[] = [
       {
         type: "img",
         src: "/essays/platonCave/platonCave2.jpg",
-        alt: "Working on Cogletta, the app I built to bring reading back into my mornings",
-        caption: "The technology has changed. The problem may not have changed as much as we think",
+        alt: "Why Plato's Allegory Still Matters",
+        caption: "The technology has changed. The problem may not have changed as much as we think.",
       },
     ],
   },
