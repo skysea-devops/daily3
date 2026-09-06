@@ -178,6 +178,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "James Clear",           url: "https://jamesclear.com/feed" },
     { name: "Ness Labs",             url: "https://nesslabs.com/feed" },
     { name: "Farnam Street",         url: "https://fs.blog/feed/" },
+    { name: "The Collector (Travel)", url: "https://www.thecollector.com/travel/rss/" },
   ],
 
   // Culture & Style
@@ -205,6 +206,8 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Fashionista",          url: "https://fashionista.com/.rss/feed/28e21eb8-20ac-4617-a448-e845081591ca.xml" },
     { name: "Yale News (Arts & Humanities)", url: "https://news.yale.edu/topics/arts-humanities/rss" },
     { name: "Literary Hub",          url: "https://lithub.com/feed/" },
+    { name: "The Collector (Art)",     url: "https://www.thecollector.com/art/rss/" },
+    { name: "The Collector (Film)",    url: "https://www.thecollector.com/film/rss/" },
   ],
 
   // Philosophy & Ethics
@@ -220,11 +223,11 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "New Humanist",              url: "https://newhumanist.org.uk/feed/" },
     { name: "Columbia University Press", url: "https://cupblog.org/feed/" },
     { name: "OUPblog",                   url: "https://blog.oup.com/feed/" },
-
     { name: "1000-Word Philosophy",      url: "https://1000wordphilosophy.com/feed/" },
     { name: "The Prindle Post",          url: "https://www.prindleinstitute.org/feed/" },
     { name: "Blog of the APA",           url: "https://blog.apaonline.org/feed/" },
     { name: "The Ideas Letter",          url: "https://www.theideasletter.org/feed/" },
+    { name: "The Collector (Philosophy)",      url: "https://www.thecollector.com/philosophy/rss/" },
    
   ],
 
@@ -239,11 +242,13 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "History Workshop",          url: "https://www.historyworkshop.org.uk/feed/" },
     { name: "Columbia University Press", url: "https://cupblog.org/feed/" },
     { name: "Medieval Histories",        url: "https://www.medieval.eu/feed/" },
-
     { name: "On History (IHR)",          url: "https://blog.history.ac.uk/feed/" },
     { name: "World History Encyclopedia",url: "https://www.worldhistory.org/rss2/?lang=en" },
     { name: "Medievalists.net",          url: "https://www.medievalists.net/feed/" },
     { name: "Active History",            url: "https://feeds.feedburner.com/Activehistoryca" },
+    { name: "The Acoup Blog",            url: "https://acoup.blog/feed" },  // history
+    { name: "The Collector (History)",   url: "https://www.thecollector.com/history/rss" },  // history
+  
    
   ],
 
@@ -260,7 +265,6 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Yale News (Health & Medicine)", url: "https://news.yale.edu/topics/health-medicine/rss" },
     { name: "Nature Medicine",                 url: "https://www.nature.com/nm.rss" },
     { name: "Buck Institute",                  url: "https://www.buckinstitute.org/feed/" },
-
     { name: "ScienceDaily (Top Health)", url: "https://www.sciencedaily.com/rss/top/health.xml" },
     { name: "Patient.info",              url: "https://patient.info/doctor/rss" },
 

@@ -1,3 +1,4 @@
+# infra/terraform/variables.tf
 variable "project_name" {
   type    = string
   default = "cogletta"
@@ -117,4 +118,40 @@ variable "lemonsqueezy_store_id" {
   description = "Lemon Squeezy store ID (used by the Checkouts API)"
   type        = string
   default     = ""
+}
+
+# ─── Deneme hakki defteri (trial ledger) ──────────────────────────────────────
+# Bkz. app-backend/shared/trial-ledger.ts
+
+variable "trial_ledger_secret" {
+  description = <<-EOT
+    Deneme hakki defterinde e-posta parmak izi uretmek icin kullanilan HMAC anahtari.
+    Bos birakilirsa Terraform kalici bir random deger uretir (trial-ledger.tf).
+    DIKKAT: bu deger DEGISIRSE mevcut butun defter kayitlari erisilemez hale gelir
+    ve daha once deneme kullanmis herkes yeniden deneme alabilir.
+  EOT
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "trial_ledger_retention_days" {
+  description = <<-EOT
+    Deneme parmak izinin saklanma suresi (gun). 0 = sinirsiz (DynamoDB TTL alani
+    yazilmaz). Hesap silindikten sonra ne kadar sure "bu e-posta denemesini
+    kullandi" bilgisinin tutulacagini belirler — veri saklama politikasiyla
+    birlikte kararlastirilmali.
+  EOT
+  type        = number
+  default     = 0
+}
+
+variable "trial_ledger_strict_alias" {
+  description = <<-EOT
+    true: e-posta normalize edilirken "+etiket" atilir ve gmail icin noktalar
+    yok sayilir (ucuz alias kotuye kullanimini kapatir).
+    false: yalnizca kucuk harf + trim.
+  EOT
+  type        = bool
+  default     = true
 }

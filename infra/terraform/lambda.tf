@@ -1,3 +1,4 @@
+# infra/terraform/lambda.tf
 locals {
   lambda_runtime     = "nodejs20.x"
   lambda_timeout     = 10
@@ -130,9 +131,11 @@ resource "aws_iam_role_policy" "get_profile_lambda_policy" {
         Resource = "${aws_cloudwatch_log_group.get_profile.arn}:*"
       },
       {
+        # UpdateItem: suresi dolmus denemeyi ANINDA dusurmek icin (lazy expiry).
+        # Yetkilendirme cron'a birakilamaz — bkz. app-backend/shared/entitlements.ts
         Sid      = "DynamoDB"
         Effect   = "Allow"
-        Action   = ["dynamodb:GetItem"]
+        Action   = ["dynamodb:GetItem", "dynamodb:UpdateItem"]
         Resource = aws_dynamodb_table.users.arn
       },
     ]
@@ -316,9 +319,11 @@ resource "aws_iam_role_policy" "get_articles_lambda_policy" {
         Resource = aws_dynamodb_table.articles.arn
       },
       {
+        # UpdateItem: suresi dolmus denemeyi ANINDA dusurmek icin (lazy expiry).
+        # Yetkilendirme cron'a birakilamaz — bkz. app-backend/shared/entitlements.ts
         Sid      = "DynamoReadUsers"
         Effect   = "Allow"
-        Action   = ["dynamodb:GetItem"]
+        Action   = ["dynamodb:GetItem", "dynamodb:UpdateItem"]
         Resource = aws_dynamodb_table.users.arn
       },
       {

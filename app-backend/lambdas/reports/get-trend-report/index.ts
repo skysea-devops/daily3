@@ -1,7 +1,13 @@
+// app-backend/lambdas/reports/get-trend-report/index.ts
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import type { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyResultV2 } from "aws-lambda";
 import { Keys } from "../../../shared/types";
+import {
+  resolveEntitlement,
+  ENTITLEMENT_PROJECTION,
+  ENTITLEMENT_NAMES,
+} from "../../../shared/entitlements";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const ARTICLES_TABLE = process.env.ARTICLES_TABLE_NAME!;
@@ -32,13 +38,15 @@ export const handler = async (
     // Kullanicinin plani PROFILE'dan okunur: Pazar Eki bir Pro ozelligi.
     // Arayuzde karti gizlemek yetkilendirme degildir — gecerli JWT'si olan bir
     // Free kullanici bu ucu dogrudan cagirabilirdi.
+    // Kayitli `plan` alani tek basina YETMEZ: denemesi bitmis ama cron'un henuz
+    // dusurmedigi kullanici Pazar Eki'ni gormeye devam ediyordu.
     const profile = await dynamo.send(new GetCommand({
       TableName: USERS_TABLE,
       Key: { PK: Keys.userPK(userId), SK: "PROFILE" },
-      ProjectionExpression: "#p",
-      ExpressionAttributeNames: { "#p": "plan" },
+      ProjectionExpression: ENTITLEMENT_PROJECTION,
+      ExpressionAttributeNames: ENTITLEMENT_NAMES,
     }));
-    if (String(profile.Item?.plan ?? "free").toLowerCase() !== "pro") {
+    if (!resolveEntitlement(profile.Item).isPro) {
       return { statusCode: 200, headers, body: JSON.stringify({ report: null }) };
     }
 

@@ -120,7 +120,7 @@ export const CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: "life_work",
-    label: "Life, Work & Wellbeing",
+    label: "Work, Life & Relationships",
     emoji: "💛",
     description: "Focus, habits, relationships, and living well",
     subTopics: [
@@ -135,7 +135,7 @@ export const CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: "culture_style",
-    label: "Culture & Style",
+    label: "Culture, Fashion & Style",
     emoji: "🎭",
     description: "Literature, film, art, design, and what we wear",
     subTopics: [

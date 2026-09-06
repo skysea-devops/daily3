@@ -1,3 +1,4 @@
+# infra/terraform/main.tf
 terraform {
   required_version = ">= 1.10"
 
@@ -10,6 +11,12 @@ terraform {
     archive = {
       source  = "hashicorp/archive"
       version = "~> 2.7"
+    }
+
+    # Deneme hakki defterinin HMAC anahtarini uretmek icin (bkz. trial-ledger.tf).
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
     }
   }
 }

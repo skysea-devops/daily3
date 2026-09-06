@@ -1,3 +1,4 @@
+// app-backend/lambdas/articles/daily-trigger/index.ts
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
@@ -5,6 +6,7 @@ import { RSS_SOURCES } from "../generate-articles";
 import { randomUUID } from "crypto";
 import { rotationCategoryFor } from "../../../shared/categories";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import { resolveEntitlement } from "../../../shared/entitlements";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const lambda = new LambdaClient({});
@@ -49,6 +51,12 @@ interface TriggerUser {
   lsSubscriptionId?: string;
   /** Hatirlatma gonderildiyse ISO tarih; mukerrer gonderimi engeller. */
   trialReminderSentAt?: string;
+  /** Deneme baslangici — KALICI, deneme bitse de silinmez. */
+  trialStartedAt?:  string;
+  /** Deneme tuketildi — KALICI. Yeniden deneme verilmeyecegini isaretler. */
+  trialConsumedAt?: string;
+  /** Deneme dustu ama "trial ended" e-postasi henuz gitmedi. */
+  trialEndedEmailPending?: boolean;
 }
 
 interface EnsureResult {
@@ -292,7 +300,7 @@ async function sendTrialReminderEmail(to: string, daysLeft: number): Promise<voi
         <p style="margin:0 0 24px;font-size:15px;line-height:1.8;color:#374151;font-family:Georgia,'Times New Roman',serif;">
           Choose the Pro plan to keep enjoying everything Cogletta has to offer.
         </p>
-        <a href="${APP_URL}/register" style="display:inline-block;padding:12px 24px;background:#111827;color:#ffffff;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">Continue with Pro &rarr;</a>
+        <a href="${APP_URL}/settings" style="display:inline-block;padding:12px 24px;background:#111827;color:#ffffff;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">Continue with Pro &rarr;</a>
       </td></tr>
       <tr><td style="padding:24px 36px;background:#f9fafb;border-top:1px solid #f3f4f6;">
         <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">Cogletta &nbsp;&middot;&nbsp; a curated read every morning.</p>
@@ -309,7 +317,7 @@ Your trial ends in ${daysLeft === 1 ? "one day" : `${daysLeft} ${dayWord}`}, aft
 
 Choose the Pro plan to keep enjoying everything Cogletta has to offer.
 
-${APP_URL}/register`;
+${APP_URL}/settings`;
 
   await ses.send(new SendEmailCommand({
     Source: SES_FROM_EMAIL,
@@ -332,16 +340,19 @@ async function sendTrialReminders(users: TriggerUser[]): Promise<void> {
   if (!SES_FROM_EMAIL) return;
   const now = Date.now();
 
-  const due = users.filter(u =>
-    u.plan.toLowerCase() === "pro" &&
-    u.planSource === "trial" &&
-    !u.lsSubscriptionId &&
-    !u.trialReminderSentAt &&
-    u.email &&
-    u.trialEndsAt &&
-    Date.parse(u.trialEndsAt) > now &&
-    Date.parse(u.trialEndsAt) - now <= REMINDER_DAYS_BEFORE * 24 * 60 * 60 * 1000
-  );
+  // Deneme durumu artik merkezi helper'dan geliyor: "plan pro + planSource trial"
+  // kombinasyonu tek basina yeterli degil (bkz. shared/entitlements).
+  const due = users.filter(u => {
+    const entitlement = resolveEntitlement(u, now);
+    return (
+      entitlement.trial.status === "active" &&
+      !entitlement.paid &&
+      !u.trialReminderSentAt &&
+      Boolean(u.email) &&
+      entitlement.trial.daysLeft !== null &&
+      entitlement.trial.daysLeft <= REMINDER_DAYS_BEFORE
+    );
+  });
 
   if (due.length === 0) return;
   console.log(`Sending trial reminder to ${due.length} user(s)`);
@@ -384,52 +395,108 @@ async function sendTrialReminders(users: TriggerUser[]): Promise<void> {
 async function expireFinishedTrials(users: TriggerUser[]): Promise<void> {
   const now = Date.now();
 
-  const expired = users.filter(u =>
-    u.plan.toLowerCase() === "pro" &&
-    u.planSource === "trial" &&
-    // Ödeme yapmış kullanıcıya ASLA dokunma: kullanıcı deneme sırasında
-    // yükseltmişse webhook planSource'u "paid" yapar, ama sıralama ters
-    // giderse bu kontrol ikinci güvence.
-    !u.lsSubscriptionId &&
-    u.trialEndsAt &&
-    Date.parse(u.trialEndsAt) <= now
-  );
+  // Sadece "plan=pro + planSource=trial" degil, MERKEZI efektif hesap kullanilir.
+  // Boylece cron ile API'ler ayni kurali paylasir.
+  const expired = users.filter(u => {
+    const entitlement = resolveEntitlement(u, now);
+    // Odeme yapmis kullaniciya ASLA dokunma: kullanici deneme sirasinda
+    // yukseltmisse webhook planSource'u "paid" yapar, ama sirala ters giderse
+    // resolveEntitlement'taki `paid` kisayolu ikinci guvence.
+    return entitlement.needsExpiry && !entitlement.paid;
+  });
 
   if (expired.length === 0) return;
   console.log(`Expiring ${expired.length} finished Pro trial(s)`);
 
+  const nowIso = new Date().toISOString();
+
   for (const user of expired) {
     try {
-      // Koşullu yazma: aynı anda başka bir bölgenin cron'u da düşürmeye
-      // çalışırsa yalnızca biri başarılı olur ve tek e-posta gider.
+      // Kosullu yazma: ayni anda baska bir bolgenin cron'u ya da tembel expiry
+      // de dusurmeye calisirsa yalnizca biri basarili olur.
+      //
+      // DEGISIKLIK: trialStartedAt / trialConsumedAt SILINMIYOR. Eskiden butun
+      // deneme alanlari REMOVE ediliyordu ve geriye sadece { plan: "free" }
+      // kaliyordu — backend "denemesini kullanmis" ile "hic deneme gormemis"
+      // kullaniciyi ayirt edemiyordu. /register sayfasinin dogru davranabilmesi
+      // icin bu gecmis kalici olmali.
       await dynamo.send(new UpdateCommand({
         TableName: USERS_TABLE,
         Key: { PK: `USER#${user.userId}`, SK: "PROFILE" },
         UpdateExpression:
-          "SET #plan = :free, updatedAt = :now REMOVE planSource, trialEndsAt, interests, subTopics",
+          "SET #plan = :free, updatedAt = :now, " +
+          "trialConsumedAt = if_not_exists(trialConsumedAt, :now), " +
+          "trialEndedEmailPending = :true " +
+          "REMOVE planSource, trialEndsAt, interests, subTopics",
         ConditionExpression:
           "#planSource = :trial AND attribute_not_exists(lsSubscriptionId)",
         ExpressionAttributeNames:  { "#plan": "plan", "#planSource": "planSource" },
-        ExpressionAttributeValues: { ":free": "free", ":trial": "trial", ":now": new Date().toISOString() },
+        ExpressionAttributeValues: { ":free": "free", ":trial": "trial", ":now": nowIso, ":true": true },
       }));
     } catch (err: any) {
-      if (err?.name === "ConditionalCheckFailedException") continue; // başkası halletti
+      if (err?.name === "ConditionalCheckFailedException") {
+        // Baskasi halletti. Tembel expiry dusurmus olabilir; e-posta bayragi
+        // onda da yazildi, asagidaki gonderim pasi yakalar.
+        continue;
+      }
       console.error(`Trial expiry failed for user=${user.userId}:`, err);
       continue;
     }
 
-    // Kayıttaki plan artık free — fan-out doğru yolu seçsin.
+    // Kayittaki plan artik free — fan-out dogru yolu secsin.
     user.plan = "free";
+    user.planSource = undefined;
+    user.trialEndsAt = undefined;
+    user.trialConsumedAt = nowIso;
+    user.trialEndedEmailPending = true;
     user.interests = [];
     user.subTopics = {};
+  }
+}
 
-    if (!SES_FROM_EMAIL || !user.email) continue;
+/**
+ * "Deneme bitti" e-postalarini gonderir.
+ *
+ * NEDEN AYRI BIR PAS: eskiden e-posta dusurme dongusunun icinde gonderiliyordu
+ * ve SES basarisiz olursa kayboluyordu — kullanici Free'ye dusmus oluyor, ertesi
+ * gunku cron onu bir daha "expired" listesinde bulamiyordu. Artik dusurme
+ * `trialEndedEmailPending` bayragi birakiyor; bu pas bayrakli herkese gonderiyor
+ * ve YALNIZCA gonderim basarili olursa bayragi temizliyor. Ayrica API tarafindaki
+ * tembel (lazy) expiry ile dusen kullanicilarin e-postasi da buradan gidiyor.
+ *
+ * Sira: gonder → bayragi temizle. Temizleme duserse en kotu ihtimalle ertesi gun
+ * ikinci bir e-posta gider; e-postanin HIC gitmemesinden iyidir.
+ */
+async function sendPendingTrialEndedEmails(users: TriggerUser[]): Promise<void> {
+  if (!SES_FROM_EMAIL) return;
+
+  const pending = users.filter(u => u.trialEndedEmailPending && u.email);
+  if (pending.length === 0) return;
+
+  console.log(`Sending trial-ended email to ${pending.length} user(s)`);
+
+  for (const user of pending) {
     try {
-      await sendTrialEndedEmail(user.email);
+      await sendTrialEndedEmail(user.email!);
       console.log(`Trial-ended email sent to ${user.email}`);
     } catch (err) {
       // EMAIL_SEND_FAILED: CloudWatch metric filter bu ifadeye baglanir.
+      // Bayrak duruyor → yarinki cron tekrar dener.
       console.error(`EMAIL_SEND_FAILED user=${user.userId} reason=trial-ended`, err);
+      continue;
+    }
+
+    try {
+      await dynamo.send(new UpdateCommand({
+        TableName: USERS_TABLE,
+        Key: { PK: `USER#${user.userId}`, SK: "PROFILE" },
+        UpdateExpression: "REMOVE trialEndedEmailPending",
+        ConditionExpression: "attribute_exists(trialEndedEmailPending)",
+      }));
+      user.trialEndedEmailPending = false;
+    } catch (err: any) {
+      if (err?.name === "ConditionalCheckFailedException") continue; // baskasi temizledi
+      console.warn(`Failed to clear trialEndedEmailPending for user=${user.userId}:`, err);
     }
   }
 }
@@ -461,7 +528,7 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
         FilterExpression:          "SK = :profile",
         ExpressionAttributeValues: { ":profile": "PROFILE" },
         ExpressionAttributeNames:  { "#plan": "plan", "#region": "region" },
-        ProjectionExpression:      "PK, interests, subTopics, email, #plan, #region, planSource, trialEndsAt, lsSubscriptionId, trialReminderSentAt",
+        ProjectionExpression:      "PK, interests, subTopics, email, #plan, #region, planSource, trialEndsAt, trialStartedAt, trialConsumedAt, lsSubscriptionId, trialReminderSentAt, trialEndedEmailPending",
         ExclusiveStartKey:         lastEvaluatedKey,
       })
     );
@@ -501,6 +568,9 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
         trialEndsAt:      (item.trialEndsAt as string | undefined),
         lsSubscriptionId:    (item.lsSubscriptionId as string | undefined),
         trialReminderSentAt: (item.trialReminderSentAt as string | undefined),
+        trialStartedAt:      (item.trialStartedAt as string | undefined),
+        trialConsumedAt:     (item.trialConsumedAt as string | undefined),
+        trialEndedEmailPending: item.trialEndedEmailPending === true,
       });
     }
 
@@ -509,6 +579,10 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
 
   // Süresi dolan denemeleri fan-out'tan ÖNCE sonlandır.
   await expireFinishedTrials(users);
+
+  // Bayrak bırakılmış "deneme bitti" e-postalarını gönder. Bu pas hem az önce
+  // düşenleri hem de API tarafındaki tembel expiry ile düşmüş olanları kapsar.
+  await sendPendingTrialEndedEmails(users);
 
   // Sonra hatırlatmalar: sırası önemli, bugün sona eren bir kullanıcıya
   // "3 gün kaldı" maili gitmemeli (expire sonrası planı artık free).
@@ -520,7 +594,10 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
   const legacy:     TriggerUser[] = [];
 
   for (const user of users) {
-    const isPro = user.plan.toLowerCase() === "pro";
+    // Kayitli plan degil, EFEKTIF plan. expireFinishedTrials cogu durumu zaten
+    // dusuruyor ama kosullu yazma basarisiz olduysa (throttle, race) kullanici
+    // yine de Pro teslimat almamali.
+    const isPro = resolveEntitlement(user).isPro;
 
     if (!isPro) {
       // Free planda konu SEÇİMİ YOK: herkes o günün rotasyon kategorisini alır.

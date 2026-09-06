@@ -1,3 +1,4 @@
+// app-backend/lambdas/articles/get-articles/index.ts
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
@@ -6,6 +7,12 @@ import { randomUUID } from "crypto";
 import { Keys } from "../../../shared/types";
 import type { Article, Podcast } from "../../../shared/types";
 import { isCategoryId, rotationCategoryFor } from "../../../shared/categories";
+import {
+  resolveEntitlement,
+  expireTrialIfDue,
+  ENTITLEMENT_PROJECTION,
+  ENTITLEMENT_NAMES,
+} from "../../../shared/entitlements";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const lambda = new LambdaClient({});
@@ -212,22 +219,45 @@ export const handler = async (
     }
 
     // Profili oku: üretim için plan, ilgi alanları ve e-posta lazım.
+    //
+    // Plan alanı TEK BAŞINA okunmuyor: denemesi dolmuş ama cron'un henüz
+    // düşürmediği kullanıcı burada "pro" görünüp Pro teslimat (3 makale + 2
+    // podcast) alıyordu. Yetkilendirme cron'a bırakılamaz.
     const profileResult = await dynamo.send(new GetCommand({
       TableName: USERS_TABLE,
       Key: { PK: Keys.userPK(userId), SK: "PROFILE" },
       // "plan" DynamoDB rezerve kelime → alias şart.
-      ProjectionExpression: "interests, subTopics, email, #plan",
-      ExpressionAttributeNames: { "#plan": "plan" },
+      ProjectionExpression: `interests, subTopics, email, ${ENTITLEMENT_PROJECTION}`,
+      ExpressionAttributeNames: ENTITLEMENT_NAMES,
     }));
-    const userInterests = (profileResult.Item?.interests as string[] | undefined) ?? [];
-    const userPlan      = (profileResult.Item?.plan as string | undefined) ?? "free";
-    const isPro         = userPlan.toLowerCase() === "pro";
+
+    const entitlement = resolveEntitlement(profileResult.Item);
+    const isPro       = entitlement.isPro;
+    const userPlan    = entitlement.plan;
+
+    // Self-healing: kaydı gerçeğe hizala (best-effort). Düşürme başarılı olursa
+    // interests silinmiş olur, o yüzden aşağıda Free yoluna zaten gidiyoruz.
+    if (entitlement.needsExpiry) {
+      await expireTrialIfDue({
+        dynamo,
+        UpdateCommand,
+        tableName: USERS_TABLE,
+        userId,
+        entitlement,
+      });
+    }
+
+    const userInterests = isPro
+      ? ((profileResult.Item?.interests as string[] | undefined) ?? [])
+      : [];
 
     const generatePayload: GeneratePayload = {
       userId,
       // Free'de kayıtlı interests teslimatta kullanılmaz; rotasyon geçerli.
       interests: isPro ? userInterests : [rotationCategoryFor(new Date())],
-      subTopics: (profileResult.Item?.subTopics as Record<string, string[]> | undefined) ?? {},
+      subTopics: isPro
+        ? ((profileResult.Item?.subTopics as Record<string, string[]> | undefined) ?? {})
+        : {},
       email:     profileResult.Item?.email as string | undefined,
       plan:      userPlan,
     };

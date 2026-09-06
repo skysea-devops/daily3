@@ -1,3 +1,4 @@
+// app-backend/lambdas/billing/lemonsqueezy-webhook/index.ts
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, UpdateCommand, PutCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from "aws-lambda";
@@ -69,15 +70,26 @@ async function setPlan(
   //
   // Bedeli: kullanici tekrar Pro olursa uc konuyu yeniden secer. Kucuk bir
   // surtunme, karsiliginda tutarli bir durum.
-  // Odeme yapan kullanici artik "trial" degil: deneme alanlari temizlenir,
+  // Odeme yapan kullanici artik "trial" degil: CANLI deneme alanlari temizlenir,
   // boylece daily-trigger onu 14. gunde dusurmeye calismaz.
+  //
+  // `trialStartedAt` ve `trialConsumedAt` KALICI: bunlar deneme GECMISI, canli
+  // durum degil. Silinirlerse backend "denemesini kullanmis" ile "hic deneme
+  // gormemis" kullaniciyi ayirt edemez (/register bunun uzerine kuruluyor).
+  //
+  // trialEndedEmailPending da temizlenir: deneme bitiminde tembel expiry bayrak
+  // birakmis ve kullanici hemen ardindan odeme yapmissa, "deneme bitti"
+  // e-postasi gitmemeli.
   const removals = plan === "free"
     ? ["interests", "subTopics", "planSource", "trialEndsAt"]
-    : ["trialEndsAt"];
+    : ["trialEndsAt", "trialEndedEmailPending"];
 
   if (plan === "pro") {
     sets.push("planSource = :paid");
     values[":paid"] = "paid";
+    // Odemeye gecen kullanici deneme hakkini tuketmis sayilir: bu hesapta bir
+    // daha deneme baslatilamaz.
+    sets.push("trialConsumedAt = if_not_exists(trialConsumedAt, :now)");
   }
 
   const updateExpression = `SET ${sets.join(", ")} REMOVE ${removals.join(", ")}`;
