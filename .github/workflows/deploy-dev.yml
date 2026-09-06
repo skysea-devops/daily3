@@ -1,3 +1,4 @@
+# Path: .github/workflows/deploy-dev.yml
 name: Deploy (dev)
 
 on:
@@ -146,6 +147,10 @@ jobs:
           TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           TF_VAR_lemonsqueezy_webhook_secret: ${{ secrets.LEMONSQUEEZY_WEBHOOK_SECRET }}
           TF_VAR_lemonsqueezy_api_key: ${{ secrets.LEMONSQUEEZY_API_KEY }}
+          # Terraform degiskeninin adi trial_ledger_secret (infra/terraform/variables.tf).
+          # Tanimsiz bir TF_VAR_ Terraform tarafindan SESSIZCE yok sayilir — yanlis
+          # isim hata vermez, sadece Lambda baska bir anahtar kullanir.
+          TF_VAR_trial_ledger_secret: ${{ secrets.TRIAL_IDENTITY_HMAC_SECRET }}
         run: terraform plan -var-file=dev.tfvars -out=tfplan
 
       - name: Terraform Apply
@@ -155,6 +160,10 @@ jobs:
           TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           TF_VAR_lemonsqueezy_webhook_secret: ${{ secrets.LEMONSQUEEZY_WEBHOOK_SECRET }}
           TF_VAR_lemonsqueezy_api_key: ${{ secrets.LEMONSQUEEZY_API_KEY }}
+          # Terraform degiskeninin adi trial_ledger_secret (infra/terraform/variables.tf).
+          # Tanimsiz bir TF_VAR_ Terraform tarafindan SESSIZCE yok sayilir — yanlis
+          # isim hata vermez, sadece Lambda baska bir anahtar kullanir.
+          TF_VAR_trial_ledger_secret: ${{ secrets.TRIAL_IDENTITY_HMAC_SECRET }}
         run: terraform apply -auto-approve tfplan
 
   deploy-frontend:
@@ -201,3 +210,110 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
+  subscription-regression:
+    name: Subscription regression (dev)
+    runs-on: ubuntu-latest
+    needs: [deploy-frontend]
+    environment: dev
+    # Test sabit bir e-posta kullaniyor (SES simulator). Iki kosu ayni anda
+    # calisirsa ayni Cognito kullanicisi ve ayni TRIAL# defter kaydi uzerinde
+    # yarisirlar. Sirayla calissinlar; onceki kosu iptal EDILMEMELI, yoksa
+    # teardown yarida kalir ve defter kaydi kalici olarak asili kalir.
+    concurrency:
+      group: subscription-regression-dev
+      cancel-in-progress: false
+    # Only run destructive DEV lifecycle tests after an actual merged deploy.
+    if: github.event.pull_request.merged == true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: app-backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: app-backend
+        run: npm ci
+
+      - name: Build backend for race-path regression
+        working-directory: app-backend
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Resolve deployed DEV resources
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          USER_POOL_ID="$(aws cognito-idp list-user-pools \
+            --max-results 60 \
+            --query "UserPools[?Name=='cogletta-dev-user-pool'].Id | [0]" \
+            --output text)"
+
+          if [[ -z "$USER_POOL_ID" || "$USER_POOL_ID" == "None" ]]; then
+            echo "Could not resolve cogletta-dev-user-pool" >&2
+            exit 1
+          fi
+
+          CLIENT_ID="$(aws cognito-idp list-user-pool-clients \
+            --user-pool-id "$USER_POOL_ID" \
+            --max-results 60 \
+            --query "UserPoolClients[?ClientName=='cogletta-dev-web-client'].ClientId | [0]" \
+            --output text)"
+
+          API_BASE_URL="$(aws apigatewayv2 get-apis \
+            --query "Items[?Name=='cogletta-dev-backend-api'].ApiEndpoint | [0]" \
+            --output text)"
+
+          if [[ -z "$CLIENT_ID" || "$CLIENT_ID" == "None" ]]; then
+            echo "Could not resolve cogletta-dev-web-client" >&2
+            exit 1
+          fi
+          if [[ -z "$API_BASE_URL" || "$API_BASE_URL" == "None" ]]; then
+            echo "Could not resolve cogletta-dev-backend-api" >&2
+            exit 1
+          fi
+
+          # The frontend is compiled with NEXT_PUBLIC_API_BASE_URL. Catch a
+          # deployment variable accidentally pointing DEV at another backend.
+          CONFIGURED_API_URL='${{ vars.NEXT_PUBLIC_API_BASE_URL }}'
+          if [[ -n "$CONFIGURED_API_URL" && "${CONFIGURED_API_URL%/}" != "${API_BASE_URL%/}" ]]; then
+            echo "DEV frontend API variable does not match the deployed DEV API" >&2
+            echo "Configured: $CONFIGURED_API_URL" >&2
+            echo "Resolved:   $API_BASE_URL" >&2
+            exit 1
+          fi
+
+          {
+            echo "SUBSCRIPTION_E2E_USER_POOL_ID=$USER_POOL_ID"
+            echo "SUBSCRIPTION_E2E_CLIENT_ID=$CLIENT_ID"
+            echo "SUBSCRIPTION_E2E_API_BASE_URL=$API_BASE_URL"
+          } >> "$GITHUB_ENV"
+
+      - name: Run DEV subscription state-machine regression
+        working-directory: app-backend
+        env:
+          SUBSCRIPTION_E2E_APP_URL: https://dev.cogletta.com
+          SUBSCRIPTION_E2E_USERS_TABLE_NAME: cogletta-dev-users
+          # SES mailbox simulator: no real recipient receives test mail.
+          SUBSCRIPTION_E2E_EMAIL: success@simulator.amazonses.com
+          LEMONSQUEEZY_WEBHOOK_SECRET: ${{ secrets.LEMONSQUEEZY_WEBHOOK_SECRET }}
+          # Deneme defterinin HMAC anahtari. Test, kendi olusturdugu
+          # TRIAL#<hmac(email)> kaydini teardown'da SILMEK zorunda: defter hesap
+          # silinse bile kaliyor, dolayisiyla temizlenmezse sabit test e-postasi
+          # ikinci kosuda deneme alamaz ve testler kalici kirmiziya duser.
+          # Lambda ayni degeri TRIAL_LEDGER_SECRET adiyla goruyor; ikisini de
+          # veriyoruz ki test hangi adi okursa okusun calissin.
+          TRIAL_LEDGER_SECRET: ${{ secrets.TRIAL_IDENTITY_HMAC_SECRET }}
+          TRIAL_IDENTITY_HMAC_SECRET: ${{ secrets.TRIAL_IDENTITY_HMAC_SECRET }}
+          # normalizeEmail() ile ayni sonucu uretmek icin testin de bilmesi gerek.
+          TRIAL_LEDGER_STRICT_ALIAS: "true"
+          AWS_REGION: ${{ vars.AWS_REGION }}
+        run: node tests/subscription-dev-e2e.mjs
