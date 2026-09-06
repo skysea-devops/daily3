@@ -1,0 +1,520 @@
+// app-backend/tests/subscription-dev-e2e.mjs
+/**
+ * DEV subscription state-machine regression.
+ *
+ * NE TEST EDIYOR:
+ *   signup → trial → (cron'suz) expiry → free → paid upgrade → expire →
+ *   hesap silme → ayni e-posta ile yeniden kayit (deneme YOK)
+ *
+ * NEDEN VAR:
+ * Abonelik mantigi uc ayri yerde yasiyor — PostConfirmation, Lemon Squeezy
+ * webhook'u ve gunluk cron. Bunlarin arasindaki gecisler unit test ile
+ * yakalanmiyor; en pahali hatalar (deneme bitmis kullanicinin Pro kalmasi,
+ * hesap silip yeniden kayitla sinirsiz deneme) tam olarak bu gecislerde cikti.
+ *
+ * TASARIM NOTLARI:
+ *
+ * 1) EXPIRY CRON UZERINDEN TEST EDILMIYOR.
+ *    daily-trigger'i invoke etmek DEV'deki BUTUN kullanicilarin denemesini
+ *    dusurur ve hepsine e-posta gonderir. Bunun yerine `trialEndsAt` dogrudan
+ *    gecmise cekiliyor ve API cagriliyor: ayni `expireTrialIfDue` helper'i
+ *    calisiyor, deterministik ve yan etkisiz.
+ *
+ * 2) TEARDOWN'DA DENEME DEFTERI SILINMEK ZORUNDA.
+ *    TRIAL#<hmac(email)> kaydi hesap silinse bile kalir — urunun amaci bu. Ama
+ *    test sabit bir e-posta kullandigi icin temizlenmezse IKINCI kosuda deneme
+ *    verilmez ve testler kalici olarak kirmiziya duser. Bu yuzden cleanup hem
+ *    basta hem `finally` icinde calisiyor.
+ *
+ * 3) SADECE DEV. Tablo adinda "-dev-" gecmiyorsa test bilerek reddediyor.
+ *
+ * Gerekli env: SUBSCRIPTION_E2E_USER_POOL_ID, SUBSCRIPTION_E2E_CLIENT_ID,
+ * SUBSCRIPTION_E2E_API_BASE_URL, SUBSCRIPTION_E2E_USERS_TABLE_NAME,
+ * SUBSCRIPTION_E2E_EMAIL, LEMONSQUEEZY_WEBHOOK_SECRET, TRIAL_LEDGER_SECRET.
+ */
+
+import { createHmac, randomUUID } from "crypto";
+import {
+  CognitoIdentityProviderClient,
+  SignUpCommand,
+  AdminConfirmSignUpCommand,
+  AdminDeleteUserCommand,
+  AdminGetUserCommand,
+  AdminSetUserPasswordCommand,
+  InitiateAuthCommand,
+} from "@aws-sdk/client-cognito-identity-provider";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  GetCommand,
+  UpdateCommand,
+  DeleteCommand,
+  QueryCommand,
+  ScanCommand,
+} from "@aws-sdk/lib-dynamodb";
+
+// ─── Yapilandirma ─────────────────────────────────────────────────────────────
+
+const REGION       = process.env.AWS_REGION ?? "eu-central-1";
+const USER_POOL_ID = required("SUBSCRIPTION_E2E_USER_POOL_ID");
+const CLIENT_ID    = required("SUBSCRIPTION_E2E_CLIENT_ID");
+const API_BASE_URL = required("SUBSCRIPTION_E2E_API_BASE_URL").replace(/\/$/, "");
+const USERS_TABLE  = required("SUBSCRIPTION_E2E_USERS_TABLE_NAME");
+const EMAIL        = required("SUBSCRIPTION_E2E_EMAIL");
+
+const ARTICLES_TABLE =
+  process.env.SUBSCRIPTION_E2E_ARTICLES_TABLE_NAME ?? USERS_TABLE.replace(/-users$/, "-articles");
+
+const LS_WEBHOOK_SECRET = process.env.LEMONSQUEEZY_WEBHOOK_SECRET ?? "";
+// Lambda bu degeri TRIAL_LEDGER_SECRET adiyla goruyor; workflow ikisini de veriyor.
+const TRIAL_SECRET      = process.env.TRIAL_LEDGER_SECRET ?? process.env.TRIAL_IDENTITY_HMAC_SECRET ?? "";
+const STRICT_ALIAS      = (process.env.TRIAL_LEDGER_STRICT_ALIAS ?? "true") !== "false";
+
+// Sifre politikasi: min 8, buyuk+kucuk+rakam (cognito.tf).
+const PASSWORD = `E2e-${randomUUID().replace(/-/g, "").slice(0, 16)}A1`;
+
+const cognito = new CognitoIdentityProviderClient({ region: REGION });
+const dynamo  = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }));
+
+function required(name) {
+  const value = process.env[name];
+  if (!value) {
+    console.error(`Missing required env var: ${name}`);
+    process.exit(1);
+  }
+  return value;
+}
+
+// PROD'a yanlislikla dogrultulmaya karsi sert kapi.
+if (!USERS_TABLE.includes("-dev-")) {
+  console.error(`Refusing to run: ${USERS_TABLE} does not look like a DEV table`);
+  process.exit(1);
+}
+if (!TRIAL_SECRET) {
+  console.error("Missing TRIAL_LEDGER_SECRET — teardown could not clear the trial ledger,");
+  console.error("which would make every subsequent run fail. Refusing to start.");
+  process.exit(1);
+}
+
+// ─── Kucuk test kosumu ────────────────────────────────────────────────────────
+
+let passed = 0;
+const failures = [];
+
+function check(label, condition, detail = "") {
+  if (condition) {
+    passed++;
+    console.log(`  ok   ${label}`);
+  } else {
+    failures.push(label);
+    console.log(`  FAIL ${label}${detail ? ` — ${detail}` : ""}`);
+  }
+}
+
+function section(title) {
+  console.log(`\n─── ${title} ${"─".repeat(Math.max(0, 60 - title.length))}`);
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// ─── Deneme defteri anahtari ──────────────────────────────────────────────────
+//
+// DIKKAT: app-backend/shared/trial-ledger.ts icindeki normalizeEmail() ile AYNI
+// olmak zorunda. Orasi degisirse burasi da degismeli, yoksa teardown yanlis
+// anahtari siler ve testler ikinci kosuda kirmiziya duser.
+
+function normalizeEmail(email, strictAlias = true) {
+  const trimmed = String(email ?? "").trim().toLowerCase();
+  const at = trimmed.lastIndexOf("@");
+  if (at <= 0) return trimmed;
+
+  let local = trimmed.slice(0, at);
+  const host = trimmed.slice(at + 1);
+
+  if (strictAlias) {
+    const plus = local.indexOf("+");
+    if (plus > 0) local = local.slice(0, plus);
+    if (host === "gmail.com" || host === "googlemail.com") local = local.replace(/\./g, "");
+  }
+  return `${local}@${host}`;
+}
+
+function trialLedgerPK(email) {
+  const digest = createHmac("sha256", TRIAL_SECRET)
+    .update(normalizeEmail(email, STRICT_ALIAS))
+    .digest("hex");
+  return `TRIAL#${digest}`;
+}
+
+// ─── AWS yardimcilari ─────────────────────────────────────────────────────────
+
+async function getProfile(userId) {
+  const res = await dynamo.send(new GetCommand({
+    TableName: USERS_TABLE,
+    Key: { PK: `USER#${userId}`, SK: "PROFILE" },
+    ConsistentRead: true,
+  }));
+  return res.Item ?? null;
+}
+
+async function patchProfile(userId, updateExpression, values, names) {
+  await dynamo.send(new UpdateCommand({
+    TableName: USERS_TABLE,
+    Key: { PK: `USER#${userId}`, SK: "PROFILE" },
+    UpdateExpression: updateExpression,
+    ExpressionAttributeValues: values,
+    ...(names ? { ExpressionAttributeNames: names } : {}),
+  }));
+}
+
+async function findCognitoUser(email) {
+  try {
+    const res = await cognito.send(new AdminGetUserCommand({
+      UserPoolId: USER_POOL_ID,
+      Username: email,
+    }));
+    const sub = res.UserAttributes?.find((a) => a.Name === "sub")?.Value;
+    return sub ?? null;
+  } catch (err) {
+    if (err?.name === "UserNotFoundException") return null;
+    throw err;
+  }
+}
+
+/**
+ * Hem setup hem teardown. Idempotent: hicbir sey yoksa sessizce gecer.
+ * `includeLedger` yalnizca teardown'da true — testin ortasinda defteri silmek
+ * "ayni e-posta ile yeniden kayit" senaryosunu yok ederdi.
+ */
+async function cleanup(email, { includeLedger }) {
+  const sub = await findCognitoUser(email);
+
+  if (sub) {
+    // Makaleler
+    let lastKey;
+    do {
+      const page = await dynamo.send(new QueryCommand({
+        TableName: ARTICLES_TABLE,
+        KeyConditionExpression: "PK = :pk",
+        ExpressionAttributeValues: { ":pk": `USER#${sub}` },
+        ProjectionExpression: "PK, SK",
+        ExclusiveStartKey: lastKey,
+      }));
+      for (const item of page.Items ?? []) {
+        await dynamo.send(new DeleteCommand({
+          TableName: ARTICLES_TABLE,
+          Key: { PK: item.PK, SK: item.SK },
+        }));
+      }
+      lastKey = page.LastEvaluatedKey;
+    } while (lastKey);
+
+    await dynamo.send(new DeleteCommand({
+      TableName: USERS_TABLE,
+      Key: { PK: `USER#${sub}`, SK: "PROFILE" },
+    }));
+
+    await cognito.send(new AdminDeleteUserCommand({
+      UserPoolId: USER_POOL_ID,
+      Username: email,
+    }));
+  }
+
+  // LSSUB# eslemeleri (test webhook'lari birakmis olabilir)
+  const maps = await dynamo.send(new ScanCommand({
+    TableName: USERS_TABLE,
+    FilterExpression: "SK = :map AND begins_with(PK, :prefix)",
+    ExpressionAttributeValues: { ":map": "MAP", ":prefix": "LSSUB#e2e-" },
+    ProjectionExpression: "PK",
+  }));
+  for (const item of maps.Items ?? []) {
+    await dynamo.send(new DeleteCommand({
+      TableName: USERS_TABLE,
+      Key: { PK: item.PK, SK: "MAP" },
+    }));
+  }
+
+  if (includeLedger) {
+    await dynamo.send(new DeleteCommand({
+      TableName: USERS_TABLE,
+      Key: { PK: trialLedgerPK(email), SK: "LEDGER" },
+    }));
+  }
+}
+
+/** SignUp + AdminConfirmSignUp → PostConfirmation tetiklenir. */
+async function signUpAndConfirm(email) {
+  await cognito.send(new SignUpCommand({
+    ClientId: CLIENT_ID,
+    Username: email,
+    Password: PASSWORD,
+    UserAttributes: [
+      { Name: "email", Value: email },
+      { Name: "given_name", Value: "E2E" },
+      { Name: "family_name", Value: "Test" },
+    ],
+  }));
+
+  // AdminConfirmSignUp PostConfirmation_ConfirmSignUp tetikler — profil ve
+  // deneme defteri kaydi bu sirada olusur.
+  await cognito.send(new AdminConfirmSignUpCommand({
+    UserPoolId: USER_POOL_ID,
+    Username: email,
+  }));
+
+  const sub = await findCognitoUser(email);
+  if (!sub) throw new Error("Cognito sub could not be resolved after confirm");
+
+  // Profilin yazilmasini bekle (PostConfirmation hatayi yutuyor, sonsuza kadar bekleme).
+  for (let i = 0; i < 20; i++) {
+    if (await getProfile(sub)) return sub;
+    await sleep(500);
+  }
+  throw new Error(`Profile was never created for user=${sub}`);
+}
+
+async function signIn(email) {
+  await cognito.send(new AdminSetUserPasswordCommand({
+    UserPoolId: USER_POOL_ID,
+    Username: email,
+    Password: PASSWORD,
+    Permanent: true,
+  }));
+
+  const res = await cognito.send(new InitiateAuthCommand({
+    ClientId: CLIENT_ID,
+    AuthFlow: "USER_PASSWORD_AUTH",
+    AuthParameters: { USERNAME: email, PASSWORD },
+  }));
+  const token = res.AuthenticationResult?.AccessToken;
+  if (!token) throw new Error("No access token returned");
+  return token;
+}
+
+async function api(method, path, token, body) {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+  const text = await res.text();
+  let json = null;
+  try { json = JSON.parse(text); } catch { /* metin birakilir */ }
+  return { status: res.status, body: json, raw: text };
+}
+
+/** Imzali Lemon Squeezy webhook'u gonderir. */
+async function sendWebhook(eventName, { subscriptionId, status, userId, updatedAt, createdAt }) {
+  const payload = {
+    meta: { event_name: eventName, custom_data: { user_id: userId } },
+    data: {
+      type: "subscriptions",
+      id: subscriptionId,
+      attributes: {
+        status,
+        updated_at: updatedAt,
+        created_at: createdAt,
+        customer_id: 999001,
+        variant_id: 888001,
+        cancelled: status === "cancelled",
+        urls: { customer_portal: "https://example.test/portal" },
+      },
+    },
+  };
+  const raw = JSON.stringify(payload);
+  const signature = createHmac("sha256", LS_WEBHOOK_SECRET).update(raw).digest("hex");
+
+  const res = await fetch(`${API_BASE_URL}/lemonsqueezy/webhook`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Signature": signature,
+      "X-Event-Name": eventName,
+    },
+    body: raw,
+  });
+  return { status: res.status, text: await res.text() };
+}
+
+const DAY = 86_400_000;
+const iso = (offsetMs) => new Date(Date.now() + offsetMs).toISOString();
+
+// ─── Senaryolar ───────────────────────────────────────────────────────────────
+
+async function run() {
+  console.log(`Subscription regression against ${API_BASE_URL}`);
+  console.log(`Users table: ${USERS_TABLE} · email: ${EMAIL}\n`);
+
+  await cleanup(EMAIL, { includeLedger: true });
+
+  // ── 1. Signup → 14 gunluk deneme ───────────────────────────────────────────
+  section("1. signup → trial");
+  const sub = await signUpAndConfirm(EMAIL);
+  let token = await signIn(EMAIL);
+
+  let profile = await getProfile(sub);
+  check("profil olustu", Boolean(profile));
+  check("plan=pro", profile?.plan === "pro", `plan=${profile?.plan}`);
+  check("planSource=trial", profile?.planSource === "trial", `planSource=${profile?.planSource}`);
+  check("trialStartedAt yazildi", Boolean(profile?.trialStartedAt));
+  check("trialEndsAt ~14 gun sonra",
+    Math.abs(Date.parse(profile?.trialEndsAt ?? 0) - (Date.now() + 14 * DAY)) < 5 * 60_000,
+    `trialEndsAt=${profile?.trialEndsAt}`);
+
+  const ledger = await dynamo.send(new GetCommand({
+    TableName: USERS_TABLE,
+    Key: { PK: trialLedgerPK(EMAIL), SK: "LEDGER" },
+    ConsistentRead: true,
+  }));
+  check("deneme defteri kaydi olustu", Boolean(ledger.Item));
+  check("defter bu kullaniciya ait", ledger.Item?.lastUserId === sub);
+
+  let profileApi = await api("GET", "/me/profile", token);
+  check("GET /me/profile → pro", profileApi.body?.plan === "pro", JSON.stringify(profileApi.body));
+  check("trial.status=active", profileApi.body?.trial?.status === "active");
+  check("trial.daysLeft=14", profileApi.body?.trial?.daysLeft === 14, `daysLeft=${profileApi.body?.trial?.daysLeft}`);
+
+  // ── 2. Deneme sirasinda Pro yetkileri ──────────────────────────────────────
+  section("2. deneme sirasinda Pro erisimi");
+  const threeInterests = ["technology", "geopolitics", "business_economics"];
+  let res = await api("PUT", "/me/interests", token, { interests: threeInterests, email: EMAIL, region: "EU" });
+  check("3 konu secilebiliyor", res.status === 200, `status=${res.status} ${res.raw}`);
+
+  // ── 3. Cron CALISMADAN expiry (P0 #1) ──────────────────────────────────────
+  section("3. cron calismadan deneme bitisi");
+  await patchProfile(sub, "SET trialEndsAt = :past", { ":past": iso(-2 * 60 * 60_000) });
+
+  profileApi = await api("GET", "/me/profile", token);
+  check("GET /me/profile → free (cron calismadi)", profileApi.body?.plan === "free",
+    `plan=${profileApi.body?.plan}`);
+  check("trial.status=expired", profileApi.body?.trial?.status === "expired");
+
+  profile = await getProfile(sub);
+  check("kayit da free'ye dustu (self-healing)", profile?.plan === "free", `plan=${profile?.plan}`);
+  check("planSource silindi", profile?.planSource === undefined);
+  check("trialEndsAt silindi", profile?.trialEndsAt === undefined);
+  check("trialConsumedAt yazildi", Boolean(profile?.trialConsumedAt));
+  check("trialStartedAt KORUNDU", Boolean(profile?.trialStartedAt));
+  check("trial-ended e-posta bayragi birakildi", profile?.trialEndedEmailPending === true);
+
+  res = await api("PUT", "/me/interests", token, { interests: threeInterests, email: EMAIL, region: "EU" });
+  check("free planda 3 konu reddediliyor", res.status === 400, `status=${res.status}`);
+
+  res = await api("PUT", "/me/interests", token, { interests: ["technology"], email: EMAIL, region: "EU" });
+  check("free planda 1 konu kabul ediliyor", res.status === 200, `status=${res.status} ${res.raw}`);
+
+  res = await api("GET", "/me/trend-report", token);
+  check("Pazar Eki free'ye kapali", res.body?.report === null, JSON.stringify(res.body));
+
+  // ── 4. Odemeli yukseltme (webhook) ─────────────────────────────────────────
+  section("4. webhook → paid Pro");
+  const subscriptionId = `e2e-${Date.now()}`;
+  let hook = await sendWebhook("subscription_created", {
+    subscriptionId, status: "active", userId: sub,
+    updatedAt: iso(0), createdAt: iso(0),
+  });
+  check("webhook 200 dondu", hook.status === 200, `status=${hook.status} ${hook.text}`);
+
+  profile = await getProfile(sub);
+  check("plan=pro", profile?.plan === "pro", `plan=${profile?.plan}`);
+  check("planSource=paid", profile?.planSource === "paid", `planSource=${profile?.planSource}`);
+  check("trialStartedAt hala duruyor", Boolean(profile?.trialStartedAt));
+  check("trial-ended bayragi temizlendi", profile?.trialEndedEmailPending === undefined);
+
+  profileApi = await api("GET", "/me/profile", token);
+  check("GET /me/profile → paid pro", profileApi.body?.plan === "pro" && profileApi.body?.planSource === "paid",
+    JSON.stringify(profileApi.body));
+
+  // ── 5. Odeme varken bayat trialEndsAt Pro'yu dusurmemeli ───────────────────
+  section("5. odeme + bayat trialEndsAt");
+  await patchProfile(sub, "SET trialEndsAt = :past", { ":past": iso(-3 * DAY) });
+  profileApi = await api("GET", "/me/profile", token);
+  check("odeme yapan kullanici Pro kaliyor", profileApi.body?.plan === "pro", `plan=${profileApi.body?.plan}`);
+  profile = await getProfile(sub);
+  check("odeme yapanin plani degistirilmedi", profile?.plan === "pro");
+
+  // ── 6. Abonelik sona eriyor ────────────────────────────────────────────────
+  section("6. webhook → expired → free");
+  hook = await sendWebhook("subscription_expired", {
+    subscriptionId, status: "expired", userId: sub,
+    updatedAt: iso(60_000), createdAt: iso(0),
+  });
+  check("webhook 200 dondu", hook.status === 200, `status=${hook.status} ${hook.text}`);
+
+  profile = await getProfile(sub);
+  check("plan=free", profile?.plan === "free", `plan=${profile?.plan}`);
+  check("interests temizlendi", profile?.interests === undefined);
+
+  // ── 7. Bayat/mukerrer webhook yoksayiliyor ─────────────────────────────────
+  section("7. mukerrer webhook (idempotency)");
+  hook = await sendWebhook("subscription_updated", {
+    subscriptionId, status: "active", userId: sub,
+    updatedAt: iso(-10 * 60_000), createdAt: iso(0),
+  });
+  check("eski event 200 ile yutuldu", hook.status === 200, `status=${hook.status}`);
+  profile = await getProfile(sub);
+  check("bayat event plani degistirmedi", profile?.plan === "free", `plan=${profile?.plan}`);
+
+  // ── 8. Hesap silme → ayni e-posta ile yeniden kayit (P0 #2) ────────────────
+  section("8. hesap silme → ayni e-posta ile yeniden kayit");
+  // LS iptal cagrisini atlamak icin abonelik alanlarini temizle: sahte
+  // subscriptionId gercek LS API'sine gidip 502'ye yol acabilir.
+  await patchProfile(sub, "REMOVE lsSubscriptionId, lsSubscriptionStatus", {});
+
+  token = await signIn(EMAIL);
+  res = await api("DELETE", "/me", token);
+  check("hesap silindi", res.status === 200, `status=${res.status} ${res.raw}`);
+  check("profil gitti", (await getProfile(sub)) === null);
+
+  const ledgerAfterDelete = await dynamo.send(new GetCommand({
+    TableName: USERS_TABLE,
+    Key: { PK: trialLedgerPK(EMAIL), SK: "LEDGER" },
+    ConsistentRead: true,
+  }));
+  check("deneme defteri KORUNDU", Boolean(ledgerAfterDelete.Item));
+
+  const sub2 = await signUpAndConfirm(EMAIL);
+  check("yeni Cognito kullanicisi", sub2 !== sub);
+
+  const profile2 = await getProfile(sub2);
+  check("yeniden kayitta plan=free", profile2?.plan === "free", `plan=${profile2?.plan}`);
+  check("yeniden kayitta deneme YOK", profile2?.planSource === undefined, `planSource=${profile2?.planSource}`);
+  check("trialEndsAt yok", profile2?.trialEndsAt === undefined);
+  check("trialConsumedAt isaretli", Boolean(profile2?.trialConsumedAt));
+
+  const token2 = await signIn(EMAIL);
+  profileApi = await api("GET", "/me/profile", token2);
+  check("GET /me/profile → free", profileApi.body?.plan === "free");
+  check("trial.eligible=false", profileApi.body?.trial?.eligible === false);
+}
+
+// ─── Giris noktasi ────────────────────────────────────────────────────────────
+
+let exitCode = 0;
+try {
+  await run();
+} catch (err) {
+  console.error("\nUnexpected error:", err);
+  failures.push(`unexpected: ${err?.message ?? err}`);
+} finally {
+  // Teardown HER ZAMAN calisir. Defter temizlenmezse sonraki kosu deneme
+  // alamaz ve testler kalici olarak kirmizi kalir.
+  try {
+    await cleanup(EMAIL, { includeLedger: true });
+    console.log("\nTeardown complete.");
+  } catch (err) {
+    console.error("\nCRITICAL: teardown failed — the next run will likely fail:", err);
+    exitCode = 1;
+  }
+}
+
+console.log(`\n${passed} passed, ${failures.length} failed`);
+if (failures.length > 0) {
+  console.log("\nFailed checks:");
+  for (const f of failures) console.log(`  - ${f}`);
+  exitCode = 1;
+}
+process.exit(exitCode);
