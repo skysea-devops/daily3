@@ -39,9 +39,9 @@ import {
   SignUpCommand,
   AdminConfirmSignUpCommand,
   AdminDeleteUserCommand,
-  AdminGetUserCommand,
   AdminSetUserPasswordCommand,
   InitiateAuthCommand,
+  ListUsersCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
@@ -167,18 +167,29 @@ async function patchProfile(userId, updateExpression, values, names) {
   }));
 }
 
-async function findCognitoUser(email) {
-  try {
-    const res = await cognito.send(new AdminGetUserCommand({
-      UserPoolId: USER_POOL_ID,
-      Username: email,
-    }));
-    const sub = res.UserAttributes?.find((a) => a.Name === "sub")?.Value;
-    return sub ?? null;
-  } catch (err) {
-    if (err?.name === "UserNotFoundException") return null;
-    throw err;
-  }
+/**
+ * E-postaya karsilik gelen TUM Cognito kullanicilarini dondurur.
+ *
+ * NEDEN AdminGetUser DEGIL:
+ * Pool'da `username_attributes = ["email"]` — yani gercek Username otomatik
+ * uretilen bir UUID, e-posta ise alias. Alias YALNIZCA kullanici confirm
+ * edildikten sonra cozulur. UNCONFIRMED bir kullanicida AdminGetUser(email)
+ * UserNotFoundException verir; cleanup "yok" sanip gecer, SignUp ise
+ * UsernameExistsException atar ve test kalici olarak kirilir.
+ * ListUsers + email filtresi UNCONFIRMED kullanicilari da bulur ve admin
+ * cagrilari icin gereken gercek Username'i verir.
+ */
+async function findCognitoUsers(email) {
+  const res = await cognito.send(new ListUsersCommand({
+    UserPoolId: USER_POOL_ID,
+    Filter: `email = "${email}"`,
+    Limit: 60,
+  }));
+  return (res.Users ?? []).map((u) => ({
+    username: u.Username,
+    sub: u.Attributes?.find((a) => a.Name === "sub")?.Value ?? u.Username,
+    status: u.UserStatus,
+  }));
 }
 
 /**
@@ -187,16 +198,20 @@ async function findCognitoUser(email) {
  * "ayni e-posta ile yeniden kayit" senaryosunu yok ederdi.
  */
 async function cleanup(email, { includeLedger }) {
-  const sub = await findCognitoUser(email);
+  // Onceki kosulardan kalmis birden fazla kayit olabilir (ornegin UNCONFIRMED
+  // bir kullanici). Hepsini temizle.
+  const users = await findCognitoUsers(email);
 
-  if (sub) {
+  for (const user of users) {
+    console.log(`  cleanup: removing cognito user ${user.username} (${user.status})`);
+
     // Makaleler
     let lastKey;
     do {
       const page = await dynamo.send(new QueryCommand({
         TableName: ARTICLES_TABLE,
         KeyConditionExpression: "PK = :pk",
-        ExpressionAttributeValues: { ":pk": `USER#${sub}` },
+        ExpressionAttributeValues: { ":pk": `USER#${user.sub}` },
         ProjectionExpression: "PK, SK",
         ExclusiveStartKey: lastKey,
       }));
@@ -211,12 +226,13 @@ async function cleanup(email, { includeLedger }) {
 
     await dynamo.send(new DeleteCommand({
       TableName: USERS_TABLE,
-      Key: { PK: `USER#${sub}`, SK: "PROFILE" },
+      Key: { PK: `USER#${user.sub}`, SK: "PROFILE" },
     }));
 
+    // Admin cagrisinda ALIAS degil gercek Username kullanilmali.
     await cognito.send(new AdminDeleteUserCommand({
       UserPoolId: USER_POOL_ID,
-      Username: email,
+      Username: user.username,
     }));
   }
 
@@ -242,9 +258,13 @@ async function cleanup(email, { includeLedger }) {
   }
 }
 
-/** SignUp + AdminConfirmSignUp → PostConfirmation tetiklenir. */
+/**
+ * SignUp + AdminConfirmSignUp → PostConfirmation tetiklenir.
+ * @returns {{ sub: string, username: string }}
+ */
 async function signUpAndConfirm(email) {
-  await cognito.send(new SignUpCommand({
+  // SignUp yanitindaki UserSub, profil anahtarinin (USER#<sub>) ta kendisi.
+  const signUpResult = await cognito.send(new SignUpCommand({
     ClientId: CLIENT_ID,
     Username: email,
     Password: PASSWORD,
@@ -254,29 +274,37 @@ async function signUpAndConfirm(email) {
       { Name: "family_name", Value: "Test" },
     ],
   }));
+  const sub = signUpResult.UserSub;
+  if (!sub) throw new Error("SignUp did not return UserSub");
+
+  // Confirm ONCESI e-posta alias'i cozulmez → gercek Username'i ListUsers ile bul.
+  let username = null;
+  for (let i = 0; i < 10 && !username; i++) {
+    const users = await findCognitoUsers(email);
+    username = users.find((u) => u.sub === sub)?.username ?? null;
+    if (!username) await sleep(500);
+  }
+  if (!username) throw new Error(`Could not resolve Cognito username for sub=${sub}`);
 
   // AdminConfirmSignUp PostConfirmation_ConfirmSignUp tetikler — profil ve
   // deneme defteri kaydi bu sirada olusur.
   await cognito.send(new AdminConfirmSignUpCommand({
     UserPoolId: USER_POOL_ID,
-    Username: email,
+    Username: username,
   }));
-
-  const sub = await findCognitoUser(email);
-  if (!sub) throw new Error("Cognito sub could not be resolved after confirm");
 
   // Profilin yazilmasini bekle (PostConfirmation hatayi yutuyor, sonsuza kadar bekleme).
   for (let i = 0; i < 20; i++) {
-    if (await getProfile(sub)) return sub;
+    if (await getProfile(sub)) return { sub, username };
     await sleep(500);
   }
   throw new Error(`Profile was never created for user=${sub}`);
 }
 
-async function signIn(email) {
+async function signIn(username) {
   await cognito.send(new AdminSetUserPasswordCommand({
     UserPoolId: USER_POOL_ID,
-    Username: email,
+    Username: username,
     Password: PASSWORD,
     Permanent: true,
   }));
@@ -284,7 +312,8 @@ async function signIn(email) {
   const res = await cognito.send(new InitiateAuthCommand({
     ClientId: CLIENT_ID,
     AuthFlow: "USER_PASSWORD_AUTH",
-    AuthParameters: { USERNAME: email, PASSWORD },
+    // Giris e-posta ile yapilir (gercek kullanici akisi); alias confirm sonrasi cozulur.
+    AuthParameters: { USERNAME: EMAIL, PASSWORD },
   }));
   const token = res.AuthenticationResult?.AccessToken;
   if (!token) throw new Error("No access token returned");
@@ -352,8 +381,8 @@ async function run() {
 
   // ── 1. Signup → 14 gunluk deneme ───────────────────────────────────────────
   section("1. signup → trial");
-  const sub = await signUpAndConfirm(EMAIL);
-  let token = await signIn(EMAIL);
+  const { sub, username } = await signUpAndConfirm(EMAIL);
+  let token = await signIn(username);
 
   let profile = await getProfile(sub);
   check("profil olustu", Boolean(profile));
@@ -464,7 +493,7 @@ async function run() {
   // subscriptionId gercek LS API'sine gidip 502'ye yol acabilir.
   await patchProfile(sub, "REMOVE lsSubscriptionId, lsSubscriptionStatus", {});
 
-  token = await signIn(EMAIL);
+  token = await signIn(username);
   res = await api("DELETE", "/me", token);
   check("hesap silindi", res.status === 200, `status=${res.status} ${res.raw}`);
   check("profil gitti", (await getProfile(sub)) === null);
@@ -476,7 +505,7 @@ async function run() {
   }));
   check("deneme defteri KORUNDU", Boolean(ledgerAfterDelete.Item));
 
-  const sub2 = await signUpAndConfirm(EMAIL);
+  const { sub: sub2, username: username2 } = await signUpAndConfirm(EMAIL);
   check("yeni Cognito kullanicisi", sub2 !== sub);
 
   const profile2 = await getProfile(sub2);
@@ -485,7 +514,7 @@ async function run() {
   check("trialEndsAt yok", profile2?.trialEndsAt === undefined);
   check("trialConsumedAt isaretli", Boolean(profile2?.trialConsumedAt));
 
-  const token2 = await signIn(EMAIL);
+  const token2 = await signIn(username2);
   profileApi = await api("GET", "/me/profile", token2);
   check("GET /me/profile → free", profileApi.body?.plan === "free");
   check("trial.eligible=false", profileApi.body?.trial?.eligible === false);
