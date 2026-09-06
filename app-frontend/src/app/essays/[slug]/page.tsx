@@ -23,6 +23,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const essay = getEssay(slug);
   if (!essay) return {};
+  // Sosyal onizleme gorseli. Yazi govdesindeki img bloklari BURAYA GECMEZ —
+  // Twitter/LinkedIn/WhatsApp yalnizca <head> meta etiketlerini okur.
+  const images = essay.coverImage ? [essay.coverImage] : undefined;
+
   return {
     title: `${essay.title} — Cogletta Essays`,
     description: essay.description,
@@ -34,11 +38,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "article",
       publishedTime: essay.date,
       siteName: "Cogletta",
+      ...(images ? { images } : {}),
     },
     twitter: {
-      card: "summary",
+      // Gorsel varsa buyuk kart: kucuk "summary" karti gorseli kucuk bir
+      // kare kucuk resim olarak gosterir, etkisi kaybolur.
+      card: images ? "summary_large_image" : "summary",
       title: essay.title,
       description: essay.description,
+      ...(images ? { images } : {}),
     },
   };
 }
