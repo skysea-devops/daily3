@@ -240,19 +240,16 @@ function isWeeklyReviewDay(): boolean {
   return new Date().getDay() === 0;
 }
 
-function SundayItem({ pick, kind, isFirst }: { pick: SundayPick; kind: "read" | "listen"; isFirst: boolean }) {
+function SundayItem({ pick, isFirst }: { pick: SundayPick; isFirst: boolean }) {
   return (
-    <div style={{ borderTop: isFirst ? "none" : "1px solid var(--rule)", paddingTop: isFirst ? 0 : 22, marginTop: isFirst ? 0 : 22 }}>
-      <span style={{ fontSize: "0.6875rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-muted)" }}>
-        {kind === "read" ? "The Read" : "The Listen"}
-      </span>
-      <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1.0625rem", fontWeight: 600, lineHeight: 1.4, margin: "8px 0 4px" }}>
+    <div style={{ borderTop: isFirst ? "none" : "2px solid var(--rule)", paddingTop: isFirst ? 0 : 24, marginTop: isFirst ? 0 : 24 }}>
+      <h3 style={{ fontFamily: "'Lora', serif", fontSize: "1.0625rem", fontWeight: 600, lineHeight: 1.4, margin: "0 0 4px" }}>
         <a href={pick.url} target="_blank" rel="noreferrer" style={{ color: "var(--ink)", textDecoration: "none" }}>
           {pick.title}
         </a>
       </h3>
       <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", margin: "0 0 8px" }}>
-        {pick.source} · {pick.duration}
+        {pick.source}
       </p>
       <p style={{ fontSize: "0.9375rem", lineHeight: 1.65, color: "var(--ink-soft)", margin: 0 }}>
         {pick.summary}
@@ -282,9 +279,9 @@ function SundayCard({ issue }: { issue: SundayIssue }) {
       <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", margin: "0 0 24px", lineHeight: 1.5 }}>
         Something to read, something to listen to. Enjoy your Sunday.
       </p>
+      {issue.article && <SundayItem pick={issue.article} isFirst />}
+      {issue.podcast && <SundayItem pick={issue.podcast} isFirst={!issue.article} />}
 
-      {issue.article && <SundayItem pick={issue.article} kind="read" isFirst />}
-      {issue.podcast && <SundayItem pick={issue.podcast} kind="listen" isFirst={!issue.article} />}
     </div>
   );
 }
