@@ -73,6 +73,35 @@ const STRICT_ALIAS      = (process.env.TRIAL_LEDGER_STRICT_ALIAS ?? "true") !== 
 // Sifre politikasi: min 8, buyuk+kucuk+rakam (cognito.tf).
 const PASSWORD = `E2e-${randomUUID().replace(/-/g, "").slice(0, 16)}A1`;
 
+// ─── Kosuya ozel e-posta etiketleri ───────────────────────────────────────────
+//
+// NEDEN SABIT E-POSTA KULLANMIYORUZ:
+// Cognito ListUsers EVENTUALLY CONSISTENT — yeni olusturulmus bir kullanici
+// dakikalarca aramada gorunmeyebilir. SignUp ise anlik ve tutarli. Sabit bir
+// e-postada onceki kosudan kalan bir kullaniciyi cleanup bulamayip geciyor,
+// hemen ardindan SignUp UsernameExistsException atiyordu. Arama sonucuna
+// guvenilemez.
+//
+// Cozum: her kosu kendi `+etiket` adresini kullanir → Cognito'da asla cakisma
+// olmaz. Deneme defteri ise etiketleri soyuyor (normalizeEmail), dolayisiyla
+// her iki adres de AYNI TRIAL# anahtarina dusuyor. Bu, 8. senaryoyu
+// zayiflatmak yerine GUCLENDIRIYOR: artik "ayni string" degil, "ayni kisi,
+// farkli alias" senaryosunu test ediyoruz.
+const RUN_ID = `${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+
+function emailWithTag(email, tag) {
+  const at = email.lastIndexOf("@");
+  return `${email.slice(0, at)}+${tag}@${email.slice(at + 1)}`;
+}
+
+/** Cognito'da bu on eki tasiyan her sey test artigidir. */
+const E2E_TAG_PREFIX = "e2e-";
+const SIGNUP_EMAIL_A = emailWithTag(EMAIL, `${E2E_TAG_PREFIX}${RUN_ID}a`);
+const SIGNUP_EMAIL_B = emailWithTag(EMAIL, `${E2E_TAG_PREFIX}${RUN_ID}b`);
+
+/** Olusturdugumuz kullanicilar — teardown aramaya GUVENMEDEN bunlari siler. */
+const createdUsers = [];
+
 const cognito = new CognitoIdentityProviderClient({ region: REGION });
 const dynamo  = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }));
 
@@ -93,6 +122,13 @@ if (!USERS_TABLE.includes("-dev-")) {
 if (!TRIAL_SECRET) {
   console.error("Missing TRIAL_LEDGER_SECRET — teardown could not clear the trial ledger,");
   console.error("which would make every subsequent run fail. Refusing to start.");
+  process.exit(1);
+}
+// Kosuya ozel `+etiket` adresleri yalnizca etiket soyuluyorsa ayni deneme
+// hakkina dusuyor. STRICT_ALIAS kapaliysa 8. senaryo anlamsizlasir.
+if (!STRICT_ALIAS) {
+  console.error("TRIAL_LEDGER_STRICT_ALIAS=false — this test relies on +tag stripping.");
+  console.error("Set it to true, or the re-signup scenario cannot be verified.");
   process.exit(1);
 }
 
@@ -192,51 +228,70 @@ async function findCognitoUsers(email) {
   }));
 }
 
-/**
- * Hem setup hem teardown. Idempotent: hicbir sey yoksa sessizce gecer.
- * `includeLedger` yalnizca teardown'da true — testin ortasinda defteri silmek
- * "ayni e-posta ile yeniden kayit" senaryosunu yok ederdi.
- */
-async function cleanup(email, { includeLedger }) {
-  // Onceki kosulardan kalmis birden fazla kayit olabilir (ornegin UNCONFIRMED
-  // bir kullanici). Hepsini temizle.
-  const users = await findCognitoUsers(email);
-
-  for (const user of users) {
-    console.log(`  cleanup: removing cognito user ${user.username} (${user.status})`);
-
-    // Makaleler
-    let lastKey;
-    do {
-      const page = await dynamo.send(new QueryCommand({
-        TableName: ARTICLES_TABLE,
-        KeyConditionExpression: "PK = :pk",
-        ExpressionAttributeValues: { ":pk": `USER#${user.sub}` },
-        ProjectionExpression: "PK, SK",
-        ExclusiveStartKey: lastKey,
-      }));
-      for (const item of page.Items ?? []) {
-        await dynamo.send(new DeleteCommand({
-          TableName: ARTICLES_TABLE,
-          Key: { PK: item.PK, SK: item.SK },
-        }));
-      }
-      lastKey = page.LastEvaluatedKey;
-    } while (lastKey);
-
-    await dynamo.send(new DeleteCommand({
-      TableName: USERS_TABLE,
-      Key: { PK: `USER#${user.sub}`, SK: "PROFILE" },
+/** Tek bir kullaniciya ait tum kayitlari siler. */
+async function purgeUser({ username, sub }) {
+  let lastKey;
+  do {
+    const page = await dynamo.send(new QueryCommand({
+      TableName: ARTICLES_TABLE,
+      KeyConditionExpression: "PK = :pk",
+      ExpressionAttributeValues: { ":pk": `USER#${sub}` },
+      ProjectionExpression: "PK, SK",
+      ExclusiveStartKey: lastKey,
     }));
+    for (const item of page.Items ?? []) {
+      await dynamo.send(new DeleteCommand({
+        TableName: ARTICLES_TABLE,
+        Key: { PK: item.PK, SK: item.SK },
+      }));
+    }
+    lastKey = page.LastEvaluatedKey;
+  } while (lastKey);
 
+  await dynamo.send(new DeleteCommand({
+    TableName: USERS_TABLE,
+    Key: { PK: `USER#${sub}`, SK: "PROFILE" },
+  }));
+
+  try {
     // Admin cagrisinda ALIAS degil gercek Username kullanilmali.
     await cognito.send(new AdminDeleteUserCommand({
       UserPoolId: USER_POOL_ID,
-      Username: user.username,
+      Username: username,
     }));
+  } catch (err) {
+    if (err?.name !== "UserNotFoundException") throw err;
   }
+}
 
-  // LSSUB# eslemeleri (test webhook'lari birakmis olabilir)
+/**
+ * Onceki kosulardan kalmis test kullanicilarini sureklemek icin BEST-EFFORT
+ * tarama. ListUsers gecikmeli oldugu icin buna GUVENMIYORUZ — bu kosunun
+ * dogrulugu `createdUsers` listesine dayaniyor. Burasi yalnizca cop toplama.
+ */
+async function sweepLeftovers() {
+  const at = EMAIL.lastIndexOf("@");
+  const prefix = `${EMAIL.slice(0, at)}+${E2E_TAG_PREFIX}`;
+  try {
+    const res = await cognito.send(new ListUsersCommand({
+      UserPoolId: USER_POOL_ID,
+      Filter: `email ^= "${prefix}"`,
+      Limit: 60,
+    }));
+    for (const u of res.Users ?? []) {
+      const sub = u.Attributes?.find((a) => a.Name === "sub")?.Value ?? u.Username;
+      // Bu kosunun kullanicilari zaten ayrica siliniyor.
+      if (createdUsers.some((c) => c.username === u.Username)) continue;
+      console.log(`  sweep: removing leftover ${u.Username} (${u.UserStatus})`);
+      await purgeUser({ username: u.Username, sub });
+    }
+  } catch (err) {
+    console.warn("  sweep skipped (non-fatal):", err?.name ?? err);
+  }
+}
+
+/** LSSUB# esleme artiklari. */
+async function purgeSubscriptionMaps() {
   const maps = await dynamo.send(new ScanCommand({
     TableName: USERS_TABLE,
     FilterExpression: "SK = :map AND begins_with(PK, :prefix)",
@@ -249,13 +304,27 @@ async function cleanup(email, { includeLedger }) {
       Key: { PK: item.PK, SK: "MAP" },
     }));
   }
+}
 
-  if (includeLedger) {
-    await dynamo.send(new DeleteCommand({
-      TableName: USERS_TABLE,
-      Key: { PK: trialLedgerPK(email), SK: "LEDGER" },
-    }));
+/**
+ * Teardown. `finally` icinde HER ZAMAN calisir.
+ *
+ * Deneme defteri kaydi TEMEL e-posta uzerinden siliniyor: kosuya ozel
+ * `+etiket` adresleri normalize edilince ayni anahtara dusuyor. Silinmezse
+ * sonraki kosu deneme alamaz ve testler kalici olarak kirmiziya duser.
+ * DynamoDB DeleteItem tutarli — burada Cognito aramasinin gecikmesi gibi bir
+ * belirsizlik yok.
+ */
+async function teardown() {
+  for (const user of createdUsers) {
+    console.log(`  teardown: removing ${user.username}`);
+    await purgeUser(user);
   }
+  await purgeSubscriptionMaps();
+  await dynamo.send(new DeleteCommand({
+    TableName: USERS_TABLE,
+    Key: { PK: trialLedgerPK(EMAIL), SK: "LEDGER" },
+  }));
 }
 
 /**
@@ -278,13 +347,16 @@ async function signUpAndConfirm(email) {
   if (!sub) throw new Error("SignUp did not return UserSub");
 
   // Confirm ONCESI e-posta alias'i cozulmez → gercek Username'i ListUsers ile bul.
+  // ListUsers gecikmeli olabilir; bulunana kadar makul sure dene.
   let username = null;
-  for (let i = 0; i < 10 && !username; i++) {
+  for (let i = 0; i < 20 && !username; i++) {
     const users = await findCognitoUsers(email);
     username = users.find((u) => u.sub === sub)?.username ?? null;
-    if (!username) await sleep(500);
+    if (!username) await sleep(1000);
   }
   if (!username) throw new Error(`Could not resolve Cognito username for sub=${sub}`);
+  // Teardown aramaya guvenmesin: olusturulan kullaniciyi HEMEN kaydet.
+  createdUsers.push({ username, sub });
 
   // AdminConfirmSignUp PostConfirmation_ConfirmSignUp tetikler — profil ve
   // deneme defteri kaydi bu sirada olusur.
@@ -312,8 +384,8 @@ async function signIn(username) {
   const res = await cognito.send(new InitiateAuthCommand({
     ClientId: CLIENT_ID,
     AuthFlow: "USER_PASSWORD_AUTH",
-    // Giris e-posta ile yapilir (gercek kullanici akisi); alias confirm sonrasi cozulur.
-    AuthParameters: { USERNAME: EMAIL, PASSWORD },
+    // Giris gercek Username ile; e-posta alias'i da calisir ama Username kesin.
+    AuthParameters: { USERNAME: username, PASSWORD },
   }));
   const token = res.AuthenticationResult?.AccessToken;
   if (!token) throw new Error("No access token returned");
@@ -375,13 +447,23 @@ const iso = (offsetMs) => new Date(Date.now() + offsetMs).toISOString();
 
 async function run() {
   console.log(`Subscription regression against ${API_BASE_URL}`);
-  console.log(`Users table: ${USERS_TABLE} · email: ${EMAIL}\n`);
+  console.log(`Users table: ${USERS_TABLE}`);
+  console.log(`Signup A: ${SIGNUP_EMAIL_A}`);
+  console.log(`Signup B: ${SIGNUP_EMAIL_B}`);
+  console.log(`Trial ledger key derives from: ${normalizeEmail(EMAIL, STRICT_ALIAS)}\n`);
 
-  await cleanup(EMAIL, { includeLedger: true });
+  // Onceki kosulardan kalan artiklari sureklemeyi dene (best-effort) ve deneme
+  // defterini KESIN olarak temizle — 1. senaryo temiz bir defter bekliyor.
+  await sweepLeftovers();
+  await dynamo.send(new DeleteCommand({
+    TableName: USERS_TABLE,
+    Key: { PK: trialLedgerPK(EMAIL), SK: "LEDGER" },
+  }));
+  await purgeSubscriptionMaps();
 
   // ── 1. Signup → 14 gunluk deneme ───────────────────────────────────────────
   section("1. signup → trial");
-  const { sub, username } = await signUpAndConfirm(EMAIL);
+  const { sub, username } = await signUpAndConfirm(SIGNUP_EMAIL_A);
   let token = await signIn(username);
 
   let profile = await getProfile(sub);
@@ -395,7 +477,7 @@ async function run() {
 
   const ledger = await dynamo.send(new GetCommand({
     TableName: USERS_TABLE,
-    Key: { PK: trialLedgerPK(EMAIL), SK: "LEDGER" },
+    Key: { PK: trialLedgerPK(SIGNUP_EMAIL_A), SK: "LEDGER" },
     ConsistentRead: true,
   }));
   check("deneme defteri kaydi olustu", Boolean(ledger.Item));
@@ -409,7 +491,7 @@ async function run() {
   // ── 2. Deneme sirasinda Pro yetkileri ──────────────────────────────────────
   section("2. deneme sirasinda Pro erisimi");
   const threeInterests = ["technology", "geopolitics", "business_economics"];
-  let res = await api("PUT", "/me/interests", token, { interests: threeInterests, email: EMAIL, region: "EU" });
+  let res = await api("PUT", "/me/interests", token, { interests: threeInterests, email: SIGNUP_EMAIL_A, region: "EU" });
   check("3 konu secilebiliyor", res.status === 200, `status=${res.status} ${res.raw}`);
 
   // ── 3. Cron CALISMADAN expiry (P0 #1) ──────────────────────────────────────
@@ -429,10 +511,10 @@ async function run() {
   check("trialStartedAt KORUNDU", Boolean(profile?.trialStartedAt));
   check("trial-ended e-posta bayragi birakildi", profile?.trialEndedEmailPending === true);
 
-  res = await api("PUT", "/me/interests", token, { interests: threeInterests, email: EMAIL, region: "EU" });
+  res = await api("PUT", "/me/interests", token, { interests: threeInterests, email: SIGNUP_EMAIL_A, region: "EU" });
   check("free planda 3 konu reddediliyor", res.status === 400, `status=${res.status}`);
 
-  res = await api("PUT", "/me/interests", token, { interests: ["technology"], email: EMAIL, region: "EU" });
+  res = await api("PUT", "/me/interests", token, { interests: ["technology"], email: SIGNUP_EMAIL_A, region: "EU" });
   check("free planda 1 konu kabul ediliyor", res.status === 200, `status=${res.status} ${res.raw}`);
 
   res = await api("GET", "/me/trend-report", token);
@@ -505,8 +587,12 @@ async function run() {
   }));
   check("deneme defteri KORUNDU", Boolean(ledgerAfterDelete.Item));
 
-  const { sub: sub2, username: username2 } = await signUpAndConfirm(EMAIL);
+  // FARKLI bir alias ile kayit: Cognito icin bambaska bir kullanici, deneme
+  // defteri icin AYNI kisi. Etiket soyma calismazsa bu senaryo kirmizi olur.
+  const { sub: sub2, username: username2 } = await signUpAndConfirm(SIGNUP_EMAIL_B);
   check("yeni Cognito kullanicisi", sub2 !== sub);
+  check("iki alias ayni deneme anahtarina dusuyor",
+    trialLedgerPK(SIGNUP_EMAIL_A) === trialLedgerPK(SIGNUP_EMAIL_B));
 
   const profile2 = await getProfile(sub2);
   check("yeniden kayitta plan=free", profile2?.plan === "free", `plan=${profile2?.plan}`);
@@ -532,7 +618,7 @@ try {
   // Teardown HER ZAMAN calisir. Defter temizlenmezse sonraki kosu deneme
   // alamaz ve testler kalici olarak kirmizi kalir.
   try {
-    await cleanup(EMAIL, { includeLedger: true });
+    await teardown();
     console.log("\nTeardown complete.");
   } catch (err) {
     console.error("\nCRITICAL: teardown failed — the next run will likely fail:", err);
