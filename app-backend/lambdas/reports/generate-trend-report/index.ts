@@ -240,17 +240,15 @@ async function ensureIssue(sk: string): Promise<SundayIssue | null> {
 // ── E-posta ───────────────────────────────────────────────────────────────────
 
 function itemBlock(pick: SundayPick, kind: "read" | "listen", withDivider: boolean): string {
-  const label = kind === "read" ? "The read" : "The listen";
-  const cta   = kind === "read" ? "Read" : "Listen";
-  const divider = withDivider ? "border-top:1px solid #f3f4f6;" : "";
+  const cta     = kind === "read" ? "Read" : "Listen";
+  const divider = withDivider ? "border-top:2px solid #e5e7eb;" : "";
   return `
       <tr>
-        <td style="padding:28px 0;${divider}">
-          <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">${label}</span>
-          <h2 style="margin:10px 0 4px 0;font-size:21px;font-weight:700;line-height:1.35;color:#111827;">
+        <td style="padding:30px 0;${divider}">
+          <h2 style="margin:0 0 4px 0;font-size:21px;font-weight:700;line-height:1.35;color:#111827;">
             <a href="${pick.url}" style="color:#111827;text-decoration:none;">${pick.title}</a>
           </h2>
-          <p style="margin:0 0 14px 0;font-size:13px;color:#6b7280;font-weight:500;">${pick.source} &nbsp;·&nbsp; ${pick.duration}</p>
+          <p style="margin:0 0 14px 0;font-size:13px;color:#6b7280;font-weight:500;">${pick.source}</p>
           <p style="margin:0;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
             ${pick.summary} <a href="${pick.url}" style="color:#111827;font-weight:600;text-decoration:none;white-space:nowrap;">${cta} &rarr;</a>
           </p>
@@ -282,8 +280,6 @@ function buildEmail(issue: SundayIssue): { html: string; text: string } {
 </body></html>`;
 
   const lines: string[] = [];
-  if (issue.article) lines.push(`The read\n${issue.article.title}\n${issue.article.source} · ${issue.article.duration}\n${issue.article.url}`);
-  if (issue.podcast) lines.push(`The listen\n${issue.podcast.title}\n${issue.podcast.source} · ${issue.podcast.duration}\n${issue.podcast.url}`);
   const text = `Cogletta — The Sunday Supplement (${issue.weekLabel})\n\n${lines.join("\n\n")}\n\nCogletta Pro · every Sunday.`;
 
   return { html, text };
