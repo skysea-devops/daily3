@@ -239,8 +239,13 @@ async function ensureIssue(sk: string): Promise<SundayIssue | null> {
 
 // ── E-posta ───────────────────────────────────────────────────────────────────
 
-function itemBlock(pick: SundayPick, kind: "read" | "listen", withDivider: boolean): string {
-  const cta     = kind === "read" ? "Read" : "Listen";
+/**
+ * Tek bir seçimin HTML bloğu.
+ *
+ * "Read" / "Listen" etiketi YOK: okurun ne bulacağını önceden söylemek sürprizi
+ * öldürüyordu. Başlık zaten link, tıklanacak yer kaybolmuyor.
+ */
+function itemBlock(pick: SundayPick, withDivider: boolean): string {
   const divider = withDivider ? "border-top:2px solid #e5e7eb;" : "";
   return `
       <tr>
@@ -250,7 +255,7 @@ function itemBlock(pick: SundayPick, kind: "read" | "listen", withDivider: boole
           </h2>
           <p style="margin:0 0 14px 0;font-size:13px;color:#6b7280;font-weight:500;">${pick.source}</p>
           <p style="margin:0;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-            ${pick.summary} <a href="${pick.url}" style="color:#111827;font-weight:600;text-decoration:none;white-space:nowrap;">${cta} &rarr;</a>
+            ${pick.summary}
           </p>
         </td>
       </tr>`;
@@ -258,8 +263,8 @@ function itemBlock(pick: SundayPick, kind: "read" | "listen", withDivider: boole
 
 function buildEmail(issue: SundayIssue): { html: string; text: string } {
   const blocks =
-    (issue.article ? itemBlock(issue.article, "read", false) : "") +
-    (issue.podcast ? itemBlock(issue.podcast, "listen", Boolean(issue.article)) : "");
+    (issue.article ? itemBlock(issue.article, false) : "") +
+    (issue.podcast ? itemBlock(issue.podcast, Boolean(issue.article)) : "");
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>The Sunday Supplement</title></head>
 <body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
@@ -279,8 +284,16 @@ function buildEmail(issue: SundayIssue): { html: string; text: string } {
   </td></tr></table>
 </body></html>`;
 
-  const lines: string[] = [];
-  const text = `Cogletta — The Sunday Supplement (${issue.weekLabel})\n\n${lines.join("\n\n")}\n\nCogletta Pro · every Sunday.`;
+  // Plain-text fallback. Onceden bos gidiyordu: `lines` doldurulmadan
+  // join ediliyordu, yani text/plain okuyan istemcide mail bombostu.
+  const textBlock = (pick: SundayPick) =>
+    `${pick.title}\n${pick.source}\n\n${pick.summary}\n\n${pick.url}`;
+
+  const lines = [issue.article, issue.podcast]
+    .filter((p): p is SundayPick => Boolean(p))
+    .map(textBlock);
+
+  const text = `Cogletta — The Sunday Supplement (${issue.weekLabel})\n\n${lines.join("\n\n———\n\n")}\n\nCogletta Pro · every Sunday.`;
 
   return { html, text };
 }

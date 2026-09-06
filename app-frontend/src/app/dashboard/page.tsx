@@ -279,6 +279,8 @@ function SundayCard({ issue }: { issue: SundayIssue }) {
       <p style={{ fontSize: "0.8125rem", color: "var(--ink-muted)", margin: "0 0 24px", lineHeight: 1.5 }}>
         Something to read, something to listen to. Enjoy your Sunday.
       </p>
+      {issue.article && <SundayItem pick={issue.article} isFirst />}
+      {issue.podcast && <SundayItem pick={issue.podcast} isFirst={!issue.article} />}
 
     </div>
   );
