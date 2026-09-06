@@ -1,3 +1,4 @@
+// app-frontend/src/lib/auth-context.tsx
 "use client";
 
 import {
@@ -8,7 +9,7 @@ import {
   useState,
 } from "react";
 import { userPool } from "@/lib/cognito";
-import { getUserProfile } from "@/lib/api";
+import { getUserProfile, type TrialState } from "@/lib/api";
 import type { CognitoUserSession } from "amazon-cognito-identity-js";
 import { isCategoryId } from "./categories";
 
@@ -28,6 +29,8 @@ interface AuthContextValue {
   plan:               "free" | "pro";
   planSource:         "trial" | "paid" | null;
   trialEndsAt:        string | null;
+  /** Deneme gecmisi/durumu — /register sayfasinin durum ayrimi bunun uzerinden. */
+  trial:              TrialState | null;
   signOut:            () => void;
   refreshSession:     () => Promise<void>;
   markInterestsSaved: () => void;
@@ -42,6 +45,7 @@ const AuthContext = createContext<AuthContextValue>({
   plan:               "free",
   planSource:         null,
   trialEndsAt:        null,
+  trial:              null,
   signOut:            () => {},
   refreshSession:     async () => {},
   markInterestsSaved: () => {},
@@ -61,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /** "trial" iken Pro deneme suresi devam ediyor demektir. */
   const [planSource, setPlanSource]   = useState<"trial" | "paid" | null>(null);
   const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null);
+  const [trial, setTrial]             = useState<TrialState | null>(null);
 
   const loadSession = useCallback(async () => {
     return new Promise<void>((resolve) => {
@@ -125,6 +130,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setPlan(profileIsPro ? "pro" : "free");
             setPlanSource((profile.planSource as "trial" | "paid" | null) ?? null);
             setTrialEndsAt(profile.trialEndsAt ?? null);
+            // Backend `trial` blogunu dondurmezse (eski deploy) makul bir varsayim
+            // uret: Pro/trial ise active, degilse "unknown" yerine null birak.
+            setTrial(
+              profile.trial ?? {
+                status:     profile.planSource === "trial" ? "active" : "none",
+                eligible:   false,
+                endsAt:     profile.trialEndsAt ?? null,
+                startedAt:  null,
+                consumedAt: null,
+                daysLeft:   null,
+              }
+            );
           } catch (err) {
             // Profil gecici olarak yuklenemedi: kullaniciyi DEMOTE ETME. Son bilinen
             // plani koru (Pro kullaniciyi gecici hatada Free'ye dusurme). Free yalnizca
@@ -160,6 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPlan("free");
     setPlanSource(null);
     setTrialEndsAt(null);
+    setTrial(null);
   }, []);
 
   const markInterestsSaved = useCallback(() => {
@@ -168,7 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, hasInterests, plan, planSource, trialEndsAt, signOut, refreshSession, markInterestsSaved }}
+      value={{ user, loading, hasInterests, plan, planSource, trialEndsAt, trial, signOut, refreshSession, markInterestsSaved }}
     >
       {children}
     </AuthContext.Provider>
