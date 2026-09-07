@@ -1,3 +1,4 @@
+# infra/terraform/cognito.tf
 resource "aws_cognito_user_pool" "main" {
   name = "${var.project_name}-${var.environment}-user-pool"
 
@@ -137,9 +138,11 @@ resource "aws_iam_role_policy" "post_confirmation_lambda_policy" {
         Resource = "*"
       },
       {
+        # PutItem/GetItem: deneme hakki defteri (TRIAL#<hmac(email)> / LEDGER)
+        # kosullu yazma ile claim ediliyor. Bkz. app-backend/shared/trial-ledger.ts
         Sid      = "UsersTableWrite"
         Effect   = "Allow"
-        Action   = ["dynamodb:UpdateItem"]
+        Action   = ["dynamodb:UpdateItem", "dynamodb:PutItem", "dynamodb:GetItem"]
         Resource = aws_dynamodb_table.users.arn
       },
     ]
@@ -159,18 +162,22 @@ resource "aws_lambda_function" "post_confirmation" {
   handler          = "index.handler"
   filename         = data.archive_file.post_confirmation_lambda_zip.output_path
   source_code_hash = data.archive_file.post_confirmation_lambda_zip.output_base64sha256
-  timeout          = 10
+  # Deneme defteri claim'i (kosullu PutItem + olasi GetItem) eklendi; 10 sn dar kaliyordu.
+  timeout          = 15
   memory_size      = 128
 
   environment {
-    variables = {
+    # Deneme hakki defteri degiskenleri trial-ledger.tf'ten geliyor.
+    variables = merge({
       SES_FROM_EMAIL   = var.ses_from_email
       APP_URL          = var.app_url
       CONTACT_EMAIL    = var.contact_email
       APP_NAME         = var.app_name
       USERS_TABLE_NAME = aws_dynamodb_table.users.name
       NODE_OPTIONS     = "--enable-source-maps"
-    }
+      },
+      local.trial_ledger_env
+    )
   }
 
   depends_on = [aws_cloudwatch_log_group.post_confirmation]

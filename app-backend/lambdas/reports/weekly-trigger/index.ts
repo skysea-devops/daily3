@@ -1,6 +1,8 @@
+// app-backend/lambdas/reports/weekly-trigger/index.ts
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
+import { resolveEntitlement } from "../../../shared/entitlements";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const lambda = new LambdaClient({});
@@ -30,7 +32,12 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
         // 2026-07-12'de tüm Pro trend raporlarının atlanmasının nedeni buydu.
         ExpressionAttributeValues: { ":profile": "PROFILE" },
         ExpressionAttributeNames:  { "#plan": "plan", "#region": "region" },
-        ProjectionExpression:      "PK, interests, email, #plan, #region",
+        // Deneme alanlari da okunuyor: Pazar Eki tetigi ile gunluk tetik ayni
+        // saatte calisiyor (Pazar 02:30 EU vb.). Eskiden burada sadece
+        // `plan === "pro"` bakiliyordu; daily-trigger kullaniciyi Free yapmadan
+        // hemen once bu Lambda onu okursa, denemesi BITMIS kullanici Pazar Eki
+        // aliyordu. Sira EventBridge'e birakilamaz — efektif plan hesaplanir.
+        ProjectionExpression:      "PK, interests, email, #plan, #region, planSource, trialEndsAt, trialStartedAt, trialConsumedAt, lsSubscriptionId",
         ExclusiveStartKey:         lastEvaluatedKey,
       })
     );
@@ -39,11 +46,10 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
       // Pazar Eki tum Pro uyelere AYNI icerigi gonderir; interests kullanilmaz.
       const interests  = (item.interests as string[] | undefined) ?? [];
       const userRegion = (item.region as string | undefined) ?? "EU";
-      const plan       = (item.plan as string | undefined) ?? "free";
 
-      // Sadece bu bölgedeki PRO kullanıcılar
+      // Sadece bu bölgedeki EFEKTİF Pro kullanıcılar (bkz. shared/entitlements).
       if (userRegion !== region) continue;
-      if (plan !== "pro") continue;
+      if (!resolveEntitlement(item).isPro) continue;
 
       const userId = (item.PK as string).replace("USER#", "");
       users.push({ userId, interests, email: item.email as string | undefined });

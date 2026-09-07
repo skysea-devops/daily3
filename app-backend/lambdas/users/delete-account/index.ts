@@ -1,3 +1,4 @@
+// app-backend/lambdas/users/delete-account/index.ts
 import { CognitoIdentityProviderClient, AdminDeleteUserCommand } from "@aws-sdk/client-cognito-identity-provider";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
@@ -249,6 +250,13 @@ export const handler = async (
     const deletedArticles = await deleteAllArticles(userId);
 
     // 5. Kullanıcı profilini sil
+    //
+    // DİKKAT — TRIAL#<hmac(email)> / LEDGER kaydı BİLEREK SİLİNMİYOR.
+    // Deneme hakkı defteri kullanıcıdan bağımsızdır: profil ile birlikte
+    // silinirse, kullanıcı hesabını silip aynı e-posta ile yeniden kayıt olarak
+    // sınırsız 14 günlük deneme alabilir. Defterde düz metin e-posta değil,
+    // sunucu gizli anahtarıyla üretilmiş HMAC parmak izi durur; saklama süresi
+    // TRIAL_LEDGER_RETENTION_DAYS ile yönetilir (bkz. shared/trial-ledger.ts).
     await dynamo.send(
       new DeleteCommand({
         TableName: USERS_TABLE_NAME,

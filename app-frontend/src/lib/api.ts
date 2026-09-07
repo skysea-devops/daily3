@@ -1,3 +1,4 @@
+// app-frontend/src/lib/api.ts
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // 401 gelince otomatik sign-out + login'e yönlendir
@@ -41,9 +42,29 @@ export async function updateUserInterests(
   return response.json();
 }
 
-export async function getUserProfile(accessToken: string): Promise<{
+/**
+ * Deneme durumu — backend'in hesapladigi EFEKTIF durum.
+ *
+ * "none"    → bu hesap hic deneme gormemis
+ * "active"  → deneme suruyor (daysLeft dolu)
+ * "expired" → deneme kullanilmis/bitmis; bir daha verilmez
+ *
+ * `eligible` yalnizca arayuz icindir; asil deneme hakki backend'de e-posta
+ * seviyesinde bir defterde tutulur.
+ */
+export interface TrialState {
+  status:     "none" | "active" | "expired";
+  eligible:   boolean;
+  endsAt:     string | null;
+  startedAt:  string | null;
+  consumedAt: string | null;
+  daysLeft:   number | null;
+}
+
+export interface UserProfile {
   interests: string[];
   email: string | null;
+  /** EFEKTIF plan: denemesi bitmis kullanici cron calismamis olsa da "free" doner. */
   plan?: "free" | "pro";
   subTopics?: Record<string, string[]>;
   lsPortalUrl?: string | null;
@@ -52,7 +73,11 @@ export async function getUserProfile(accessToken: string): Promise<{
   planSource?: "trial" | "paid" | null;
   /** ISO tarih; yalnizca planSource === "trial" iken anlamli. */
   trialEndsAt?: string | null;
-}> {
+  /** /register sayfasinin 4 durumu bu blok uzerinden ayrilir. */
+  trial?: TrialState;
+}
+
+export async function getUserProfile(accessToken: string): Promise<UserProfile> {
   if (!API_BASE_URL) {
     throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
   }

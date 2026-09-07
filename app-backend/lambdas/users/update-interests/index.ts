@@ -1,3 +1,4 @@
+// app-backend/lambdas/users/update-interests/index.ts
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, UpdateCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
@@ -6,6 +7,12 @@ import type {
   APIGatewayProxyResultV2,
 } from "aws-lambda";
 import { isCategoryId, isSubTopicOf, subTopicsFor } from "../../../shared/categories";
+import {
+  resolveEntitlement,
+  expireTrialIfDue,
+  ENTITLEMENT_PROJECTION,
+  ENTITLEMENT_NAMES,
+} from "../../../shared/entitlements";
 import { randomUUID } from "crypto";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
@@ -130,19 +137,33 @@ export const handler = async (
     const isDeveloper = DEVELOPER_USER_IDS.has(userId);
 
     // Plan'ı validasyondan ÖNCE oku: free → tam 1 interest, pro → tam 3 interest.
-    // (#plan rezerve kelime olduğu için ExpressionAttributeNames şart.)
+    //
+    // DİKKAT: kayıtlı `plan` alanı TEK BAŞINA yeterli değil. Denemesi bitmiş ama
+    // cron'un henüz düşürmediği kullanıcı burada "pro" görünüp 3 konu seçebiliyordu.
+    // resolveEntitlement efektif planı verir; ayrıca süresi dolmuşsa kaydı da
+    // hemen düzeltiriz (best-effort).
     let plan = "free";
     try {
       const profileResult = await dynamo.send(
         new GetCommand({
           TableName: USERS_TABLE_NAME,
           Key: { PK: `USER#${userId}`, SK: "PROFILE" },
-          ProjectionExpression: "#plan",
-          ExpressionAttributeNames: { "#plan": "plan" },
+          ProjectionExpression: ENTITLEMENT_PROJECTION,
+          ExpressionAttributeNames: ENTITLEMENT_NAMES,
         })
       );
-      const rawPlan = profileResult.Item?.plan as string | undefined;
-      plan = rawPlan?.toLowerCase() === "pro" ? "pro" : "free";
+      const entitlement = resolveEntitlement(profileResult.Item);
+      plan = entitlement.plan;
+
+      if (entitlement.needsExpiry) {
+        await expireTrialIfDue({
+          dynamo,
+          UpdateCommand,
+          tableName: USERS_TABLE_NAME,
+          userId,
+          entitlement,
+        });
+      }
     } catch (err) {
       console.warn("Failed to read plan, defaulting to free:", err);
     }
