@@ -285,11 +285,13 @@ function GuestTrialCard({ onStart }: { onStart: () => void }) {
   return (
     <div style={cardStyle}>
       <div style={{ marginBottom: 24 }}>
-        <span style={eyebrow}>14 days of Pro — free</span>
+        <span style={eyebrow}>14-day free trial</span>
         <h2 style={cardTitle}>Try the full experience first</h2>
-        <p style={cardBody}>
-          Every new reader starts with Cogletta Pro for 14 days. No credit card required and nothing to cancel.
-        </p>
+
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 12 }}>
+          <span style={{ fontFamily: "'Lora', serif", fontSize: "2rem", fontWeight: 600, color: "var(--ink)" }}>$0</span>
+          
+        </div>
       </div>
 
       <FeatureList items={TRIAL_FEATURES} />
@@ -302,7 +304,7 @@ function GuestTrialCard({ onStart }: { onStart: () => void }) {
           Continue free, automatically
         </h3>
         <p style={{ fontSize: "0.8125rem", color: "var(--ink-soft)", lineHeight: 1.6, marginBottom: 14 }}>
-          You’ll move to the Free plan automatically. Upgrade only if you want to keep the full Pro experience.
+          Your account automatically switches to the Free plan. 
         </p>
         <FeatureList items={FREE_FEATURES} muted />
       </div>
@@ -330,7 +332,7 @@ function ActiveTrialCard({ daysLeft, onDashboard }: { daysLeft: number | null; o
         <span style={eyebrow}>Your Pro trial is active</span>
         <h2 style={cardTitle}>{dayText}</h2>
         <p style={cardBody}>
-          You already have the full Cogletta Pro experience. Nothing to do here — your reading is waiting on the dashboard.
+          You already have the full Cogletta Pro experience. Your reading is waiting on the dashboard.
         </p>
       </div>
 
@@ -446,18 +448,18 @@ export default function RegisterPage() {
     },
     guest: {
       eyebrow: "Join Cogletta",
-      title:   "Start with the full Cogletta experience.",
-      body:    "Try Cogletta Pro free for 14 days. No credit card required. After your trial, continue free or keep the full experience with Pro.",
+      title:   "Start with 14 days of Cogletta Pro",
+      body:    "Enjoy the full Cogletta experience. No credit card required. After that, continue with Free or switch to Pro.",
     },
     trial: {
       eyebrow: "Your trial",
       title:   "You’re already reading with Pro.",
-      body:    "Your 14-day trial is running. Keep Pro after it ends by choosing a plan below — nothing is charged automatically.",
+      body:    "Your 14-day trial is running. Keep Pro after it ends by choosing the Pro plan below.",
     },
     free: {
       eyebrow: "Your plan",
       title:   "Keep the full Cogletta experience.",
-      body:    "You’re on the Free plan. Pro brings back your three topics, three daily articles, two podcasts, and the Sunday Supplement.",
+      body:    "You’re on the Free plan. Upgrade to Profor full access. Three topics, three daily articles, two podcasts, and the Sunday Supplement.",
     },
     pro: {
       eyebrow: "Your plan",
@@ -516,7 +518,7 @@ export default function RegisterPage() {
                 {state === "pro" ? "You’re all set" : "Keep the full experience"}
               </h2>
               <p style={{ ...cardBody, marginBottom: 18 }}>
-                Keep all three topics, three daily articles, personalized sub-topics, two podcasts, and the Sunday Supplement.
+                
               </p>
 
               {state !== "pro" && (
