@@ -193,12 +193,15 @@ async function getProfile(userId) {
   return res.Item ?? null;
 }
 
-async function patchProfile(userId, updateExpression, values, names) {
+async function patchProfile(userId, updateExpression, values = {}, names) {
+  // DynamoDB BOS ExpressionAttributeValues kabul etmiyor (ValidationException).
+  // Saf REMOVE ifadelerinde deger olmadigi icin alan tamamen atlanmali.
+  const hasValues = values && Object.keys(values).length > 0;
   await dynamo.send(new UpdateCommand({
     TableName: USERS_TABLE,
     Key: { PK: `USER#${userId}`, SK: "PROFILE" },
     UpdateExpression: updateExpression,
-    ExpressionAttributeValues: values,
+    ...(hasValues ? { ExpressionAttributeValues: values } : {}),
     ...(names ? { ExpressionAttributeNames: names } : {}),
   }));
 }
@@ -573,7 +576,7 @@ async function run() {
   section("8. hesap silme → ayni e-posta ile yeniden kayit");
   // LS iptal cagrisini atlamak icin abonelik alanlarini temizle: sahte
   // subscriptionId gercek LS API'sine gidip 502'ye yol acabilir.
-  await patchProfile(sub, "REMOVE lsSubscriptionId, lsSubscriptionStatus", {});
+  await patchProfile(sub, "REMOVE lsSubscriptionId, lsSubscriptionStatus");
 
   token = await signIn(username);
   res = await api("DELETE", "/me", token);
