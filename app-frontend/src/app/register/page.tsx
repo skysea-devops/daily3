@@ -459,7 +459,7 @@ export default function RegisterPage() {
     free: {
       eyebrow: "Your plan",
       title:   "Keep the full Cogletta experience.",
-      body:    "You’re on the Free plan. Upgrade to Profor full access. Three topics, three daily articles, two podcasts, and the Sunday Supplement.",
+      body:    "You’re on the Free plan. Upgrade to Pro plan for full access. Three topics, three daily articles, two podcasts, and the Sunday Supplement.",
     },
     pro: {
       eyebrow: "Your plan",
