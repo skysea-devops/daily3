@@ -66,10 +66,10 @@ export default function DemoPage() {
           A preview of Cogletta Pro
         </p>
         <h1 style={{ fontFamily: "'Lora', serif", fontSize: "2.25rem", fontWeight: 600, color: "var(--ink)", margin: "10px 0 12px", lineHeight: 1.2 }}>
-          This is what your morning looks like
+          
         </h1>
         <p style={{ fontSize: "1.0625rem", color: "var(--ink-soft)", lineHeight: 1.7, maxWidth: 540, margin: "0 auto" }}>
-          A small, hand-picked selection each day &mdash; chosen for the topics you actually care about, with a note on why each piece made the cut. No feed, no noise.
+          
         </p>
       </section>
 
