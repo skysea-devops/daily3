@@ -1,9 +1,11 @@
+// app-frontend/src/app/page.tsx
 "use client";
 
 import Link from "next/link";
-import { useState, FormEvent } from "react";
+import { useState, useEffect, useRef, FormEvent, MouseEvent as ReactMouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { signUp } from "@/lib/cognito";
+import { useAuth } from "@/lib/auth-context";
 import Navbar from "@/components/Navbar";
 
 function RegisterModal({ onClose }: { onClose: () => void }) {
@@ -14,6 +16,25 @@ function RegisterModal({ onClose }: { onClose: () => void }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState("");
+  const firstFieldRef = useRef<HTMLInputElement>(null);
+
+  // Modal artık ana dönüşüm yolu: açılınca odak ilk alana gider ve arkadaki
+  // sayfa kaymaz. Bu efekt onClose'a BAĞLANMAMALI — prop referansı her
+  // render'da değişince odağı kullanıcının elinden geri alır.
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    firstFieldRef.current?.focus();
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -21,14 +42,21 @@ function RegisterModal({ onClose }: { onClose: () => void }) {
     setLoading(true);
     try {
       await signUp(name, email, password);
-      localStorage.setItem("pending_verification_email", email);
-      localStorage.setItem("selected_plan", "free");
-      router.push("/verify-email");
     } catch (err: any) {
       setError(err?.message || "Failed to create account.");
-    } finally {
       setLoading(false);
+      return;
     }
+
+    // Hesap AÇILDI. Buradan sonrası best-effort: localStorage yazımı Safari
+    // gizli sekmesinde/kota dolduğunda throw edebiliyor ve eskiden bu, başarılı
+    // bir kaydı "Failed to create account." hatasına çeviriyordu.
+    try {
+      localStorage.setItem("pending_verification_email", email);
+      localStorage.setItem("selected_plan", "free");
+    } catch {}
+
+    router.push("/verify-email");
   }
 
   const input: React.CSSProperties = {
@@ -59,28 +87,36 @@ function RegisterModal({ onClose }: { onClose: () => void }) {
         display: "flex", alignItems: "center", justifyContent: "center", padding: "0 20px",
       }}
     >
-      <div style={{
-        width: "100%", maxWidth: 440,
-        background: "var(--white)",
-        border: "1px solid var(--rule)",
-        borderRadius: 16, padding: "40px 36px",
-      }}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="lp-signup-title"
+        style={{
+          width: "100%", maxWidth: 440,
+          background: "var(--white)",
+          border: "1px solid var(--rule)",
+          borderRadius: 16, padding: "40px 36px",
+        }}
+      >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
           <div>
-            <h2 style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)" }}>
+            <h2 id="lp-signup-title" style={{ fontFamily: "'Lora', serif", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)" }}>
               Create your account
             </h2>
+            {/* Kayıt olan herkes backend'de 14 günlük Pro denemesi alıyor
+                (post-confirmation → claimTrial). Eski "Free plan" metni yanlıştı
+                ve /register modalıyla da çelişiyordu. */}
             <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)", marginTop: 4 }}>
-              Starting with <strong style={{ color: "var(--ink)" }}>Free plan</strong>
+              Starting with <strong style={{ color: "var(--ink)" }}>a 14-day Pro trial</strong>
             </p>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-muted)", fontSize: "1.25rem", lineHeight: 1 }}>✕</button>
+          <button type="button" onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-muted)", fontSize: "1.25rem", lineHeight: 1 }}>✕</button>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           <div>
             <label style={label}>Name</label>
-            <input style={input} type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} required />
+            <input ref={firstFieldRef} style={input} type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} required />
           </div>
           <div>
             <label style={label}>Email</label>
@@ -136,6 +172,29 @@ function RegisterModal({ onClose }: { onClose: () => void }) {
 
 export default function HomePage() {
   const [showModal, setShowModal] = useState(false);
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  /**
+   * Tüm "kayıt ol" CTA'larının ortak davranışı.
+   *
+   * - Misafir → kayıt modalı açılır (sayfa değişmez).
+   * - Giriş yapmış kullanıcı → dashboard'a gider; mevcut hesabı varken yeni
+   *   hesap açmaya davet edilmez (/register sayfasındaki mantığın aynısı).
+   * - Oturum henüz yükleniyorsa → /register'a gider; o sayfa beş durumu da
+   *   doğru şekilde ele alıyor, yani yanlış ekran gösterme riski yok.
+   *
+   * Ctrl/Cmd/orta tık ile yeni sekmede açma korunur ve JS yüklenmemişse
+   * href devrede kalır — statik export'ta bu önemli.
+   */
+  function handleSignupCta(e: ReactMouseEvent<HTMLAnchorElement>) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+
+    if (loading) { router.push("/register"); return; }
+    if (user)    { router.push("/dashboard"); return; }
+    setShowModal(true);
+  }
 
   return (
     <>
@@ -245,9 +304,9 @@ export default function HomePage() {
           <p className="lp-sub">
             Thoughtfully curated articles and podcast recommendations based on the interests you choose, delivered to your inbox every morning.
           </p>
-          <Link href="/register" className="lp-cta">
+          <a href="/register/" className="lp-cta" onClick={handleSignupCta}>
             Start your morning reading habit →
-          </Link>
+          </a>
           <span className="lp-note">No credit card required. </span>
           <div style={{ marginTop: 14 }}>
             <Link href="/demo" style={{ color: "var(--ink-soft)", fontSize: "1.1575rem", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
@@ -415,7 +474,7 @@ export default function HomePage() {
                 Four centuries later, Johannes Vermeer's quiet interiors continue to captivate millions. But what exactly makes
                 his paintings feel so modern? This essay explores the subtle psychology of light, attention, and why slowing
                 down in front of a single painting can change the way we see the world.
-                <a href="#" onClick={e => { e.preventDefault(); setShowModal(true); }}>Read full article →</a>
+                <a href="/register/" onClick={handleSignupCta}>Read full article →</a>
               </p>
             </div>
 
@@ -427,7 +486,7 @@ export default function HomePage() {
                 Logos are fading, craftsmanship is back, and understated elegance has become the industry's biggest statement.
                 Beyond the trend, this piece explains the cultural and economic forces that made "quiet luxury" the defining
                 aesthetic of the decade.
-                <a href="#" onClick={e => { e.preventDefault(); setShowModal(true); }}>Read full article →</a>
+                <a href="/register/" onClick={handleSignupCta}>Read full article →</a>
               </p>
             </div>
           </div>
@@ -439,9 +498,9 @@ export default function HomePage() {
         <div className="lp-cta-bottom">
           <h2>Start your morning ritual.</h2>
           
-          <button onClick={() => setShowModal(true)} className="lp-cta">
+          <a href="/register/" className="lp-cta" onClick={handleSignupCta}>
             Try Pro free for 14 days →
-          </button>
+          </a>
           <span className="lp-note">Takes 30 seconds to set up</span>
         </div>
 
