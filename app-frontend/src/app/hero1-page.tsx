@@ -229,23 +229,23 @@ export default function HomePage() {
         .lp-nav-links a { font-size: 0.875rem; color: var(--ink-soft); text-decoration: none; }
         .lp-btn-nav { background: var(--ink); color: var(--white) !important; padding: 8px 18px; border-radius: 6px; font-weight: 500; }
 
-        .lp-hero { max-width: 1180px; margin: 0 auto; padding: 88px 5vw 72px; text-align: center; }
-        .lp-eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 28px; }
-        .lp-h1 { font-family: 'Lora', serif; font-size: clamp(2.4rem, 6vw, 4.25rem); font-weight: 600; line-height: 1.12; letter-spacing: -0.015em; color: var(--ink); max-width: 1040px; margin: 0 auto; text-wrap: balance; }
+        .lp-hero { max-width: 1180px; margin: 0 auto; padding: 72px 5vw 64px; text-align: center; }
+        .lp-eyebrow { display: inline-block; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 26px; }
+        .lp-h1 { font-family: 'Lora', serif; font-size: clamp(2.6rem, 6.2vw, 5.25rem); font-weight: 500; line-height: 1.02; letter-spacing: -0.035em; color: var(--ink); max-width: 930px; margin: 0 auto; }
         .lp-h1 em { font-style: italic; color: var(--accent); }
         .lp-sub { font-size: 1.125rem; color: var(--ink-soft); max-width: 540px; margin: 0 auto 40px; line-height: 1.75; }
-        .lp-hero-sub { font-size: 1.125rem; color: var(--ink-soft); max-width: 560px; margin: 24px auto 0; line-height: 1.75; }
+        .lp-hero-sub { font-size: 1.25rem; color: var(--ink-soft); max-width: 760px; margin: 28px auto 0; line-height: 1.6; }
         .lp-cta { display: inline-block; background: var(--ink); color: var(--white); padding: 14px 32px; border-radius: 8px; font-size: 0.9375rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; }
-        .lp-cta-hero { margin-top: 36px; }
+        .lp-cta-hero { margin-top: 32px; padding: 18px 34px; border-radius: 10px; font-size: 1.0625rem; font-weight: 700; }
         .lp-note { display: block; margin-top: 14px; font-size: 0.8125rem; color: var(--ink-muted); }
 
         /* Hero konu kartları — onboarding'deki 9 kategorinin önizlemesi.
            align-items:start bilinçli: satırdaki kartlar kendi yüksekliğinde kalır
            (tasarımda uzun başlıklı kart diğerlerinden uzun). */
-        .lp-topics { max-width: 960px; margin-left: auto; margin-right: auto; margin-top: 64px; border-top: 1px solid var(--rule); padding-top: 48px; }
-        .lp-topics-h2 { font-family: 'Lora', serif; font-size: clamp(1.4rem, 2.6vw, 1.75rem); font-weight: 600; color: var(--ink); margin: 0; }
-        .lp-topics-intro { color: var(--ink-muted); margin: 8px 0 28px; font-size: 0.9375rem; }
-        .lp-topic-grid { display: grid; grid-template-columns: 1fr; gap: 14px; max-width: 880px; margin: 0 auto; align-items: start; text-align: left; }
+        .lp-topics { margin-top: 68px; border-top: 1px solid var(--rule); padding-top: 45px; }
+        .lp-topics-h2 { font-family: 'Lora', serif; font-size: clamp(1.75rem, 3.2vw, 2.3rem); font-weight: 500; color: var(--ink); margin: 0; }
+        .lp-topics-intro { color: var(--ink-muted); margin: 10px 0 32px; font-size: 1rem; }
+        .lp-topic-grid { display: grid; grid-template-columns: 1fr; gap: 20px; max-width: 1060px; margin: 0 auto; align-items: start; text-align: left; }
         @media (min-width: 560px) { .lp-topic-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 900px) { .lp-topic-grid { grid-template-columns: repeat(3, 1fr); } }
         .lp-topic {
@@ -253,8 +253,8 @@ export default function HomePage() {
           background: var(--white);
           border: 1px solid var(--rule);
           border-bottom: 3px solid var(--ink);
-          border-radius: 12px;
-          padding: 20px 22px;
+          border-radius: 14px;
+          padding: 26px 30px 28px;
           text-decoration: none;
           color: var(--ink);
           transition: border-color 0.15s, box-shadow 0.15s;
@@ -264,13 +264,13 @@ export default function HomePage() {
           box-shadow: 0 0 0 1px #2f64c9;
           outline: none;
         }
-        .lp-topic-icon { font-size: 1.5rem; line-height: 1; margin-bottom: 14px; display: block; }
-        .lp-topic-title { display: block; font-size: 0.9375rem; font-weight: 600; line-height: 1.35; color: var(--ink); margin-bottom: 4px; }
-        .lp-topic-desc { display: block; font-size: 0.8125rem; line-height: 1.5; color: var(--ink-muted); }
+        .lp-topic-icon { font-size: 2rem; line-height: 1; margin-bottom: 24px; display: block; }
+        .lp-topic-title { display: block; font-size: 1.3125rem; font-weight: 700; line-height: 1.25; color: var(--ink); margin-bottom: 6px; }
+        .lp-topic-desc { display: block; font-size: 1.0625rem; line-height: 1.5; color: var(--ink-muted); }
 
         @media (max-width: 760px) {
-          .lp-hero { padding-top: 56px; }
-          .lp-hero-sub { font-size: 1rem; }
+          .lp-hero { padding-top: 48px; }
+          .lp-hero-sub { font-size: 1.125rem; }
         }
 
         .lp-divider { width: 48px; height: 2px; background: var(--accent); margin: 0 auto; }
@@ -339,14 +339,14 @@ export default function HomePage() {
           <span className="lp-eyebrow">Curated for you. Every morning.</span>
           <h1 className="lp-h1">Spend less time scrolling.<br /><em>Read more of what interests you.</em></h1>
           <p className="lp-hero-sub">
-            Thoughtfully selected articles around the topics you care about, ready for you every morning.
+            Three thoughtful articles, selected around the topics you care about and delivered to your inbox every morning.
           </p>
           <a href="/register/" className="lp-cta lp-cta-hero" onClick={handleSignupCta}>
             Start reading for free →
           </a>
           <span className="lp-note">No credit card required.</span>
           <div style={{ marginTop: 14 }}>
-            <Link href="/demo" style={{ color: "var(--ink-soft)", fontSize: "0.9375rem", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
+            <Link href="/demo" style={{ color: "var(--ink-soft)", fontSize: "1rem", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
               or see a demo →
             </Link>
           </div>
