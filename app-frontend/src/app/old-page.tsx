@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { signUp } from "@/lib/cognito";
 import { useAuth } from "@/lib/auth-context";
 import Navbar from "@/components/Navbar";
-import { CATEGORIES } from "@/lib/categories";
 
 function RegisterModal({ onClose }: { onClose: () => void }) {
   const router = useRouter();
@@ -229,49 +228,13 @@ export default function HomePage() {
         .lp-nav-links a { font-size: 0.875rem; color: var(--ink-soft); text-decoration: none; }
         .lp-btn-nav { background: var(--ink); color: var(--white) !important; padding: 8px 18px; border-radius: 6px; font-weight: 500; }
 
-        .lp-hero { max-width: 1180px; margin: 0 auto; padding: 88px 5vw 72px; text-align: center; }
+        .lp-hero { max-width: 780px; margin: 0 auto; padding: 96px 5vw 80px; text-align: center; }
         .lp-eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 28px; }
-        .lp-h1 { font-family: 'Lora', serif; font-size: clamp(2.4rem, 6vw, 4.25rem); font-weight: 600; line-height: 1.12; letter-spacing: -0.015em; color: var(--ink); max-width: 1040px; margin: 0 auto; text-wrap: balance; }
+        .lp-h1 { font-family: 'Lora', serif; font-size: clamp(2.4rem, 5vw, 3.8rem); font-weight: 600; line-height: 1.18; color: var(--ink); margin-bottom: 24px; }
         .lp-h1 em { font-style: italic; color: var(--accent); }
         .lp-sub { font-size: 1.125rem; color: var(--ink-soft); max-width: 540px; margin: 0 auto 40px; line-height: 1.75; }
-        .lp-hero-sub { font-size: 1.125rem; color: var(--ink-soft); max-width: 560px; margin: 24px auto 0; line-height: 1.75; }
         .lp-cta { display: inline-block; background: var(--ink); color: var(--white); padding: 14px 32px; border-radius: 8px; font-size: 0.9375rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; }
-        .lp-cta-hero { margin-top: 36px; }
         .lp-note { display: block; margin-top: 14px; font-size: 0.8125rem; color: var(--ink-muted); }
-
-        /* Hero konu kartları — onboarding'deki 9 kategorinin önizlemesi.
-           align-items:start bilinçli: satırdaki kartlar kendi yüksekliğinde kalır
-           (tasarımda uzun başlıklı kart diğerlerinden uzun). */
-        .lp-topics { max-width: 960px; margin-left: auto; margin-right: auto; margin-top: 64px; border-top: 1px solid var(--rule); padding-top: 48px; }
-        .lp-topics-h2 { font-family: 'Lora', serif; font-size: clamp(1.4rem, 2.6vw, 1.75rem); font-weight: 600; color: var(--ink); margin: 0; }
-        .lp-topics-intro { color: var(--ink-muted); margin: 8px 0 28px; font-size: 0.9375rem; }
-        .lp-topic-grid { display: grid; grid-template-columns: 1fr; gap: 14px; max-width: 880px; margin: 0 auto; align-items: start; text-align: left; }
-        @media (min-width: 560px) { .lp-topic-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (min-width: 900px) { .lp-topic-grid { grid-template-columns: repeat(3, 1fr); } }
-        .lp-topic {
-          display: block;
-          background: var(--white);
-          border: 1px solid var(--rule);
-          border-bottom: 3px solid var(--ink);
-          border-radius: 12px;
-          padding: 20px 22px;
-          text-decoration: none;
-          color: var(--ink);
-          transition: border-color 0.15s, box-shadow 0.15s;
-        }
-        .lp-topic:hover, .lp-topic:focus-visible {
-          border-color: #2f64c9;
-          box-shadow: 0 0 0 1px #2f64c9;
-          outline: none;
-        }
-        .lp-topic-icon { font-size: 1.5rem; line-height: 1; margin-bottom: 14px; display: block; }
-        .lp-topic-title { display: block; font-size: 0.9375rem; font-weight: 600; line-height: 1.35; color: var(--ink); margin-bottom: 4px; }
-        .lp-topic-desc { display: block; font-size: 0.8125rem; line-height: 1.5; color: var(--ink-muted); }
-
-        @media (max-width: 760px) {
-          .lp-hero { padding-top: 56px; }
-          .lp-hero-sub { font-size: 1rem; }
-        }
 
         .lp-divider { width: 48px; height: 2px; background: var(--accent); margin: 0 auto; }
 
@@ -337,40 +300,20 @@ export default function HomePage() {
         {/* HERO */}
         <section className="lp-hero">
           <span className="lp-eyebrow">Curated for you. Every morning.</span>
-          <h1 className="lp-h1">Spend less time scrolling.<br /><em>Read more of what interests you.</em></h1>
-          <p className="lp-hero-sub">
-            Thoughtfully selected articles around the topics you care about, ready for you every morning.
+          <h1 className="lp-h1">Your morning reading<br /><em>three articles daily</em></h1>
+          <p className="lp-sub">
+            Thoughtfully curated articles and podcast recommendations based on the interests you choose, delivered to your inbox every morning.
           </p>
-          <a href="/register/" className="lp-cta lp-cta-hero" onClick={handleSignupCta}>
-            Start reading for free →
+          <a href="/register/" className="lp-cta" onClick={handleSignupCta}>
+            Start your morning reading habit →
           </a>
-          <span className="lp-note">No credit card required.</span>
+          <span className="lp-note">No credit card required. </span>
           <div style={{ marginTop: 14 }}>
-            <Link href="/demo" style={{ color: "var(--ink-soft)", fontSize: "0.9375rem", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
+            <Link href="/demo" style={{ color: "var(--ink-soft)", fontSize: "1.1575rem", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}>
               or see a demo →
             </Link>
           </div>
-
-          {/* TOPICS — kartlar CATEGORIES'ten gelir; yeni kategori eklenince
-              burası da otomatik güncellenir. Karta tıklamak kayıt akışını açar. */}
-          <div className="lp-topics">
-            <h2 className="lp-topics-h2">What do you want to read more about?</h2>
-            <p className="lp-topics-intro">Choose the topics that genuinely interest you.</p>
-            <div className="lp-topic-grid">
-              {CATEGORIES.map(cat => (
-                <a
-                  key={cat.id}
-                  href="/register/"
-                  className="lp-topic"
-                  onClick={handleSignupCta}
-                >
-                  <span className="lp-topic-icon" aria-hidden="true">{cat.emoji}</span>
-                  <span className="lp-topic-title">{cat.label}</span>
-                  <span className="lp-topic-desc">{cat.description}</span>
-                </a>
-              ))}
-            </div>
-          </div>
+          <span className="lp-note">Preview the full Pro experience — 3 topics, 3 daily articles, podcasts, and more.</span>
         </section>
          <div className="lp-divider" />
 
