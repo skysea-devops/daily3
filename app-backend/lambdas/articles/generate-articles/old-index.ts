@@ -913,11 +913,11 @@ function articleEmailBlock(article: Article, withDivider: boolean): string {
                 <td style="padding:28px 0;${divider}">
                   <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">${emoji} ${categoryLabel(article.category)}</span>
                   <h2 style="margin:10px 0 4px 0;font-size:21px;font-weight:700;line-height:1.3;color:#111827;">
-                    <a href="${article.url}" style="color:#111827;text-decoration:none;">${article.title}</a>
+                    <a href="${APP_URL}/dashboard" style="color:#111827;text-decoration:none;">${article.title}</a>
                   </h2>
                   <p style="margin:0 0 14px 0;font-size:13px;color:#6b7280;font-weight:500;">${article.source} &nbsp;·&nbsp; ${article.readingTime}</p>
                   <p style="margin:0;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                    ${article.summary} <a href="${article.url}" style="color:#111827;font-weight:600;text-decoration:none;white-space:nowrap;">Read full article &rarr;</a>
+                    ${article.summary} <a href="${APP_URL}/dashboard" style="color:#111827;font-weight:600;text-decoration:none;white-space:nowrap;">Read full article &rarr;</a>
                   </p>
                 </td>
               </tr>`;
@@ -930,11 +930,11 @@ function podcastEmailBlock(podcast: Podcast): string {
                   <span style="font-size:11px;font-weight:700;color:#d1d5db;margin-right:8px;">🎙</span>
                   <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">Podcast · ${categoryLabel(podcast.category)}</span>
                   <h2 style="margin:10px 0 4px 0;font-size:18px;font-weight:700;line-height:1.3;color:#111827;">
-                    <a href="${podcast.url}" style="color:#111827;text-decoration:none;">${podcast.title}</a>
+                    <a href="${APP_URL}/dashboard" style="color:#111827;text-decoration:none;">${podcast.title}</a>
                   </h2>
                   <p style="margin:0 0 14px 0;font-size:13px;color:#6b7280;font-weight:500;">${podcast.source} &nbsp;·&nbsp; ${podcast.duration}</p>
                   <p style="margin:0;font-size:15px;line-height:1.75;color:#374151;font-family:Georgia,'Times New Roman',serif;">
-                    ${podcast.summary} <a href="${podcast.url}" style="color:#111827;font-weight:600;text-decoration:none;white-space:nowrap;">Listen &rarr;</a>
+                    ${podcast.summary} <a href="${APP_URL}/dashboard" style="color:#111827;font-weight:600;text-decoration:none;white-space:nowrap;">Listen &rarr;</a>
                   </p>
                 </td>
               </tr>`;
@@ -1015,7 +1015,6 @@ function buildEmailHtml(articles: Article[], podcasts: Podcast[], isPro: boolean
             </table>
             <p style="margin:16px 0 12px 0;font-size:22px;font-weight:700;color:#111827;line-height:1.3;">${heading}</p>
             ${chips}
-            <p style="margin:10px 0 0 0;font-size:14px;"><a href="${APP_URL}/dashboard" style="color:#111827;font-weight:600;text-decoration:none;">Go to your dashboard &rarr;</a></p>
           </td>
         </tr>
         <tr>
@@ -1047,7 +1046,7 @@ function buildEmailText(articles: Article[], podcasts: Podcast[], isPro: boolean
   });
   const articleLines = articles
     .map(
-      (a) => `${categoryLabel(a.category)} — ${a.source}\n${a.title}\n${a.reason}\n${a.url}`,
+      (a) => `${categoryLabel(a.category)} — ${a.source}\n${a.title}\n${a.reason}\n${APP_URL}/dashboard`,
     )
     .join("\n\n");
   const podcastLines = podcasts.length
@@ -1055,7 +1054,7 @@ function buildEmailText(articles: Article[], podcasts: Podcast[], isPro: boolean
       podcasts
         .map(
           (p) =>
-            `🎙 Podcast · ${categoryLabel(p.category)} — ${p.source}\n${p.title}\n${p.reason}\n${p.url}`,
+            `🎙 Podcast · ${categoryLabel(p.category)} — ${p.source}\n${p.title}\n${p.reason}\n${APP_URL}/dashboard`,
         )
         .join("\n\n")
     : "";
@@ -1067,7 +1066,7 @@ function buildEmailText(articles: Article[], podcasts: Podcast[], isPro: boolean
     `\n\n---\n\nOne good read is a start. With Cogletta Pro, every morning brings 3 thoughtful ` +
     `articles and 2 podcast episodes across the topics you care about.\n${APP_URL}/settings\n\n---`;
   // Sira HTML ile ayni: makale → davet → podcast.
-  return `Cogletta — ${today}\n\nGo to your dashboard: ${APP_URL}/dashboard\n\n${intro}\n\n${articleLines}${upsell}${podcastLines}\n\nNew content arrives every morning at 07:00.`;
+  return `Cogletta — ${today}\n\n${intro}\n\n${articleLines}${upsell}${podcastLines}\n\nNew content arrives every morning at 07:00.`;
 }
 
 export async function sendDailyEmail(
