@@ -42,3 +42,7 @@ next-env.d.ts
 
 * 2.*
 * [0-9].*
+# essays: üretilen veri (scripts/essays/build.mjs)
+/src/generated/
+# KİLİTLİ deneme bölümleri — asla commit'lenmez, asla out/ altına girmez
+/.essays-private/

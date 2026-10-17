@@ -3,10 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/essays/build.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/essays/build.mjs",
     "build": "next build",
+    "postbuild": "node scripts/essays/check-leaks.mjs",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "essays": "node scripts/essays/build.mjs"
   },
   "dependencies": {
     "amazon-cognito-identity-js": "^6.3.16",
@@ -15,13 +19,17 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@fontsource/lora": "^5.3.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
+    "gray-matter": "^4.0.3",
+    "remark-parse": "^11.0.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "unified": "^11.0.5"
   }
 }

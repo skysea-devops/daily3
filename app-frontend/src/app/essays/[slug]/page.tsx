@@ -1,15 +1,37 @@
 // src/app/essays/[slug]/page.tsx
-// Server component. With `output: "export"`, every slug listed by
-// generateStaticParams() is pre-rendered to static HTML at build time,
-// including full metadata and JSON-LD — ideal for Google and AI crawlers.
+// Server component. `output: "export"` ile her slug build'de statik HTML'e
+// dönüşür (metadata + JSON-LD dahil).
+//
+// access: "pro" denemelerde statik HTML YALNIZCA önizlemeyi içerir — ilk 7 gün
+// bile. 7 gün dolunca CDN'deki dosya yeni bir deploy'a kadar değişmezdi; tam
+// metin statik çıktıya hiç girmez. Kalan bölümü <EssayContinuation> tarayıcıda
+// GET /essays/{slug}/body ile getirir (yetkiyi sunucu belirler).
 
-import ShareCard from "@/components/ShareCard";
-import EssayFooterCta from "@/components/EssayFooterCta";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { ESSAYS, getEssay, essayAuthor, authorInitial, type Author, type EssayBlock } from "@/data/essays";
+import ShareCard from "@/components/ShareCard";
+import EssayFooterCta from "@/components/EssayFooterCta";
+import EssayBlocks from "@/components/essays/EssayBlocks";
+import EssayContinuation from "@/components/essays/EssayContinuation";
+import {
+  ESSAYS,
+  SITE_URL,
+  authorInitial,
+  essayAuthor,
+  formatDate,
+  getEssay,
+  ogImageFor,
+  relatedEssays,
+  seriesNeighbors,
+  tagLabel,
+  type Author,
+} from "@/lib/essays";
+import styles from "../essays.module.css";
+
+/** JSON-LD hasPart ve paywall'ın yerleştiği kapsayıcı (Google paywall yönergesi). */
+const LOCKED_SELECTOR_CLASS = "essay-locked";
 
 export function generateStaticParams() {
   return ESSAYS.map((essay) => ({ slug: essay.slug }));
@@ -23,14 +45,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const essay = getEssay(slug);
   if (!essay) return {};
-  // Sosyal onizleme gorseli. Yazi govdesindeki img bloklari BURAYA GECMEZ —
-  // Twitter/LinkedIn/WhatsApp yalnizca <head> meta etiketlerini okur.
-  const images = essay.coverImage ? [essay.coverImage] : undefined;
+  // Sosyal önizleme görseli: kapak varsa kapak, yoksa build'de başlıktan
+  // üretilen PNG (/essays/og/<slug>.png). Gövdedeki img blokları buraya geçmez.
+  const images = [ogImageFor(essay)];
 
   return {
     title: `${essay.title} — Cogletta Essays`,
     description: essay.description,
-    alternates: { canonical: `/essays/${essay.slug}/` },
+    alternates: {
+      canonical: `/essays/${essay.slug}/`,
+      types: { "application/rss+xml": [{ url: "/essays/rss.xml", title: "Cogletta Essays" }] },
+    },
     openGraph: {
       title: essay.title,
       description: essay.description,
@@ -38,152 +63,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "article",
       publishedTime: essay.date,
       siteName: "Cogletta",
-      ...(images ? { images } : {}),
+      images,
     },
     twitter: {
-      // Gorsel varsa buyuk kart: kucuk "summary" karti gorseli kucuk bir
-      // kare kucuk resim olarak gosterir, etkisi kaybolur.
-      card: images ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title: essay.title,
       description: essay.description,
-      ...(images ? { images } : {}),
+      images,
     },
   };
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso + "T00:00:00Z").toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  });
-}
-
-const pStyle: React.CSSProperties = {
-  fontSize: "1.0625rem",
-  lineHeight: 1.85,
-  color: "var(--ink-soft)",
-  marginTop: 22,
-};
-
-function Block({ block }: { block: EssayBlock }) {
-  switch (block.type) {
-    case "h2":
-      return (
-        <h2
-          style={{
-            fontFamily: "'Lora', serif",
-            fontWeight: 600,
-            fontSize: "1.375rem",
-            color: "var(--ink)",
-            marginTop: 44,
-          }}
-        >
-          {block.text}
-        </h2>
-      );
-    case "img":
-      return (
-        <figure style={{ margin: "36px 0" }}>
-          {/* next/image yerine <img>: statik export (output: export) ile
-              optimizasyon calismadigi icin dogrudan servis ediliyor. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={block.src}
-            alt={block.alt}
-            loading="lazy"
-            style={{
-              width: "100%",
-              height: "auto",
-              display: "block",
-              borderRadius: 12,
-            }}
-          />
-          {block.caption && (
-            <figcaption
-              style={{
-                marginTop: 10,
-                fontSize: "0.8125rem",
-                lineHeight: 1.6,
-                color: "var(--ink-muted)",
-                textAlign: "center",
-              }}
-            >
-              {block.caption}
-            </figcaption>
-          )}
-        </figure>
-      );
-    case "quote":
-      return (
-        <blockquote
-          style={{
-            margin: "32px 0",
-            paddingLeft: 20,
-            borderLeft: "3px solid var(--accent)",
-            fontFamily: "'Lora', serif",
-            fontStyle: "italic",
-            fontSize: "1.1875rem",
-            lineHeight: 1.7,
-            color: "var(--ink)",
-          }}
-        >
-          {block.text}
-          {block.cite && (
-            <cite
-              style={{
-                display: "block",
-                marginTop: 8,
-                fontFamily: "'Inter', sans-serif",
-                fontStyle: "normal",
-                fontSize: "0.8125rem",
-                color: "var(--ink-muted)",
-              }}
-            >
-              — {block.cite}
-            </cite>
-          )}
-        </blockquote>
-      );
-    case "ul":
-      return (
-        <ul
-          style={{
-            marginTop: 22,
-            paddingLeft: 22,
-            fontSize: "1.0625rem",
-            lineHeight: 1.85,
-            color: "var(--ink-soft)",
-          }}
-        >
-          {block.items.map((item, i) => (
-            <li key={i} style={{ marginTop: 6 }}>
-              {item}
-            </li>
-          ))}
-        </ul>
-      );
-    default:
-      return <p style={pStyle}>{block.text}</p>;
-  }
-}
-
-
-/**
- * Yazar satiri. `avatar` yoksa ismin bas harfi daire icinde gosterilir —
- * misafir yazar foto vermediginde kirik resim ikonu cikmasin diye.
- */
 function AuthorByline({ author }: { author: Author }) {
   const initial = authorInitial(author);
-
   const name = author.url ? (
-    <a
-      href={author.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{ color: "var(--ink)", textDecoration: "none", fontWeight: 600 }}
-    >
+    <a href={author.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--ink)", textDecoration: "none", fontWeight: 600 }}>
       {author.name}
     </a>
   ) : (
@@ -194,13 +88,7 @@ function AuthorByline({ author }: { author: Author }) {
     <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 24 }}>
       {author.avatar ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={author.avatar}
-          alt=""
-          width={40}
-          height={40}
-          style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
-        />
+        <img src={author.avatar} alt="" width={40} height={40} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
       ) : (
         <span
           aria-hidden="true"
@@ -223,12 +111,25 @@ function AuthorByline({ author }: { author: Author }) {
   );
 }
 
+const sectionLabel = {
+  fontSize: "0.75rem",
+  fontWeight: 600,
+  letterSpacing: "0.12em",
+  textTransform: "uppercase" as const,
+  color: "var(--ink-muted)",
+  margin: "0 0 14px",
+};
+
 export default async function EssayPage({ params }: Props) {
   const { slug } = await params;
   const essay = getEssay(slug);
   if (!essay) notFound();
 
   const author = essayAuthor(essay);
+  const url = `${SITE_URL}/essays/${essay.slug}/`;
+  const { prev, next } = seriesNeighbors(essay);
+  const related = relatedEssays(essay, 3);
+  const locked = essay.access === "pro";
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -236,47 +137,58 @@ export default async function EssayPage({ params }: Props) {
     headline: essay.title,
     description: essay.description,
     datePublished: essay.date,
-    // Yazar artik Person: Google ve AI tarayicilari icin dogru sinyal.
-    // Yayinci Organization olarak Cogletta kaliyor.
+    image: [`${SITE_URL}${ogImageFor(essay)}`],
+    keywords: essay.tags.map(tagLabel).join(", "),
     author: {
       "@type": "Person",
       name: author.name,
       ...(author.url ? { url: author.url } : {}),
     },
-    publisher: { "@type": "Organization", name: "Cogletta", url: "https://cogletta.com" },
-    mainEntityOfPage: `https://cogletta.com/essays/${essay.slug}/`,
+    publisher: { "@type": "Organization", name: "Cogletta", url: SITE_URL },
+    mainEntityOfPage: url,
+    ...(essay.seriesSlug
+      ? { isPartOf: { "@type": "CreativeWorkSeries", name: essay.series, url: `${SITE_URL}/essays/series/${essay.seriesSlug}/` } }
+      : {}),
+    // Google paywall yönergesi: kilitli bölüm cssSelector ile işaretlenir.
+    // Googlebot da okuyucuyla AYNI önizlemeyi görür (cloaking yok).
+    isAccessibleForFree: !locked,
+    ...(locked
+      ? {
+          hasPart: {
+            "@type": "WebPageElement",
+            isAccessibleForFree: false,
+            cssSelector: `.${LOCKED_SELECTOR_CLASS}`,
+          },
+        }
+      : {}),
   };
 
   return (
     <>
       <Navbar />
-      <main
-        style={{
-          maxWidth: 680,
-          margin: "0 auto",
-          padding: "56px 5vw 96px",
-        }}
-      >
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+      <main style={{ maxWidth: 680, margin: "0 auto", padding: "56px 5vw 96px" }}>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
         <p style={{ marginBottom: 28 }}>
-          <Link
-            href="/essays/"
-            style={{
-              fontSize: "0.875rem",
-              color: "var(--ink-muted)",
-              textDecoration: "none",
-            }}
-          >
+          <Link href="/essays/" style={{ fontSize: "0.875rem", color: "var(--ink-muted)", textDecoration: "none" }}>
             ← All essays
           </Link>
         </p>
 
         <article>
           <header>
+            <div className={styles.kicker}>
+              {essay.tags.map((t) => (
+                <Link key={t} href={`/essays/tag/${t}/`} className={styles.tag}>
+                  {tagLabel(t)}
+                </Link>
+              ))}
+              {essay.seriesSlug && (
+                <Link href={`/essays/series/${essay.seriesSlug}/`} className={styles.seriesTag}>
+                  {essay.series} · Part {essay.seriesPart}
+                </Link>
+              )}
+            </div>
             <p
               style={{
                 fontSize: "0.75rem",
@@ -305,14 +217,66 @@ export default async function EssayPage({ params }: Props) {
             <AuthorByline author={author} />
           </header>
 
-          {essay.blocks.map((block, i) => (
-            <Block key={i} block={block} />
-          ))}
+          {essay.coverImage && (
+            <figure style={{ margin: "32px 0 8px" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={essay.coverImage} alt="" className={styles.cover} />
+              {essay.coverCredit && <figcaption className={styles.credit}>{essay.coverCredit}</figcaption>}
+            </figure>
+          )}
+
+          <EssayBlocks blocks={essay.blocks} />
+
+          {essay.hasLockedPart && (
+            <div className={LOCKED_SELECTOR_CLASS}>
+              <EssayContinuation slug={essay.slug} />
+            </div>
+          )}
         </article>
+
+        {(prev || next) && (
+          <nav aria-label="Series" style={{ marginTop: 56 }}>
+            <p style={sectionLabel}>{essay.series}</p>
+            <div className={styles.seriesNav}>
+              {prev && (
+                <Link href={`/essays/${prev.slug}/`} className={styles.seriesNavLink}>
+                  <span style={{ fontSize: "0.75rem", color: "var(--ink-muted)" }}>← Part {prev.seriesPart}</span>
+                  <span style={{ display: "block", marginTop: 4, fontFamily: "'Lora', serif", fontWeight: 600 }}>{prev.title}</span>
+                </Link>
+              )}
+              {next && (
+                <Link href={`/essays/${next.slug}/`} className={`${styles.seriesNavLink} ${styles.seriesNavNext}`}>
+                  <span style={{ fontSize: "0.75rem", color: "var(--ink-muted)" }}>Part {next.seriesPart} →</span>
+                  <span style={{ display: "block", marginTop: 4, fontFamily: "'Lora', serif", fontWeight: 600 }}>{next.title}</span>
+                </Link>
+              )}
+            </div>
+          </nav>
+        )}
 
         <div style={{ margin: "40px 0" }}>
           <ShareCard compact />
         </div>
+
+        {related.length > 0 && (
+          <section aria-labelledby="related-label" style={{ marginTop: 48 }}>
+            <p style={sectionLabel} id="related-label">
+              Related essays
+            </p>
+            <div className={styles.related}>
+              {related.map((r) => (
+                <Link key={r.slug} href={`/essays/${r.slug}/`} className={styles.relatedCard}>
+                  <span style={{ fontSize: "0.75rem", color: "var(--ink-muted)" }}>
+                    {tagLabel(r.tags[0])} · {r.readingMinutes} min
+                  </span>
+                  <span style={{ display: "block", marginTop: 6, fontFamily: "'Lora', serif", fontWeight: 600, lineHeight: 1.35 }}>
+                    {r.title}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <footer
           style={{

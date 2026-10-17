@@ -482,8 +482,10 @@ export default function HomePage() {
               { icon: "✉️", title: "Daily email digest", body: "Your article and podcast delivered to your inbox every morning. Clean, readable." },
               { icon: "💡", title: "Why we picked this for you", body: "Each article comes with a short editorial note — why this piece, why today, why it's worth your time." },
               { icon: "🎙", title: "2 podcast episodes daily (1 in the free plan)", body: "A carefully selected episode from top podcasts in your interest area — paired with your article every morning." },
+              { icon: "✍️", title: "Cogletta Essays", body: "Weekly long-form essays that turn old ideas toward modern life, from Plato's cave to Rumi's wooden horse. Pro readers get the full archive.", wide: true },
             ].map(f => (
-              <div key={f.title} className="lp-feature">
+              // 5. kart 2 sütunlu grid'de tek kalmasın: tam genişlik
+              <div key={f.title} className="lp-feature" style={"wide" in f && f.wide ? { gridColumn: "1 / -1" } : undefined}>
                 <div className="lp-feature-icon">{f.icon}</div>
                 <h3>{f.title}</h3>
                 <p>{f.body}</p>
