@@ -205,19 +205,23 @@ const PRO_NUDGES = [
   { text: "Enjoyed today's read? Pro delivers 3 articles for each of your interests — every morning.", cta: "Explore Cogletta Pro →" },
 ];
 
+// Free kullanıcıya dashboard'un ÜSTÜNDE, paylaşım kartının yerinde gösterilir
+// (Pro kullanıcıda o alanda "Enjoying Cogletta?" paylaşım kartı kalır).
 function ProNudge() {
   const nudge = PRO_NUDGES[Math.floor(Math.random() * PRO_NUDGES.length)];
   return (
     <div style={{
-      borderTop: "1px solid var(--rule)",
-      paddingTop: 24,
+      background: "var(--white)",
+      border: "1px solid var(--rule)",
+      borderRadius: 12,
+      padding: "14px 18px",
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
       gap: 16,
       flexWrap: "wrap",
     }}>
-      <p style={{ fontSize: "0.875rem", color: "var(--ink-muted)", lineHeight: 1.6 }}>
+      <p style={{ flex: 1, minWidth: 220, fontSize: "0.875rem", color: "var(--ink-soft)", lineHeight: 1.6, margin: 0 }}>
         {nudge.text}
       </p>
       <a href="/register#pro" style={{
@@ -353,7 +357,7 @@ function DashboardContent() {
         </div>
 
         <div style={{ margin: "24px 0 32px" }}>
-          <ShareCard compact />
+          {plan === "pro" ? <ShareCard compact /> : <ProNudge />}
         </div>
 
         {noInterests && (
@@ -408,7 +412,6 @@ function DashboardContent() {
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {plan === "pro" && isWeeklyReviewDay() && trend && <SundayCard issue={trend} />}
             {articles.map((a, i) => <ArticleCard key={`a-${i}`} article={a} />)}
-            {plan !== "pro" && <ProNudge />}
             {podcasts.map((p, i) => <PodcastCard key={`p-${i}`} podcast={p} />)}
             {generatedAt && (
               <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--ink-muted)", paddingTop: 4 }}>
