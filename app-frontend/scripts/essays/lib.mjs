@@ -279,7 +279,16 @@ export function loadEssayFile(filePath, categoryIds) {
     description,
     date,
     readingMinutes,
-    ...(coverImage ? { coverImage, coverCredit } : {}),
+    ...(coverImage
+      ? {
+          coverImage,
+          ...(coverCredit ? { coverCredit } : {}),
+          // Kapak gövdede de kullanılıyorsa (önizlemede ya da kilitli bölümde)
+          // deneme sayfası onu üstte TEKRAR göstermez: mevcut denemelerin
+          // tasarımı değişmesin, görsel iki kez çıkmasın.
+          coverInBody: blocks.some((b) => b.type === "img" && b.src === coverImage),
+        }
+      : {}),
     ...(author ? { author } : {}),
     tags,
     ...(series ? { series, seriesSlug: slugify(series), seriesPart } : {}),

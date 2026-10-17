@@ -217,7 +217,7 @@ export default async function EssayPage({ params }: Props) {
             <AuthorByline author={author} />
           </header>
 
-          {essay.coverImage && (
+          {essay.coverImage && !essay.coverInBody && (
             <figure style={{ margin: "32px 0 8px" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={essay.coverImage} alt="" className={styles.cover} />

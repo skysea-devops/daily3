@@ -40,6 +40,8 @@ export interface Essay {
   readingMinutes: number;
   coverImage?: string;
   coverCredit?: string;
+  /** Kapak gövdede de kullanılıyor mu (öyleyse deneme sayfasında üstte gösterilmez). */
+  coverInBody?: boolean;
   author?: Author;
   tags: CategoryId[];
   series?: string;
