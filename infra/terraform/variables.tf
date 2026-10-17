@@ -89,33 +89,37 @@ variable "domain_aliases" {
   default     = ["dev.cogletta.com"]
 }
 
-variable "lemonsqueezy_webhook_secret" {
-  description = "Lemon Squeezy webhook signing secret (LS panelinde belirlenen string)"
+# ─── Polar (Merchant of Record) ───────────────────────────────────────────────
+# Sırlar yalnızca SSM parametresi İLK oluşturulurken kullanılır (polar.tf,
+# ignore_changes = all). Sonraki değişiklikler doğrudan SSM'de yapılır.
+
+variable "polar_server" {
+  description = "Polar API ortamı: sandbox (sandbox-api.polar.sh) ya da production (api.polar.sh)"
+  type        = string
+  default     = "sandbox"
+
+  validation {
+    condition     = contains(["sandbox", "production"], var.polar_server)
+    error_message = "polar_server 'sandbox' ya da 'production' olmalı."
+  }
+}
+
+variable "polar_access_token" {
+  description = "Polar Organization Access Token (yalnızca SSM parametresinin ilk değeri)"
   type        = string
   sensitive   = true
-  default     = "" # ilk deploy icin bos birak; sonra GitHub secret'tan TF_VAR ile gelir
+  default     = ""
 }
-variable "lemonsqueezy_api_key" {
-  description = "Lemon Squeezy API key used for customer subscription management"
+
+variable "polar_webhook_secret" {
+  description = "Polar webhook signing secret (yalnızca SSM parametresinin ilk değeri)"
   type        = string
   sensitive   = true
   default     = ""
 }
 
-variable "lemonsqueezy_yearly_variant_id" {
-  description = "Lemon Squeezy variant ID for the yearly ProReader plan"
-  type        = string
-  default     = ""
-}
-
-variable "lemonsqueezy_monthly_variant_id" {
-  description = "Lemon Squeezy variant ID for the monthly ProReader plan"
-  type        = string
-  default     = ""
-}
-
-variable "lemonsqueezy_store_id" {
-  description = "Lemon Squeezy store ID (used by the Checkouts API)"
+variable "polar_product_id" {
+  description = "Polar ürün ID'si — Cogletta Pro, yalnızca yıllık ($48/yıl, trial'sız)"
   type        = string
   default     = ""
 }
