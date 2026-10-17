@@ -40,6 +40,7 @@ const TRIAL_FEATURES = [
   "2 podcast recommendations daily",
   "Personalized sub-topics",
   "The Sunday Supplement every week",
+  "Full access to Cogletta Essays: a new long-form essay every week, plus the complete archive",
 ];
 
 const FREE_FEATURES = [
@@ -54,6 +55,7 @@ const PRO_FEATURES = [
   "2 podcast recommendations daily",
   "Personalized sub-topics",
   "The Sunday Supplement every week",
+  "Full access to Cogletta Essays: a new long-form essay every week, plus the complete archive",
 ];
 
 const input: React.CSSProperties = {
