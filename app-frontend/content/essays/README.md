@@ -52,7 +52,7 @@ Bu satırdan sonrası Pro okurlara açılır.
 | `date` | ✔ | `YYYY-MM-DD`. 7 günlük açık pencere bu tarihten (00:00 UTC) sayılır. |
 | `tags` | ✔ | Kategori id'leri, en az bir tane: `technology`, `geopolitics`, `business_economics`, `science_environment`, `life_work`, `culture_style`, `philosophy`, `history`, `health`. Başka bir değer build'i durdurur. |
 | `coverImage` | | Liste sayfasında öne çıkan görsel, deneme başında kapak ve paylaşım görseli. Yoksa başlıktan otomatik OG görseli üretilir. |
-| `coverCredit` | `coverImage` varsa ✔ | Kapağın altında görünür. Kaynağı ve lisansı yaz. |
+| `coverCredit` | Başkasına ait görselde ✔ | Kapağın altında görünür. Kaynağı ve lisansı yaz. Kendi ürettiğin görselde (ör. Canva) boş bırakabilirsin; build yalnızca uyarı verir. |
 | `series` / `seriesPart` | | Aynı seri adındaki denemeler `/essays/series/<seri-adı>/` sayfasında sırayla listelenir. Aynı bölüm numarası iki kez kullanılamaz. |
 | `access` | | `pro` (varsayılan) veya `free`. Aşağıya bak. |
 | `readingMinutes` | | Yazılmazsa dakikada 225 kelimeden hesaplanır. |

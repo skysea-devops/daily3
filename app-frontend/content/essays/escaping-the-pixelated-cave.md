@@ -4,7 +4,6 @@ description: "Plato imagined prisoners who mistook shadows for reality. Twenty-f
 date: "2026-08-30"
 readingMinutes: 6
 coverImage: "/essays/platonCave/platonCave2.jpg"
-coverCredit: "Illustration: Ismail Gokdeniz (made with Canva)"
 tags: [philosophy, technology]
 access: pro
 ---

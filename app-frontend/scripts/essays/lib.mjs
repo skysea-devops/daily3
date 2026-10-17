@@ -226,7 +226,9 @@ export function loadEssayFile(filePath, categoryIds) {
   const coverImage = data.coverImage ? String(data.coverImage) : undefined;
   const coverCredit = data.coverCredit ? String(data.coverCredit) : undefined;
   if (coverImage && !coverCredit) {
-    throw new EssayError(file, "coverCredit is required when coverImage is set");
+    // Uyarı, hata değil: kendi ürettiğin görsellerde kredi gerekmeyebilir.
+    // Başkasına ait (kamu malı dahil) her görselde coverCredit YAZILMALI (README).
+    console.warn(`[essays] ${file}: coverImage has no coverCredit (fine for your own artwork; required for anyone else's)`);
   }
 
   let series;

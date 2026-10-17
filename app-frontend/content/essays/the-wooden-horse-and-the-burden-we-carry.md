@@ -4,7 +4,6 @@ description: "Rumi imagined a child carrying the stick he believes is carrying h
 date: "2026-08-31"
 readingMinutes: 8
 coverImage: "/essays/mevlanaTahtaAt/mavlanaTahtaAtMetaforu.jpg"
-coverCredit: "Illustration: Ismail Gokdeniz (made with Canva)"
 tags: [philosophy]
 access: pro
 ---
