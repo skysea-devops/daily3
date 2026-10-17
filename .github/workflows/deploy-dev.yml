@@ -44,6 +44,10 @@ jobs:
         working-directory: app-backend
         run: npm run typecheck
 
+      - name: Unit tests
+        working-directory: app-backend
+        run: npm test
+
       - name: Build
         working-directory: app-backend
         run: npm run build
@@ -97,6 +101,18 @@ jobs:
         with:
           name: frontend-out
           path: app-frontend/out/
+          retention-days: 1
+
+      # Kilitli deneme bölümleri (npm run build → prebuild üretir). out/'a GİRMEZ;
+      # ayrı artifact olarak deploy job'ına taşınır ve PRIVATE bucket'a yüklenir.
+      # Sızıntı kontrolü (postbuild) zaten build adımında koştu ve geçti.
+      - name: Upload locked essay bodies
+        uses: actions/upload-artifact@v4
+        with:
+          name: essays-private
+          path: app-frontend/.essays-private/
+          include-hidden-files: true
+          if-no-files-found: error
           retention-days: 1
 
   terraform:
@@ -204,6 +220,25 @@ jobs:
             --exclude "*.html" \
             --exclude "*.txt" \
             --cache-control "public, max-age=3600"
+
+      - name: Download locked essay bodies
+        uses: actions/download-artifact@v4
+        with:
+          name: essays-private
+          path: essays-private/
+
+      # Bucket adı Terraform'daki kuralla aynı (infra/terraform/essays.tf):
+      # <project>-<env>-essays-private-<account id>. Public erişimi kapalı.
+      - name: Sync locked essay bodies
+        run: |
+          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+          BUCKET="cogletta-dev-essays-private-$ACCOUNT_ID"
+          aws s3 sync essays-private/ "s3://$BUCKET/essays/" \
+            --delete \
+            --exclude "*" --include "*.json" \
+            --content-type "application/json" \
+            --cache-control "private, no-store" \
+            --sse AES256
 
       - name: Invalidate CloudFront
         run: |

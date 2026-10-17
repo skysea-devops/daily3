@@ -457,7 +457,7 @@ function SettingsContent() {
               description={
                 isTrial
                   ? "Your trial ends automatically. Subscribe to keep choosing your own three topics."
-                  : "3 articles per interest, sub-topics, The Sunday Supplement. $48/year."
+                  : "3 articles per interest, sub-topics, The Sunday Supplement and full access to Cogletta Essays: a new long-form essay every week, plus the complete archive. $48/year."
               }
             >
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -505,6 +505,9 @@ function SettingsContent() {
           <Row label="Daily Cogletta email" description="Your curated articles and podcast recommendations, every morning." />
           {plan === "pro" && (
             <Row topBorder label="The Sunday Supplement" description="A lighter article and podcast, every Sunday morning." />
+          )}
+          {plan === "pro" && (
+            <Row topBorder label="Cogletta Essays" description="Full access to Cogletta Essays: a new long-form essay every week, plus the complete archive." />
           )}
         </Section>
 
