@@ -1,9 +1,8 @@
 // src/components/essays/EssayRow.tsx
-// Arşiv satırı: tarih, başlık, kısa açıklama, etiketler, okuma süresi, Pro rozeti.
+// Arşiv satırı: tarih, başlık, kısa açıklama, etiketler, okuma süresi.
 
 import Link from "next/link";
 import { formatDate, tagLabel, type Essay } from "@/lib/essays";
-import AccessBadge from "./AccessBadge";
 import styles from "@/app/essays/essays.module.css";
 
 export default function EssayRow({ essay, showTags = true }: { essay: Essay; showTags?: boolean }) {
@@ -24,7 +23,6 @@ export default function EssayRow({ essay, showTags = true }: { essay: Essay; sho
                 {tagLabel(t)}
               </Link>
             ))}
-          <AccessBadge access={essay.access} date={essay.date} />
         </div>
       </div>
       <span className={styles.min}>{essay.readingMinutes} min</span>
