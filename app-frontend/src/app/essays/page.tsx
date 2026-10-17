@@ -6,7 +6,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import ShareCard from "@/components/ShareCard";
-import AccessBadge from "@/components/essays/AccessBadge";
 import EssaysCta from "@/components/essays/EssaysCta";
 import { Archive } from "@/components/essays/EssayRow";
 import {
@@ -97,7 +96,6 @@ export default function EssaysPage() {
                     {featured.series} · Part {featured.seriesPart}
                   </Link>
                 )}
-                <AccessBadge access={featured.access} date={featured.date} />
               </div>
               <h2 className={styles.featuredTitle}>
                 <Link href={`/essays/${featured.slug}/`}>{featured.title}</Link>
