@@ -27,12 +27,12 @@ function OnboardingForm() {
   // Ödemesi tamamlanmış kullanıcıda planSource "paid" olur ve effect durur.
   useEffect(() => {
     if (!user || planSource === "paid") return;
-    let intent: "monthly" | "yearly" | null = null;
+    let intent: "yearly" | null = null; // tek plan; eski "monthly" niyeti de yıllığa gider
     try {
       const raw = localStorage.getItem("cogletta_plan_intent");
       if (raw) {
         const p = JSON.parse(raw);
-        if ((p?.billing === "monthly" || p?.billing === "yearly") && p.exp > Date.now()) intent = p.billing;
+        if ((p?.billing === "monthly" || p?.billing === "yearly") && p.exp > Date.now()) intent = "yearly";
         else localStorage.removeItem("cogletta_plan_intent");
       }
     } catch {

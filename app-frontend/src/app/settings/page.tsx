@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/Guards";
 import { updateDisplayName, changePassword } from "@/lib/cognito";
-import { cancelBillingSubscription, getBillingSubscription, switchBillingCycle, resumeSubscription } from "@/lib/api";
+import { cancelBillingSubscription, getBillingSubscription, resumeSubscription } from "@/lib/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
@@ -16,7 +16,7 @@ const mutedPill: React.CSSProperties = {
   fontSize: "0.8125rem", fontWeight: 600, color: "var(--ink-muted)",
 };
 
-// Lemon Squeezy checkout linkleri build sırasında inline edilir. Prod'da bu
+// Checkout URL'leri backend'de (POST /me/checkout → Polar Checkout Session) üretilir.
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -260,13 +260,13 @@ function SettingsContent() {
   }, [user]);
 
   useEffect(() => {
-    // Deneme sirasinda Lemon Squeezy aboneligi YOK: cagri bosuna hata doner
+    // Deneme sirasinda Polar aboneligi YOK: cagri bosuna 404 doner
     // ve "Couldn't load your billing details" gorunurdu.
     if (!user?.accessToken || plan !== "pro" || isTrial) return;
     void loadBilling();
   }, [user, plan, loadBilling]);
 
-  // Lemon Squeezy Checkout dönüşü: ?checkout=success | ?checkout=cancel
+  // Checkout dönüşü: ?checkout=success | ?checkout=cancel (Polar'daki geri butonu cancel'a döner)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get("checkout");
@@ -288,19 +288,20 @@ function SettingsContent() {
     }
   }, [refreshSession]);
 
-  // Kayıt akışından gelen Pro niyeti: /settings?upgrade=monthly|yearly → otomatik checkout
+  // Kayıt akışından gelen Pro niyeti: /settings?upgrade=yearly → otomatik checkout
+  // (eski "monthly" linkleri de tek plan olan yıllığa gider)
   useEffect(() => {
     const upgrade = new URLSearchParams(window.location.search).get("upgrade");
     if (upgrade !== "monthly" && upgrade !== "yearly") return;
     if (!user || plan !== "free") return;
     window.history.replaceState({}, "", "/settings");
-    handleUpgrade(upgrade);
+    handleUpgrade("yearly");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, plan]);
 
-  function handleUpgrade(billing: "monthly" | "yearly") {
+  function handleUpgrade(billing: "yearly") {
     if (!user || billingBusy) return;
-    // Checkout'u cogletta içindeki hub'a taşı: hub, LS'i yeni sekmede açar ve
+    // Checkout'u cogletta içindeki hub'a taşı: hub, Polar checkout'unu yeni sekmede açar ve
     // bu (settings) sekmesi cogletta'da kalır. Popup engeli hub'daki tıklamayla aşılır.
     router.push(`/checkout-complete?plan=${billing}`);
   }
@@ -333,38 +334,6 @@ function SettingsContent() {
     }
   }
 
-  // Aylık↔Yıllık geçiş: LS variant-swap (PATCH /me/subscription). Aynı abonelik ID
-  // korunur, proration LS'te otomatik. Eski "önce iptal et, yeni checkout aç" akışı
-  // yok — çift abonelik / iade riski ortadan kalktı.
-  async function handleSwitchBillingCycle(target: "monthly" | "yearly") {
-    if (!user?.accessToken || billingBusy) return;
-    const priceLine = target === "yearly" ? "$58/year" : "$5.80/month";
-    const confirmed = window.confirm(
-      `Switch to ${target} billing (${priceLine})? Your plan changes right away and the price ` +
-      "difference is prorated automatically."
-    );
-    if (!confirmed) return;
-
-    setBillingBusy(true); setBillingError(""); setBillingNotice("");
-    try {
-      const updated = await switchBillingCycle(target, user.accessToken);
-      setSubscription((cur) => cur ? {
-        ...cur,
-        billingCycle: updated.billingCycle,
-        status: updated.status,
-        renewsAt: updated.renewsAt ?? cur.renewsAt,
-        endsAt: updated.endsAt ?? cur.endsAt,
-      } : cur);
-      setBillingNotice(`You're now on ${target} billing.`);
-      await refreshSession();
-    } catch (error: any) {
-      setBillingError(error?.message || "Could not switch billing cycle. Please try again.");
-    } finally {
-      setBillingBusy(false);
-    }
-  }
-
-  // Resume: iptal edilmiş (ama henüz expired olmamış) aboneliği geri al.
   async function handleResumeSubscription() {
     if (!user?.accessToken || billingBusy) return;
     setBillingBusy(true); setBillingError(""); setBillingNotice("");
@@ -400,10 +369,8 @@ function SettingsContent() {
     }
     if (plan !== "pro") return "Free";
     if (billingStatus !== "ready" || !subscription) return "Cogletta Pro";
-    const cycleLabel = subscription.billingCycle === "yearly" ? "Yearly"
-      : subscription.billingCycle === "monthly" ? "Monthly" : "";
-    const price = subscription.billingCycle === "yearly" ? "$58/year"
-      : subscription.billingCycle === "monthly" ? "$5.80/month" : "";
+    const cycleLabel = subscription.billingCycle === "yearly" ? "Yearly" : "";
+    const price = subscription.billingCycle === "yearly" ? "$48/year" : "";
     if (String(subscription.status).toLowerCase() === "past_due") return "Cogletta Pro — Payment past due";
     if (subscription.cancelled) {
       const d = subscription.endsAt ? new Date(subscription.endsAt).toLocaleDateString() : "the end of the period";
@@ -490,12 +457,11 @@ function SettingsContent() {
               description={
                 isTrial
                   ? "Your trial ends automatically. Subscribe to keep choosing your own three topics."
-                  : "3 articles per interest, sub-topics, The Sunday Supplement. Yearly saves two months."
+                  : "3 articles per interest, sub-topics, The Sunday Supplement. $48/year."
               }
             >
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                <ActionBtn label={billingBusy ? "Redirecting…" : "Yearly · $58"} onClick={() => handleUpgrade("yearly")} disabled={billingBusy} style="accent" />
-                <ActionBtn label="Monthly · $5.80" onClick={() => handleUpgrade("monthly")} disabled={billingBusy} />
+                <ActionBtn label={billingBusy ? "Redirecting…" : "Get Pro · $48/year"} onClick={() => handleUpgrade("yearly")} disabled={billingBusy} style="accent" />
               </div>
             </Row>
           )}
@@ -506,19 +472,6 @@ function SettingsContent() {
           )}
           {plan === "pro" && !isTrial && billingStatus !== "error" && (
             <>
-              <Row topBorder label="Billing cycle" description="Change between monthly and yearly anytime. The switch applies immediately.">
-                {billingStatus !== "ready" || !subscription ? (
-                  <span style={mutedPill}>Loading…</span>
-                ) : subscription.cancelled ? (
-                  <span style={mutedPill}>Unavailable while cancelled</span>
-                ) : subscription.billingCycle === "monthly" ? (
-                  <ActionBtn label={billingBusy ? "Switching…" : "Switch to yearly"} onClick={() => handleSwitchBillingCycle("yearly")} disabled={billingBusy} style="accent" />
-                ) : subscription.billingCycle === "yearly" ? (
-                  <span style={mutedPill}>You&apos;re on the yearly plan</span>
-                ) : (
-                  <span style={mutedPill}>—</span>
-                )}
-              </Row>
               <Row topBorder label="Payment method & invoices" description="Open a secure link to update your payment method and view invoices.">
                 <ActionBtn label={billingBusy ? "Opening…" : "Manage"} onClick={handleManageBilling} disabled={billingBusy || billingStatus !== "ready"} />
               </Row>

@@ -36,7 +36,7 @@ const ul: React.CSSProperties = {
 
 const TERMS = (
   <>
-    <p style={prose}>Last Updated: July 2026</p>
+    <p style={prose}>Last Updated: October 2026</p>
     <p style={{ ...prose, marginTop: 12 }}>Welcome to Cogletta. By accessing or using Cogletta, you agree to these Terms of Use.</p>
 
     <h2 style={h2}>1. Acceptance of Terms</h2>
@@ -81,14 +81,14 @@ const TERMS = (
     <h2 style={h2}>7. Subscription and Payments</h2>
 
     <h3 style={h3}>7.A. Billing</h3>
-    <p style={prose}>Certain features require a paid Cogletta Pro subscription. Pricing is shown before purchase. You may choose monthly or yearly billing, and fees are charged in advance for each billing period. Your subscription renews automatically — monthly or yearly, depending on the plan you select — until you or we cancel it. Subscription charges are fully earned upon payment.</p>
-    <p style={prose}>Payments are processed by our Merchant of Record, Lemon Squeezy, which acts as the authorized reseller of Cogletta Pro. Lemon Squeezy's Buyer Terms also apply to your purchase, and Lemon Squeezy handles billing, payment card storage, taxes (such as VAT and sales tax), and refund and chargeback processing. To update your payment method, use the billing portal linked from your account settings.</p>
+    <p style={prose}>Certain features require a paid Cogletta Pro subscription. Pricing is shown before purchase. Cogletta Pro is billed yearly, and fees are charged in advance for each yearly billing period. Your subscription renews automatically each year until you or we cancel it. Subscription charges are fully earned upon payment.</p>
+    <p style={prose}>Payments are processed by our Merchant of Record, Polar (polar.sh), which acts as the authorized reseller of Cogletta Pro. Polar's terms for buyers also apply to your purchase, and Polar handles billing, payment card storage, taxes (such as VAT and sales tax), and refund and chargeback processing. To update your payment method or download invoices, use the billing portal linked from your account settings.</p>
 
     <h3 style={h3}>7.B. No Refunds</h3>
     <p style={prose}>You may cancel your subscription at any time from your account settings. Except where a refund is required by applicable law, subscription fees are non-refundable, and there are no refunds or credits for partially used billing periods. If you cancel before the end of your billing period, you keep Pro access for the remainder of that period, after which your account reverts to the Free plan. If we suspend or terminate your account for breach of these Terms, you will receive no refund for any unused portion of your subscription.</p>
 
     <h3 style={h3}>7.C. Plan Changes</h3>
-    <p style={prose}>You may switch from monthly to yearly billing at any time; your plan changes immediately and the price difference is prorated automatically. We do not offer downgrades from yearly to monthly billing — to move to monthly billing, cancel your yearly subscription and subscribe again after your current period ends.</p>
+    <p style={prose}>Cogletta Pro is currently offered as a single yearly plan, so there are no plan switches. If we introduce other billing options, we will describe here how to change between them.</p>
 
     <h3 style={h3}>7.D. Price Changes</h3>
     <p style={prose}>We may change subscription prices. Any price change applies only to future billing periods; existing subscriptions continue at the price at which they were created until they renew.</p>
@@ -118,7 +118,7 @@ const TERMS = (
 
 const PRIVACY = (
   <>
-    <p style={prose}>Last Updated: July 2026</p>
+    <p style={prose}>Last Updated: October 2026</p>
     <p style={{ ...prose, marginTop: 12 }}>At Cogletta, we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard information when you use our services.</p>
 
     <h2 style={h2}>1. Information We Collect</h2>

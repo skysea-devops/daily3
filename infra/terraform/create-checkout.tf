@@ -1,8 +1,8 @@
 # ==============================================================================
 # create-checkout Lambda
-# POST /me/checkout — LS Checkouts API ile TEK variant'lı, kullanıcıya bağlı,
-# kısa ömürlü checkout üretir. Mükerrer abonelik guard'ı içerir (aktif aboneliği
-# olan kullanıcıya yeni checkout açtırmaz → çift ücretlendirmeyi engeller).
+# POST /me/checkout — Polar Checkout Session üretir (tek ürün, external_customer_id
+# = Cognito sub, Polar tarafında trial yok). Mükerrer abonelik guard'ı Polar'a
+# sorar (aktif aboneliği olan kullanıcıya yeni checkout açtırmaz).
 # ==============================================================================
 
 resource "aws_cloudwatch_log_group" "create_checkout" {
@@ -34,10 +34,15 @@ resource "aws_iam_role_policy" "create_checkout_lambda_policy" {
         Resource = "${aws_cloudwatch_log_group.create_checkout.arn}:*"
       },
       {
-        # Yalnızca profili (email + mevcut lsSubscriptionId) okur; yazma yok.
+        # Yalnızca profili (email) okur; yazma yok.
         Effect   = "Allow"
         Action   = ["dynamodb:GetItem"]
         Resource = aws_dynamodb_table.users.arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["ssm:GetParameter"]
+        Resource = local.polar_access_token_param_arn
       }
     ]
   })
@@ -60,17 +65,13 @@ resource "aws_lambda_function" "create_checkout" {
   memory_size      = local.lambda_memory_size
 
   environment {
-    variables = {
-      USERS_TABLE_NAME       = aws_dynamodb_table.users.name
-      LEMONSQUEEZY_API_KEY   = var.lemonsqueezy_api_key
-      LS_STORE_ID            = var.lemonsqueezy_store_id
-      LS_MONTHLY_VARIANT_ID  = var.lemonsqueezy_monthly_variant_id
-      LS_YEARLY_VARIANT_ID   = var.lemonsqueezy_yearly_variant_id
+    variables = merge(local.polar_api_env, {
+      USERS_TABLE_NAME = aws_dynamodb_table.users.name
       # Ödeme sonrası dönüş kökü = CORS listesinin ilk origin'i (ör. https://cogletta.com)
-      APP_BASE_URL           = element(split(",", var.cors_origin), 0)
-      CORS_ORIGIN            = var.cors_origin
-      NODE_OPTIONS           = "--enable-source-maps"
-    }
+      APP_BASE_URL = element(split(",", var.cors_origin), 0)
+      CORS_ORIGIN  = var.cors_origin
+      NODE_OPTIONS = "--enable-source-maps"
+    })
   }
 
   depends_on = [aws_cloudwatch_log_group.create_checkout]

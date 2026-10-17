@@ -34,21 +34,21 @@ resource "aws_iam_role_policy" "delete_account_lambda_policy" {
         Resource = "${aws_cloudwatch_log_group.delete_account.arn}:*"
       },
       {
-        # GetItem       → profili (lsSubscriptionId) silmeden önce oku
+        # GetItem       → profili (subscriptionId) silmeden önce oku
         # Query         → makaleleri sayfalı çek (LastEvaluatedKey ile pagination)
         # BatchWriteItem → makaleleri 25'lik gruplar halinde sil
-        # DeleteItem    → profil + LSSUB# eşleme kaydını sil
+        # DeleteItem    → profili sil
         Sid    = "DynamoDeleteUser"
         Effect = "Allow"
         Action = [
           "dynamodb:GetItem",
           "dynamodb:Query",
-          # Scan: profilde lsSubscriptionId yoksa sahipsiz kalmis LSSUB#
-          # eslemelerini bulmak icin.
+          # Scan: kullanicinin BILLSUB# abonelik eslemelerini (profilde
+          # olmayanlar dahil) bulup tombstone'a cevirmek icin.
           "dynamodb:Scan",
           "dynamodb:DeleteItem",
           "dynamodb:BatchWriteItem",
-          # PutItem: LSSUB# eslemesi SILINMEZ, tombstone'a cevrilir — gecikmeli
+          # PutItem: BILLSUB# eslemesi SILINMEZ, tombstone'a cevrilir — gecikmeli
           # bir webhook silinmis hesabi diriltmesin diye. Bu izin eksikti, yani
           # tombstone yazimi bastan beri AccessDenied aliyordu: eslemeler
           # tabloda userId'siyle kaliyordu (2026-08-26).
@@ -58,6 +58,13 @@ resource "aws_iam_role_policy" "delete_account_lambda_policy" {
           aws_dynamodb_table.users.arn,
           aws_dynamodb_table.articles.arn,
         ]
+      },
+      {
+        # Polar aboneliklerini revoke etmek için access token (SSM SecureString)
+        Sid      = "PolarAccessToken"
+        Effect   = "Allow"
+        Action   = ["ssm:GetParameter"]
+        Resource = local.polar_access_token_param_arn
       },
       {
         Sid      = "CognitoDeleteUser"
@@ -86,14 +93,13 @@ resource "aws_lambda_function" "delete_account" {
   memory_size      = local.lambda_memory_size
 
   environment {
-    variables = {
-      USERS_TABLE_NAME     = aws_dynamodb_table.users.name
-      ARTICLES_TABLE_NAME  = aws_dynamodb_table.articles.name
-      USER_POOL_ID         = aws_cognito_user_pool.main.id
-      CORS_ORIGIN          = var.cors_origin
-      LEMONSQUEEZY_API_KEY = var.lemonsqueezy_api_key
-      NODE_OPTIONS         = "--enable-source-maps"
-    }
+    variables = merge(local.polar_api_env, {
+      USERS_TABLE_NAME    = aws_dynamodb_table.users.name
+      ARTICLES_TABLE_NAME = aws_dynamodb_table.articles.name
+      USER_POOL_ID        = aws_cognito_user_pool.main.id
+      CORS_ORIGIN         = var.cors_origin
+      NODE_OPTIONS        = "--enable-source-maps"
+    })
   }
 }
 

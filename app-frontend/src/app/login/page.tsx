@@ -111,17 +111,17 @@ function LoginForm() {
 
       // Register'da Pro seçildiyse: kullanıcıyı Free onboarding'e hiç uğratmadan,
       // cogletta İÇİNDEKİ checkout hub'ına (/checkout-complete) götür. Oradaki
-      // butonla LS yeni sekmede açılır; bu sekme cogletta'da kalır.
+      // butonla Polar checkout'u yeni sekmede açılır; bu sekme cogletta'da kalır.
       // NOT: Bunu refreshSession'DAN ÖNCE ve window.location ile (hard-nav) yapıyoruz.
       // - refreshSession'dan önce: auth-context user set olmaz, RequireGuest tetiklenmez.
       // - hard-nav: hub taze yüklenip user'ı Cognito session'dan çözer; client push'un
       //   RequireGuest ile yarışıp /onboarding'e sapması riski ortadan kalkar.
-      let intent: "monthly" | "yearly" | null = null;
+      let intent: "yearly" | null = null; // tek plan; eski "monthly" niyeti de yıllığa gider
       try {
         const raw = localStorage.getItem("cogletta_plan_intent");
         if (raw) {
           const p = JSON.parse(raw);
-          if ((p?.billing === "monthly" || p?.billing === "yearly") && p.exp > Date.now()) intent = p.billing;
+          if ((p?.billing === "monthly" || p?.billing === "yearly") && p.exp > Date.now()) intent = "yearly";
           else localStorage.removeItem("cogletta_plan_intent");
         }
       } catch {
