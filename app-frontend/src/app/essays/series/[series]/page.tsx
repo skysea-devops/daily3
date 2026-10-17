@@ -10,7 +10,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import EssaysCta from "@/components/essays/EssaysCta";
-import AccessBadge from "@/components/essays/AccessBadge";
 import { NO_SERIES_PLACEHOLDER, allSeries, formatDate, getSeries } from "@/lib/essays";
 import styles from "../../essays.module.css";
 
@@ -69,7 +68,6 @@ export default async function SeriesPage({ params }: Props) {
                   <time className={styles.day} dateTime={p.date}>
                     {formatDate(p.date)}
                   </time>
-                  <AccessBadge access={p.access} date={p.date} />
                 </div>
               </div>
               <span className={styles.min}>{p.readingMinutes} min</span>
