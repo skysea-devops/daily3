@@ -20,6 +20,14 @@ const POLAR_SERVER = (process.env.POLAR_SERVER ?? "sandbox").toLowerCase();
 export const POLAR_API_BASE =
   POLAR_SERVER === "production" ? "https://api.polar.sh" : "https://sandbox-api.polar.sh";
 
+/**
+ * Polar API sürümü. Header gönderilmezse Polar "Current" sürümü kullanır ve bu her
+ * çeyrek değişir. Webhook endpoint'i de aynı sürümde (2026-10) tanımlı: REST
+ * yanıtları ile webhook payload'ları aynı şekilde kalsın diye sabitleniyor.
+ * Sürüm yükseltilecekse Polar'daki webhook endpoint'inin sürümüyle BİRLİKTE değişmeli.
+ */
+export const POLAR_API_VERSION = process.env.POLAR_API_VERSION ?? "2026-10";
+
 /** Tek ürün: Cogletta Pro, yalnızca yıllık. Aylık plan yok. */
 export const POLAR_PRODUCT_ID = process.env.POLAR_PRODUCT_ID ?? "";
 
@@ -53,6 +61,7 @@ export async function polarRequest<T = any>(path: string, init: RequestInit = {}
       Accept: "application/json",
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
+      "Polar-Version": POLAR_API_VERSION,
       ...(init.headers ?? {}),
     },
     signal: AbortSignal.timeout(POLAR_TIMEOUT_MS),
