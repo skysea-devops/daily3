@@ -43,12 +43,12 @@ interface TriggerUser {
   subTopics:  Record<string, string[]>;
   email?:     string;
   plan:       string;
-  /** "trial" = 14 gunluk deneme, "paid" = Lemon Squeezy aboneligi. */
+  /** "trial" = 14 gunluk deneme, "paid" = Polar aboneligi. */
   planSource?:       string;
   /** ISO tarih; yalnizca planSource === "trial" iken anlamli. */
   trialEndsAt?:      string;
   /** Varsa kullanici gercekten odeme yapmis demektir. */
-  lsSubscriptionId?: string;
+  subscriptionId?: string;
   /** Hatirlatma gonderildiyse ISO tarih; mukerrer gonderimi engeller. */
   trialReminderSentAt?: string;
   /** Deneme baslangici — KALICI, deneme bitse de silinmez. */
@@ -429,7 +429,7 @@ async function expireFinishedTrials(users: TriggerUser[]): Promise<void> {
           "trialEndedEmailPending = :true " +
           "REMOVE planSource, trialEndsAt, interests, subTopics",
         ConditionExpression:
-          "#planSource = :trial AND attribute_not_exists(lsSubscriptionId)",
+          "#planSource = :trial AND attribute_not_exists(subscriptionId)",
         ExpressionAttributeNames:  { "#plan": "plan", "#planSource": "planSource" },
         ExpressionAttributeValues: { ":free": "free", ":trial": "trial", ":now": nowIso, ":true": true },
       }));
@@ -528,7 +528,7 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
         FilterExpression:          "SK = :profile",
         ExpressionAttributeValues: { ":profile": "PROFILE" },
         ExpressionAttributeNames:  { "#plan": "plan", "#region": "region" },
-        ProjectionExpression:      "PK, interests, subTopics, email, #plan, #region, planSource, trialEndsAt, trialStartedAt, trialConsumedAt, lsSubscriptionId, trialReminderSentAt, trialEndedEmailPending",
+        ProjectionExpression:      "PK, interests, subTopics, email, #plan, #region, planSource, trialEndsAt, trialStartedAt, trialConsumedAt, subscriptionId, trialReminderSentAt, trialEndedEmailPending",
         ExclusiveStartKey:         lastEvaluatedKey,
       })
     );
@@ -566,7 +566,7 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
         plan:             (item.plan as string | undefined) ?? "free",
         planSource:       (item.planSource as string | undefined),
         trialEndsAt:      (item.trialEndsAt as string | undefined),
-        lsSubscriptionId:    (item.lsSubscriptionId as string | undefined),
+        subscriptionId:    (item.subscriptionId as string | undefined),
         trialReminderSentAt: (item.trialReminderSentAt as string | undefined),
         trialStartedAt:      (item.trialStartedAt as string | undefined),
         trialConsumedAt:     (item.trialConsumedAt as string | undefined),

@@ -280,7 +280,7 @@ export const handler = async (event: any): Promise<any> => {
     // deliver-daily, Sunday Supplement — hicbir degisiklik olmadan calisiyor.
     // Ayrimi `planSource` tasiyor:
     //   "trial" → 14 gun sonra daily-trigger (ya da tembel expiry) dusurur
-    //   "paid"  → Lemon Squeezy aboneligi, dokunulmaz
+    //   "paid"  → Polar aboneligi, dokunulmaz
     //
     // `trialStartedAt` KALICI: deneme bittiginde silinmez, boylece backend
     // "denemesini kullanmis Free" ile "hic deneme gormemis Free" ayrimini

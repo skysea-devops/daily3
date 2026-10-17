@@ -10,7 +10,8 @@ import { useAuth } from "@/lib/auth-context";
 
 // Kayıt→doğrulama→giriş zinciri boyunca Pro niyetini taşır (yeni sekmede
 // açılan doğrulama linkine dayanıklı olması için localStorage; 1 saat geçerli).
-function setPlanIntent(billing: "monthly" | "yearly") {
+// Tek plan (yıllık): billing her zaman "yearly".
+function setPlanIntent(billing: "yearly") {
   try {
     localStorage.setItem("cogletta_plan_intent", JSON.stringify({ billing, exp: Date.now() + 3600_000 }));
   } catch {}
@@ -240,7 +241,7 @@ function RegisterModal({ plan, onClose }: { plan: "free" | "pro"; onClose: () =>
   );
 }
 
-function ProNotifyButton({ onStart }: { onStart: (billing: "monthly" | "yearly") => void }) {
+function ProNotifyButton({ onStart }: { onStart: (billing: "yearly") => void }) {
   const { user } = useAuth();
   const router = useRouter();
 
@@ -259,20 +260,7 @@ function ProNotifyButton({ onStart }: { onStart: (billing: "monthly" | "yearly")
           fontSize: "0.9375rem", fontWeight: 600, cursor: "pointer",
         }}
       >
-        Choose yearly &mdash; $58/year &rarr;
-      </button>
-      <button
-        onClick={() => {
-          if (user) { router.push("/checkout-complete?plan=monthly"); }
-          else onStart("monthly");
-        }}
-        style={{
-          width: "100%", background: "none", color: "var(--ink-soft)",
-          border: "1px solid var(--rule)", borderRadius: 10, padding: "11px 24px",
-          fontSize: "0.875rem", fontWeight: 600, cursor: "pointer",
-        }}
-      >
-        Choose monthly &middot; $5.80/month
+        Get Pro &mdash; $48/year &rarr;
       </button>
     </div>
   );
@@ -509,7 +497,7 @@ export default function RegisterPage() {
               fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em",
               textTransform: "uppercase", padding: "4px 12px", borderRadius: 20,
             }}>
-              {state === "pro" ? "Your plan" : "Save 17% with yearly"}
+              {state === "pro" ? "Your plan" : "Billed yearly"}
             </div>
 
             <div style={{ marginBottom: 24 }}>
@@ -524,14 +512,11 @@ export default function RegisterPage() {
               {state !== "pro" && (
                 <>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 }}>
-                    <span style={{ fontFamily: "'Lora', serif", fontSize: "2rem", fontWeight: 600, color: "var(--ink)" }}>$58</span>
+                    <span style={{ fontFamily: "'Lora', serif", fontSize: "2rem", fontWeight: 600, color: "var(--ink)" }}>$48</span>
                     <span style={{ fontSize: "0.875rem", color: "var(--ink-muted)" }}>/ year</span>
                   </div>
-                  <p style={{ fontSize: "0.8125rem", color: "var(--accent)", fontWeight: 600, marginBottom: 4 }}>
-                    Save 17% vs monthly
-                  </p>
                   <p style={{ fontSize: "0.78rem", color: "var(--ink-muted)" }}>
-                    Equivalent to $4.83/month · Monthly plan $5.80
+                    That&apos;s $4/month, billed once a year
                   </p>
                 </>
               )}

@@ -8,8 +8,8 @@ cors_allowed_origins = ["https://www.cogletta.com","https://cogletta.com" ]
 domain_name          = "cogletta.com"
 domain_aliases       = ["cogletta.com", "www.cogletta.com"]
 
-# Lemon Squeezy — tek product "Cogletta ProReader" (1231920), iki variant.
-# Bu ID'ler gizli değildir (checkout URL'lerinde görünür).
-lemonsqueezy_store_id           = "423311"
-lemonsqueezy_monthly_variant_id = "1935893"
-lemonsqueezy_yearly_variant_id  = "1925924"
+# Polar — production (api.polar.sh).
+# Tek ürün: Cogletta Pro yıllık $48, TRIAL'SIZ (deneme bizde). ID gizli değildir.
+# Sandbox ID'si (dev.tfvars) prod'da GEÇERSİZ; bu production ürünüdür.
+polar_server     = "production"
+polar_product_id = "4dff6dfd-4f6b-4067-8282-212f39b9186a"
