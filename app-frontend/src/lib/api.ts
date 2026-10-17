@@ -68,7 +68,7 @@ export interface UserProfile {
   plan?: "free" | "pro";
   subTopics?: Record<string, string[]>;
   /** Faturalama özeti (Polar webhook'u yazar). Portal linki burada YOK: GET /me/subscription verir. */
-  billingCycle?: "monthly" | "yearly" | "unknown" | null;
+  billingCycle?: "yearly" | "unknown" | null;
   cancelAtPeriodEnd?: boolean;
   currentPeriodEnd?: string | null;
   /** "trial" = 14 gunluk deneme suruyor, "paid" = odeme yapilmis abonelik. */
@@ -144,13 +144,14 @@ export async function getDailyArticles(
 // Frontend yalnızca interval yollar, dönen url'i açar.
 export interface CreateCheckoutResult {
   url: string;
-  interval: "monthly" | "yearly";
+  interval: "yearly";
 }
 
 export type CheckoutError = Error & { code?: string; status?: number };
 
+/** Tek plan: Cogletta Pro yıllık ($48/yıl). */
 export async function createCheckout(
-  interval: "monthly" | "yearly",
+  interval: "yearly",
   accessToken: string
 ): Promise<CreateCheckoutResult> {
   if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
@@ -201,7 +202,7 @@ export interface BillingSubscription {
   renewsAt: string | null;
   endsAt: string | null;
   productId: string;
-  billingCycle: "monthly" | "yearly" | "unknown";
+  billingCycle: "yearly" | "unknown";
   /** Kısa ömürlü Polar müşteri portalı linki (her GET'te yeniden üretilir). */
   portalUrl: string | null;
   updatePaymentUrl: string | null;
@@ -228,30 +229,6 @@ export async function cancelBillingSubscription(accessToken: string): Promise<{ 
   if (response.status === 401) { handleUnauthorized(); throw new Error("Session expired"); }
   const body = await response.json().catch(() => null);
   if (!response.ok) throw new Error(body?.message || "Failed to cancel subscription");
-  return body;
-}
-
-export async function switchBillingCycle(
-  interval: "monthly" | "yearly",
-  accessToken: string
-): Promise<{ status: string; billingCycle: "monthly" | "yearly" | "unknown"; renewsAt: string | null; endsAt: string | null; message?: string }> {
-  if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
-  const response = await fetch(`${API_BASE_URL}/me/subscription`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify({ interval }),
-  });
-  if (response.status === 401) { handleUnauthorized(); throw new Error("Session expired"); }
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    const err = new Error(body?.message || "Could not switch billing cycle") as Error & { code?: string; status?: number };
-    err.code = body?.code;
-    err.status = response.status;
-    throw err;
-  }
   return body;
 }
 

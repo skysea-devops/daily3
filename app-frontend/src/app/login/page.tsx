@@ -116,12 +116,12 @@ function LoginForm() {
       // - refreshSession'dan önce: auth-context user set olmaz, RequireGuest tetiklenmez.
       // - hard-nav: hub taze yüklenip user'ı Cognito session'dan çözer; client push'un
       //   RequireGuest ile yarışıp /onboarding'e sapması riski ortadan kalkar.
-      let intent: "monthly" | "yearly" | null = null;
+      let intent: "yearly" | null = null; // tek plan; eski "monthly" niyeti de yıllığa gider
       try {
         const raw = localStorage.getItem("cogletta_plan_intent");
         if (raw) {
           const p = JSON.parse(raw);
-          if ((p?.billing === "monthly" || p?.billing === "yearly") && p.exp > Date.now()) intent = p.billing;
+          if ((p?.billing === "monthly" || p?.billing === "yearly") && p.exp > Date.now()) intent = "yearly";
           else localStorage.removeItem("cogletta_plan_intent");
         }
       } catch {

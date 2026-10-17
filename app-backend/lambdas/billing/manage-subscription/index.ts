@@ -2,8 +2,8 @@
 //
 // /me/subscription
 //   GET    → abonelik durumu + kısa ömürlü Polar müşteri portalı linki
-//   PATCH  { interval: "monthly"|"yearly" } → periyot değişimi (aynı abonelik, proration)
 //   PATCH  { action: "resume" }             → dönem sonu iptalini geri al
+//   (Periyot değişimi yok: tek plan, yıllık.)
 //   DELETE                                  → dönem sonunda iptal (erişim dönem sonuna kadar sürer)
 //
 // Yanıt şekli frontend'deki BillingSubscription ile aynı tutuldu.
@@ -15,11 +15,8 @@ import {
   PolarError,
   getSubscription,
   listActiveSubscriptions,
-  productIdForCycle,
   subscriptionProfileFields,
   subscriptionView,
-  POLAR_MONTHLY_PRODUCT_ID,
-  POLAR_YEARLY_PRODUCT_ID,
 } from "../../../shared/polar";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
@@ -207,40 +204,11 @@ export const handler = async (
         }
       }
 
-      // ── Aylık ↔ Yıllık geçiş: aynı abonelik, ürün değişimi ──
-      if (!POLAR_MONTHLY_PRODUCT_ID || !POLAR_YEARLY_PRODUCT_ID) {
-        return response(event, 500, { message: "Billing products are not configured" });
-      }
-      const interval = String(parsed?.interval ?? "").toLowerCase();
-      if (interval !== "monthly" && interval !== "yearly") {
-        return response(event, 400, { message: "interval must be 'monthly' or 'yearly'" });
-      }
-
-      if (status === "canceled" || sub.cancel_at_period_end) {
-        return response(event, 409, {
-          message: "Your subscription is set to cancel, so its plan can't be changed. Resume it first, then switch.",
-          code: "not_switchable",
-        });
-      }
-
-      const targetProduct = productIdForCycle(interval);
-      if (String(sub.product_id ?? "") === targetProduct) {
-        return response(event, 200, { message: "Already on this plan", ...subscriptionView(sub) });
-      }
-
-      try {
-        // "invoice": fark hemen tahsil edilir, plan hemen değişir (legal §7 ile uyumlu).
-        const updated = await polarRequest<any>(`/v1/subscriptions/${encodeURIComponent(subscriptionId)}`, {
-          method: "PATCH",
-          body: JSON.stringify({ product_id: targetProduct, proration_behavior: "invoice" }),
-        });
-        await syncSubscription(userId, updated);
-        return response(event, 200, { message: "Billing cycle updated", ...subscriptionView(updated) });
-      } catch (err) {
-        const mapped = polarErrorResponse(event, err);
-        if (mapped) return mapped;
-        throw err;
-      }
+      // Tek plan (yıllık): periyot değişimi yok.
+      return response(event, 400, {
+        message: "Cogletta Pro is available as a yearly plan only.",
+        code: "yearly_only",
+      });
     }
 
     // DELETE → dönem sonunda iptal. Erişimi webhook (subscription.revoked) kapatır.

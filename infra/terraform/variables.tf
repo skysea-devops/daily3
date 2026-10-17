@@ -118,14 +118,8 @@ variable "polar_webhook_secret" {
   default     = ""
 }
 
-variable "polar_monthly_product_id" {
-  description = "Polar ürün ID'si — aylık Cogletta Pro (trial'sız)"
-  type        = string
-  default     = ""
-}
-
-variable "polar_yearly_product_id" {
-  description = "Polar ürün ID'si — yıllık Cogletta Pro (trial'sız)"
+variable "polar_product_id" {
+  description = "Polar ürün ID'si — Cogletta Pro, yalnızca yıllık ($48/yıl, trial'sız)"
   type        = string
   default     = ""
 }

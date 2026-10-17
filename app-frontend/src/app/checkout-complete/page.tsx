@@ -9,16 +9,18 @@ import { createCheckout } from "@/lib/api";
 
 // Resolve the billing intent from the URL (?plan=) first; login/onboarding/settings
 // carry it here via ?plan. localStorage is only a fallback.
-function readIntent(): "monthly" | "yearly" | null {
+// Tek plan var (yıllık). Eski bir sekme/kayıttan "monthly" gelirse de yıllık
+// checkout'a yönlendirilir; fiyat ekranda açıkça gösteriliyor.
+function readIntent(): "yearly" | null {
   try {
     const q = new URLSearchParams(window.location.search).get("plan");
-    if (q === "monthly" || q === "yearly") return q;
+    if (q === "monthly" || q === "yearly") return "yearly";
   } catch {}
   try {
     const raw = localStorage.getItem("cogletta_plan_intent");
     if (raw) {
       const p = JSON.parse(raw);
-      if ((p?.billing === "monthly" || p?.billing === "yearly") && p.exp > Date.now()) return p.billing;
+      if ((p?.billing === "monthly" || p?.billing === "yearly") && p.exp > Date.now()) return "yearly";
     }
   } catch {}
   return null;
@@ -58,8 +60,8 @@ function CheckoutCompleteContent() {
     try { return new URLSearchParams(window.location.search).get("paid") === "1"; } catch { return false; }
   }, []);
 
-  const planWord = intent === "yearly" ? "yearly" : "monthly";
-  const planPrice = intent === "yearly" ? "$58/year" : "$5.80/month";
+  const planWord = "yearly";
+  const planPrice = "$48/year";
   const [attempt, setAttempt] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
   const [error, setError] = useState("");

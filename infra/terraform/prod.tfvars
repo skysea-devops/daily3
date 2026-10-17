@@ -9,7 +9,7 @@ domain_name          = "cogletta.com"
 domain_aliases       = ["cogletta.com", "www.cogletta.com"]
 
 # Polar — production (api.polar.sh).
-# Ürün ID'leri gizli değildir. İki ürün de TRIAL'SIZ olmalı (deneme bizde).
-polar_server             = "production"
-polar_monthly_product_id = ""
-polar_yearly_product_id  = ""
+# Tek ürün: Cogletta Pro yıllık $48, TRIAL'SIZ (deneme bizde). ID gizli değildir.
+# Production ürününü açınca ID'yi buraya yaz (sandbox ID'si prod'da GEÇERSİZ).
+polar_server     = "production"
+polar_product_id = ""

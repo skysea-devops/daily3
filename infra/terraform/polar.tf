@@ -5,8 +5,8 @@
 # Lemon Squeezy Ekim 2026'da hesabı kapattı; yerine Polar geldi.
 #
 # KURULUM SIRASI (her ortam için; önce dev + Polar sandbox):
-#   1. Polar'da (sandbox/production) iki ürün: monthly ve yearly, TRIAL'SIZ.
-#      Product ID'leri <env>.tfvars → polar_monthly_product_id / polar_yearly_product_id
+#   1. Polar'da (sandbox/production) TEK ürün: Cogletta Pro, yıllık $48, TRIAL'SIZ.
+#      Product ID → <env>.tfvars → polar_product_id
 #   2. Organization Access Token üret → GitHub secret POLAR_ACCESS_TOKEN
 #      (ilk apply'da SSM'e yazılır; sonrası için aşağıdaki "Rotasyon" notu)
 #   3. Apply → output "polar_webhook_url" adresini Polar → Settings → Webhooks'a gir.
@@ -33,8 +33,7 @@ locals {
   polar_api_env = {
     POLAR_SERVER             = var.polar_server
     POLAR_ACCESS_TOKEN_PARAM = aws_ssm_parameter.polar_access_token.name
-    POLAR_MONTHLY_PRODUCT_ID = var.polar_monthly_product_id
-    POLAR_YEARLY_PRODUCT_ID  = var.polar_yearly_product_id
+    POLAR_PRODUCT_ID         = var.polar_product_id
   }
 }
 
@@ -134,8 +133,7 @@ resource "aws_lambda_function" "polar_webhook" {
     variables = {
       USERS_TABLE_NAME           = aws_dynamodb_table.users.name
       POLAR_WEBHOOK_SECRET_PARAM = aws_ssm_parameter.polar_webhook_secret.name
-      POLAR_MONTHLY_PRODUCT_ID   = var.polar_monthly_product_id
-      POLAR_YEARLY_PRODUCT_ID    = var.polar_yearly_product_id
+      POLAR_PRODUCT_ID           = var.polar_product_id
       NODE_OPTIONS               = "--enable-source-maps"
     }
   }
@@ -173,7 +171,7 @@ output "polar_webhook_url" {
 # ==============================================================================
 # Abonelik yönetimi (JWT korumalı)
 # GET    /me/subscription  -> güncel durum + kısa ömürlü müşteri portalı linki
-# PATCH  /me/subscription  -> aylık/yıllık ürün değişimi ya da resume
+# PATCH  /me/subscription  -> resume (dönem sonu iptalini geri al)
 # DELETE /me/subscription  -> dönem sonunda iptal
 # ==============================================================================
 

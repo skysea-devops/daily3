@@ -9,7 +9,6 @@ domain_name          = "dev.cogletta.com"
 domain_aliases       = ["dev.cogletta.com"]
 
 # Polar — sandbox (sandbox-api.polar.sh).
-# Ürün ID'leri gizli değildir. İki ürün de TRIAL'SIZ olmalı (deneme bizde).
-polar_server             = "sandbox"
-polar_monthly_product_id = ""
-polar_yearly_product_id  = ""
+# Tek ürün: Cogletta Pro yıllık $48, TRIAL'SIZ (deneme bizde). ID gizli değildir.
+polar_server     = "sandbox"
+polar_product_id = "835b8358-523d-4a49-b22d-2c945e0d69e2"

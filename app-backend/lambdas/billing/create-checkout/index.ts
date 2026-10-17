@@ -1,6 +1,9 @@
 // app-backend/lambdas/billing/create-checkout/index.ts
 //
-// POST /me/checkout { interval: "monthly" | "yearly" } → { url, interval }
+// POST /me/checkout { interval?: "yearly" } → { url, interval }
+//
+// Tek plan: Cogletta Pro yıllık. `interval` gönderilmezse yıllık kabul edilir;
+// "monthly" artık yok → 400 (eski bir sekmeden gelen istek sessizce yıllığa çevrilmesin).
 //
 // Polar Checkout Session üretir:
 //  - external_customer_id = Cognito sub (webhook'ta kullanıcı eşlemesinin ana yolu)
@@ -10,13 +13,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import type { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyResultV2 } from "aws-lambda";
-import {
-  polarRequest,
-  listActiveSubscriptions,
-  productIdForCycle,
-  POLAR_MONTHLY_PRODUCT_ID,
-  POLAR_YEARLY_PRODUCT_ID,
-} from "../../../shared/polar";
+import { polarRequest, listActiveSubscriptions, POLAR_PRODUCT_ID } from "../../../shared/polar";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
@@ -82,17 +79,20 @@ export const handler = async (
       return response(event, 400, { message: "Invalid request body" });
     }
 
-    const interval = String(parsed?.interval ?? "").toLowerCase();
-    if (interval !== "monthly" && interval !== "yearly") {
-      return response(event, 400, { message: "interval must be 'monthly' or 'yearly'" });
+    const interval = String(parsed?.interval ?? "yearly").toLowerCase();
+    if (interval !== "yearly") {
+      return response(event, 400, {
+        message: "Cogletta Pro is available as a yearly plan only.",
+        code: "yearly_only",
+      });
     }
 
-    if (!POLAR_MONTHLY_PRODUCT_ID || !POLAR_YEARLY_PRODUCT_ID || !APP_BASE_URL) {
+    if (!POLAR_PRODUCT_ID || !APP_BASE_URL) {
       console.error("create-checkout: Polar env not fully configured");
       return response(event, 500, { message: "Checkout is not configured" });
     }
 
-    const productId = productIdForCycle(interval);
+    const productId = POLAR_PRODUCT_ID;
     const profile = await getProfile(userId);
     const email = profile?.email ? String(profile.email) : "";
 

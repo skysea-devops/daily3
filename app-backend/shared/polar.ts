@@ -7,7 +7,7 @@
  * ORTAM:
  *   POLAR_ACCESS_TOKEN_PARAM — token'ı tutan SSM SecureString adı (bkz. polar-secrets.ts)
  *   POLAR_SERVER         — "sandbox" | "production" (varsayılan: sandbox)
- *   POLAR_MONTHLY_PRODUCT_ID / POLAR_YEARLY_PRODUCT_ID
+ *   POLAR_PRODUCT_ID     — tek ürün: Cogletta Pro yıllık ($48/yıl, trial'sız)
  *
  * Kullanıcı eşlemesi: Cognito sub === Polar customer.external_id.
  */
@@ -20,13 +20,13 @@ const POLAR_SERVER = (process.env.POLAR_SERVER ?? "sandbox").toLowerCase();
 export const POLAR_API_BASE =
   POLAR_SERVER === "production" ? "https://api.polar.sh" : "https://sandbox-api.polar.sh";
 
-export const POLAR_MONTHLY_PRODUCT_ID = process.env.POLAR_MONTHLY_PRODUCT_ID ?? "";
-export const POLAR_YEARLY_PRODUCT_ID  = process.env.POLAR_YEARLY_PRODUCT_ID ?? "";
+/** Tek ürün: Cogletta Pro, yalnızca yıllık. Aylık plan yok. */
+export const POLAR_PRODUCT_ID = process.env.POLAR_PRODUCT_ID ?? "";
 
 /** Abonelik eşleme kaydı: PK = SUBMAP_PREFIX + subscriptionId, SK = "MAP". */
 export const SUBMAP_PREFIX = "BILLSUB#";
 
-export type BillingCycle = "monthly" | "yearly" | "unknown";
+export type BillingCycle = "yearly" | "unknown";
 
 export class PolarError extends Error {
   status: number;
@@ -75,13 +75,8 @@ export async function polarRequest<T = any>(path: string, init: RequestInit = {}
 
 /** Ürün ID'sinden faturalama periyodu. Bilinmeyen ID → "unknown" (UI tahmin etmez). */
 export function billingCycleForProduct(productId: string | null | undefined): BillingCycle {
-  if (productId && productId === POLAR_YEARLY_PRODUCT_ID) return "yearly";
-  if (productId && productId === POLAR_MONTHLY_PRODUCT_ID) return "monthly";
+  if (productId && productId === POLAR_PRODUCT_ID) return "yearly";
   return "unknown";
-}
-
-export function productIdForCycle(cycle: "monthly" | "yearly"): string {
-  return cycle === "yearly" ? POLAR_YEARLY_PRODUCT_ID : POLAR_MONTHLY_PRODUCT_ID;
 }
 
 /**
