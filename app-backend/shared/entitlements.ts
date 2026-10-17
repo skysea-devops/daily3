@@ -22,7 +22,7 @@
  *   trialStartedAt   : ISO                   — deneme başlangıcı, ASLA silinmez
  *   trialEndsAt      : ISO                   — canlı deneme bitişi, bitince silinir
  *   trialConsumedAt  : ISO                   — deneme tüketildi, ASLA silinmez
- *   lsSubscriptionId : string                — varsa gerçek ödeme var
+ *   subscriptionId   : string                — varsa gerçek ödeme var (Polar abonelik ID'si)
  *
  * `trialStartedAt` / `trialConsumedAt` bilinçli olarak KALICI: eskiden deneme
  * bitince bütün deneme alanları siliniyordu ve backend "denemesini kullanmış
@@ -40,7 +40,7 @@ export interface EntitlementProfile {
   trialEndsAt?:      unknown;
   trialStartedAt?:   unknown;
   trialConsumedAt?:  unknown;
-  lsSubscriptionId?: unknown;
+  subscriptionId?:   unknown;
 }
 
 export interface Entitlement {
@@ -52,7 +52,7 @@ export interface Entitlement {
   storedPlan: Plan;
   /** Efektif Pro erişiminin kaynağı. */
   source:     PlanSource | null;
-  /** Gerçek ödeme var mı (planSource=paid ya da lsSubscriptionId). */
+  /** Gerçek ödeme var mı (planSource=paid ya da subscriptionId). */
   paid:       boolean;
   trial: {
     status:      TrialStatus;
@@ -80,7 +80,7 @@ export interface Entitlement {
  * `plan` DynamoDB rezerve kelimesi → ENTITLEMENT_NAMES ile birlikte kullanılmalı.
  */
 export const ENTITLEMENT_PROJECTION =
-  "#plan, planSource, trialEndsAt, trialStartedAt, trialConsumedAt, lsSubscriptionId";
+  "#plan, planSource, trialEndsAt, trialStartedAt, trialConsumedAt, subscriptionId";
 
 export const ENTITLEMENT_NAMES: Record<string, string> = { "#plan": "plan" };
 
@@ -90,7 +90,7 @@ export const ENTITLEMENT_FIELDS = [
   "trialEndsAt",
   "trialStartedAt",
   "trialConsumedAt",
-  "lsSubscriptionId",
+  "subscriptionId",
 ] as const;
 
 // ─── Yardımcılar ──────────────────────────────────────────────────────────────
@@ -123,9 +123,9 @@ export function resolveEntitlement(
   const source: PlanSource | null =
     rawSource === "paid" || rawSource === "trial" ? rawSource : null;
 
-  const hasSubscription = Boolean(asString(profile?.lsSubscriptionId));
+  const hasSubscription = Boolean(asString(profile?.subscriptionId));
   // Ödeme yapmış kullanıcıya ASLA deneme mantığı uygulanmaz. Webhook sırası ters
-  // giderse (planSource yazılamadan lsSubscriptionId düşerse) bu ikinci güvence.
+  // giderse (planSource yazılamadan subscriptionId düşerse) bu ikinci güvence.
   const paid = source === "paid" || hasSubscription;
 
   const trialStartedAt  = asString(profile?.trialStartedAt);
@@ -256,7 +256,7 @@ export async function expireTrialIfDue(input: ExpireTrialInput): Promise<boolean
         // Ödeme yapmış kullanıcıya ASLA dokunma; ayrıca yalnızca gerçekten
         // süresi geçmiş denemeler düşürülür (ISO string karşılaştırması UTC'de doğru).
         ConditionExpression:
-          "#planSource = :trial AND attribute_not_exists(lsSubscriptionId) AND trialEndsAt <= :nowIso",
+          "#planSource = :trial AND attribute_not_exists(subscriptionId) AND trialEndsAt <= :nowIso",
         ExpressionAttributeNames: { "#plan": "plan", "#planSource": "planSource" },
         ExpressionAttributeValues: {
           ":free":   "free",

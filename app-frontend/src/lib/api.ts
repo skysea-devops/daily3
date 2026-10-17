@@ -67,8 +67,10 @@ export interface UserProfile {
   /** EFEKTIF plan: denemesi bitmis kullanici cron calismamis olsa da "free" doner. */
   plan?: "free" | "pro";
   subTopics?: Record<string, string[]>;
-  lsPortalUrl?: string | null;
-  lsVariantId?: string | null;
+  /** Faturalama özeti (Polar webhook'u yazar). Portal linki burada YOK: GET /me/subscription verir. */
+  billingCycle?: "monthly" | "yearly" | "unknown" | null;
+  cancelAtPeriodEnd?: boolean;
+  currentPeriodEnd?: string | null;
   /** "trial" = 14 gunluk deneme suruyor, "paid" = odeme yapilmis abonelik. */
   planSource?: "trial" | "paid" | null;
   /** ISO tarih; yalnizca planSource === "trial" iken anlamli. */
@@ -135,11 +137,11 @@ export async function getDailyArticles(
 }
 
 
-// ─── Lemon Squeezy checkout (backend Checkouts API) ──────────────────────────
-// Checkout URL'ini artık BACKEND üretir (POST /me/checkout). Backend seçilen
-// variant'a özel (enabled_variants → tek periyot), kullanıcıya bağlı
-// (custom.user_id + email), kısa ömürlü bir checkout açar ve mükerrer abonelik
-// guard'ından geçirir. Frontend yalnızca interval yollar, dönen url'i açar.
+// ─── Polar checkout (backend Checkout Sessions API) ──────────────────────────
+// Checkout URL'ini BACKEND üretir (POST /me/checkout). Backend seçilen periyodun
+// ürününe özel, kullanıcıya bağlı (external_customer_id = Cognito sub) bir
+// checkout session açar ve Polar'a sorarak mükerrer abonelik guard'ından geçirir.
+// Frontend yalnızca interval yollar, dönen url'i açar.
 export interface CreateCheckoutResult {
   url: string;
   interval: "monthly" | "yearly";
@@ -192,15 +194,15 @@ export async function getTrendReport(
   return response.json();
 }
 
-// ─── Lemon Squeezy subscription management ───────────────────────────────────
+// ─── Polar subscription management ───────────────────────────────────────────
 export interface BillingSubscription {
   status: string;
   cancelled: boolean;
   renewsAt: string | null;
   endsAt: string | null;
   productId: string;
-  variantId: string;
   billingCycle: "monthly" | "yearly" | "unknown";
+  /** Kısa ömürlü Polar müşteri portalı linki (her GET'te yeniden üretilir). */
   portalUrl: string | null;
   updatePaymentUrl: string | null;
 }

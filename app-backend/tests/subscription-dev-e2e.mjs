@@ -7,7 +7,7 @@
  *   hesap silme → ayni e-posta ile yeniden kayit (deneme YOK)
  *
  * NEDEN VAR:
- * Abonelik mantigi uc ayri yerde yasiyor — PostConfirmation, Lemon Squeezy
+ * Abonelik mantigi uc ayri yerde yasiyor — PostConfirmation, Polar
  * webhook'u ve gunluk cron. Bunlarin arasindaki gecisler unit test ile
  * yakalanmiyor; en pahali hatalar (deneme bitmis kullanicinin Pro kalmasi,
  * hesap silip yeniden kayitla sinirsiz deneme) tam olarak bu gecislerde cikti.
@@ -30,7 +30,13 @@
  *
  * Gerekli env: SUBSCRIPTION_E2E_USER_POOL_ID, SUBSCRIPTION_E2E_CLIENT_ID,
  * SUBSCRIPTION_E2E_API_BASE_URL, SUBSCRIPTION_E2E_USERS_TABLE_NAME,
- * SUBSCRIPTION_E2E_EMAIL, LEMONSQUEEZY_WEBHOOK_SECRET, TRIAL_LEDGER_SECRET.
+ * SUBSCRIPTION_E2E_EMAIL, POLAR_WEBHOOK_SECRET, TRIAL_LEDGER_SECRET.
+ *
+ * POLAR_WEBHOOK_SECRET workflow'da SSM'den (/cogletta/dev/polar/webhook-secret)
+ * okunur — Lambda'nin dogruladigi degerin ta kendisi.
+ *
+ * Hesap silme senaryosu Polar API'sine gercekten gider (aktif abonelik listesi):
+ * dev'de SSM'deki Polar SANDBOX access token'i gecerli olmali.
  */
 
 import { createHmac, randomUUID } from "crypto";
@@ -65,7 +71,7 @@ const EMAIL        = required("SUBSCRIPTION_E2E_EMAIL");
 const ARTICLES_TABLE =
   process.env.SUBSCRIPTION_E2E_ARTICLES_TABLE_NAME ?? USERS_TABLE.replace(/-users$/, "-articles");
 
-const LS_WEBHOOK_SECRET = process.env.LEMONSQUEEZY_WEBHOOK_SECRET ?? "";
+const POLAR_WEBHOOK_SECRET = process.env.POLAR_WEBHOOK_SECRET ?? "";
 // Lambda bu degeri TRIAL_LEDGER_SECRET adiyla goruyor; workflow ikisini de veriyor.
 const TRIAL_SECRET      = process.env.TRIAL_LEDGER_SECRET ?? process.env.TRIAL_IDENTITY_HMAC_SECRET ?? "";
 const STRICT_ALIAS      = (process.env.TRIAL_LEDGER_STRICT_ALIAS ?? "true") !== "false";
@@ -117,6 +123,10 @@ function required(name) {
 // PROD'a yanlislikla dogrultulmaya karsi sert kapi.
 if (!USERS_TABLE.includes("-dev-")) {
   console.error(`Refusing to run: ${USERS_TABLE} does not look like a DEV table`);
+  process.exit(1);
+}
+if (!POLAR_WEBHOOK_SECRET) {
+  console.error("Missing POLAR_WEBHOOK_SECRET — webhook scenarios cannot be signed. Refusing to start.");
   process.exit(1);
 }
 if (!TRIAL_SECRET) {
@@ -293,20 +303,25 @@ async function sweepLeftovers() {
   }
 }
 
-/** LSSUB# esleme artiklari. */
+/** BILLSUB#e2e- abonelik esleme artiklari (tombstone'lar dahil). */
 async function purgeSubscriptionMaps() {
-  const maps = await dynamo.send(new ScanCommand({
-    TableName: USERS_TABLE,
-    FilterExpression: "SK = :map AND begins_with(PK, :prefix)",
-    ExpressionAttributeValues: { ":map": "MAP", ":prefix": "LSSUB#e2e-" },
-    ProjectionExpression: "PK",
-  }));
-  for (const item of maps.Items ?? []) {
-    await dynamo.send(new DeleteCommand({
+  let lastKey;
+  do {
+    const maps = await dynamo.send(new ScanCommand({
       TableName: USERS_TABLE,
-      Key: { PK: item.PK, SK: "MAP" },
+      FilterExpression: "SK = :map AND begins_with(PK, :prefix)",
+      ExpressionAttributeValues: { ":map": "MAP", ":prefix": "BILLSUB#e2e-" },
+      ProjectionExpression: "PK",
+      ExclusiveStartKey: lastKey,
     }));
-  }
+    for (const item of maps.Items ?? []) {
+      await dynamo.send(new DeleteCommand({
+        TableName: USERS_TABLE,
+        Key: { PK: item.PK, SK: "MAP" },
+      }));
+    }
+    lastKey = maps.LastEvaluatedKey;
+  } while (lastKey);
 }
 
 /**
@@ -410,33 +425,47 @@ async function api(method, path, token, body) {
   return { status: res.status, body: json, raw: text };
 }
 
-/** Imzali Lemon Squeezy webhook'u gonderir. */
-async function sendWebhook(eventName, { subscriptionId, status, userId, updatedAt, createdAt }) {
+/**
+ * Imzali Polar webhook'u gonderir (Standard Webhooks).
+ * HMAC anahtari secret'in UTF-8 baytlari — shared/webhook-signature.ts ve Polar SDK ile ayni.
+ * `timestampSec` verilirse o zaman damgasiyla imzalanir (replay testi icin).
+ */
+async function sendWebhook(type, {
+  subscriptionId, status, userId, modifiedAt, createdAt,
+  cancelAtPeriodEnd = false, timestampSec,
+}) {
   const payload = {
-    meta: { event_name: eventName, custom_data: { user_id: userId } },
+    type,
+    timestamp: new Date().toISOString(),
     data: {
-      type: "subscriptions",
       id: subscriptionId,
-      attributes: {
-        status,
-        updated_at: updatedAt,
-        created_at: createdAt,
-        customer_id: 999001,
-        variant_id: 888001,
-        cancelled: status === "cancelled",
-        urls: { customer_portal: "https://example.test/portal" },
-      },
+      status,
+      created_at: createdAt,
+      modified_at: modifiedAt,
+      cancel_at_period_end: cancelAtPeriodEnd,
+      current_period_end: iso(30 * DAY),
+      ends_at: status === "canceled" ? modifiedAt : null,
+      recurring_interval: "month",
+      customer_id: "e2e-customer",
+      product_id: "e2e-product",
+      metadata: { user_id: userId },
+      customer: { id: "e2e-customer", external_id: userId, email: "e2e@example.test" },
     },
   };
   const raw = JSON.stringify(payload);
-  const signature = createHmac("sha256", LS_WEBHOOK_SECRET).update(raw).digest("hex");
+  const id = `msg_e2e_${randomUUID()}`;
+  const ts = timestampSec ?? Math.floor(Date.now() / 1000);
+  const signature = createHmac("sha256", Buffer.from(POLAR_WEBHOOK_SECRET, "utf8"))
+    .update(`${id}.${ts}.${raw}`)
+    .digest("base64");
 
-  const res = await fetch(`${API_BASE_URL}/lemonsqueezy/webhook`, {
+  const res = await fetch(`${API_BASE_URL}/billing/polar/webhook`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Signature": signature,
-      "X-Event-Name": eventName,
+      "webhook-id": id,
+      "webhook-timestamp": String(ts),
+      "webhook-signature": `v1,${signature}`,
     },
     body: raw,
   });
@@ -497,6 +526,18 @@ async function run() {
   let res = await api("PUT", "/me/interests", token, { interests: threeInterests, email: SIGNUP_EMAIL_A, region: "EU" });
   check("3 konu secilebiliyor", res.status === 200, `status=${res.status} ${res.raw}`);
 
+  // Yarim kalmis checkout: Polar "incomplete" bir abonelik bildirir. Deneme
+  // suren kullanici Free'ye DUSMEMELI (erisim vermeyen abonelik mevcut durumu ezmez).
+  let hook = await sendWebhook("subscription.created", {
+    subscriptionId: `e2e-incomplete-${Date.now()}`, status: "incomplete", userId: sub,
+    modifiedAt: iso(0), createdAt: iso(0),
+  });
+  check("incomplete webhook 200", hook.status === 200, `status=${hook.status} ${hook.text}`);
+  profile = await getProfile(sub);
+  check("incomplete abonelik denemeyi bozmadi",
+    profile?.plan === "pro" && profile?.planSource === "trial",
+    `plan=${profile?.plan} planSource=${profile?.planSource}`);
+
   // ── 3. Cron CALISMADAN expiry (P0 #1) ──────────────────────────────────────
   section("3. cron calismadan deneme bitisi");
   await patchProfile(sub, "SET trialEndsAt = :past", { ":past": iso(-2 * 60 * 60_000) });
@@ -526,9 +567,9 @@ async function run() {
   // ── 4. Odemeli yukseltme (webhook) ─────────────────────────────────────────
   section("4. webhook → paid Pro");
   const subscriptionId = `e2e-${Date.now()}`;
-  let hook = await sendWebhook("subscription_created", {
+  hook = await sendWebhook("subscription.active", {
     subscriptionId, status: "active", userId: sub,
-    updatedAt: iso(0), createdAt: iso(0),
+    modifiedAt: iso(0), createdAt: iso(0),
   });
   check("webhook 200 dondu", hook.status === 200, `status=${hook.status} ${hook.text}`);
 
@@ -537,6 +578,18 @@ async function run() {
   check("planSource=paid", profile?.planSource === "paid", `planSource=${profile?.planSource}`);
   check("trialStartedAt hala duruyor", Boolean(profile?.trialStartedAt));
   check("trial-ended bayragi temizlendi", profile?.trialEndedEmailPending === undefined);
+  check("subscriptionId yazildi", profile?.subscriptionId === subscriptionId, `subscriptionId=${profile?.subscriptionId}`);
+  check("billingProvider=polar", profile?.billingProvider === "polar");
+
+  // Replay korumasi: 10 dk once imzalanmis (gecerli imzali) istek reddedilmeli.
+  hook = await sendWebhook("subscription.revoked", {
+    subscriptionId, status: "canceled", userId: sub,
+    modifiedAt: iso(30_000), createdAt: iso(0),
+    timestampSec: Math.floor(Date.now() / 1000) - 10 * 60,
+  });
+  check("eski zaman damgali webhook 401", hook.status === 401, `status=${hook.status}`);
+  profile = await getProfile(sub);
+  check("replay plani degistirmedi", profile?.plan === "pro", `plan=${profile?.plan}`);
 
   profileApi = await api("GET", "/me/profile", token);
   check("GET /me/profile → paid pro", profileApi.body?.plan === "pro" && profileApi.body?.planSource === "paid",
@@ -551,10 +604,21 @@ async function run() {
   check("odeme yapanin plani degistirilmedi", profile?.plan === "pro");
 
   // ── 6. Abonelik sona eriyor ────────────────────────────────────────────────
-  section("6. webhook → expired → free");
-  hook = await sendWebhook("subscription_expired", {
-    subscriptionId, status: "expired", userId: sub,
-    updatedAt: iso(60_000), createdAt: iso(0),
+  section("6. webhook → revoked → free");
+  // Donem sonu iptali: once cancel_at_period_end=true (erisim SURER)...
+  hook = await sendWebhook("subscription.canceled", {
+    subscriptionId, status: "active", userId: sub, cancelAtPeriodEnd: true,
+    modifiedAt: iso(30_000), createdAt: iso(0),
+  });
+  check("canceled webhook 200", hook.status === 200, `status=${hook.status} ${hook.text}`);
+  profile = await getProfile(sub);
+  check("donem sonuna kadar Pro kaliyor", profile?.plan === "pro" && profile?.cancelAtPeriodEnd === true,
+    `plan=${profile?.plan} cancelAtPeriodEnd=${profile?.cancelAtPeriodEnd}`);
+
+  // ...sonra donem bitince revoked (status=canceled) → Free.
+  hook = await sendWebhook("subscription.revoked", {
+    subscriptionId, status: "canceled", userId: sub,
+    modifiedAt: iso(60_000), createdAt: iso(0),
   });
   check("webhook 200 dondu", hook.status === 200, `status=${hook.status} ${hook.text}`);
 
@@ -564,9 +628,9 @@ async function run() {
 
   // ── 7. Bayat/mukerrer webhook yoksayiliyor ─────────────────────────────────
   section("7. mukerrer webhook (idempotency)");
-  hook = await sendWebhook("subscription_updated", {
+  hook = await sendWebhook("subscription.updated", {
     subscriptionId, status: "active", userId: sub,
-    updatedAt: iso(-10 * 60_000), createdAt: iso(0),
+    modifiedAt: iso(-10 * 60_000), createdAt: iso(0),
   });
   check("eski event 200 ile yutuldu", hook.status === 200, `status=${hook.status}`);
   profile = await getProfile(sub);
@@ -574,9 +638,11 @@ async function run() {
 
   // ── 8. Hesap silme → ayni e-posta ile yeniden kayit (P0 #2) ────────────────
   section("8. hesap silme → ayni e-posta ile yeniden kayit");
-  // LS iptal cagrisini atlamak icin abonelik alanlarini temizle: sahte
-  // subscriptionId gercek LS API'sine gidip 502'ye yol acabilir.
-  await patchProfile(sub, "REMOVE lsSubscriptionId, lsSubscriptionStatus");
+  // Sahte subscriptionId Polar'a revoke icin gonderilirse 4xx/502 alir: profil
+  // alanini temizle. Polar'a yine de "aktif abonelik var mi?" diye sorulur
+  // (sandbox'ta bu kullaniciya ait abonelik yok → bos liste). BILLSUB# eslemesi
+  // tabloda duruyor; silme akisi onu tarayip tombstone'a cevirmeli.
+  await patchProfile(sub, "REMOVE subscriptionId, subscriptionStatus");
 
   token = await signIn(username);
   res = await api("DELETE", "/me", token);
@@ -589,6 +655,22 @@ async function run() {
     ConsistentRead: true,
   }));
   check("deneme defteri KORUNDU", Boolean(ledgerAfterDelete.Item));
+
+  const mapAfterDelete = await dynamo.send(new GetCommand({
+    TableName: USERS_TABLE,
+    Key: { PK: `BILLSUB#${subscriptionId}`, SK: "MAP" },
+    ConsistentRead: true,
+  }));
+  check("abonelik eslemesi tombstone'a cevrildi", mapAfterDelete.Item?.deleted === true,
+    JSON.stringify(mapAfterDelete.Item ?? null));
+
+  // Silinmis hesaba gecikmeli "active" webhook: 200 donmeli, profil DIRILMEMELI.
+  hook = await sendWebhook("subscription.updated", {
+    subscriptionId, status: "active", userId: sub,
+    modifiedAt: iso(5 * 60_000), createdAt: iso(0),
+  });
+  check("silinmis hesaba webhook 200 (retry firtinasi yok)", hook.status === 200, `status=${hook.status} ${hook.text}`);
+  check("hayalet profil dirilmedi", (await getProfile(sub)) === null);
 
   // FARKLI bir alias ile kayit: Cognito icin bambaska bir kullanici, deneme
   // defteri icin AYNI kisi. Etiket soyma calismazsa bu senaryo kirmizi olur.

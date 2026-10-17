@@ -9,6 +9,7 @@ import {
   QueryCommand,
   BatchWriteCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import type { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyResultV2 } from "aws-lambda";
+import { listActiveSubscriptions, revokeSubscription, SUBMAP_PREFIX } from "../../../shared/polar";
 
 const cognito = new CognitoIdentityProviderClient({});
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
@@ -16,8 +17,6 @@ const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const USERS_TABLE_NAME = process.env.USERS_TABLE_NAME!;
 const ARTICLES_TABLE_NAME = process.env.ARTICLES_TABLE_NAME!;
 const USER_POOL_ID = process.env.USER_POOL_ID!;
-const LEMONSQUEEZY_API_KEY = process.env.LEMONSQUEEZY_API_KEY ?? "";
-const LS_TIMEOUT_MS = 8000; // LS asILIrsa Lambda kilitlenmesin (#15)
 
 // CORS_ORIGIN virgülle ayrılmış birden çok origin içerebilir
 // (ör. "https://cogletta.com,https://www.cogletta.com").
@@ -41,40 +40,31 @@ function buildHeaders(event: APIGatewayProxyEventV2WithJWTAuthorizer) {
   };
 }
 
-// ─── Lemon Squeezy abonelik iptali ────────────────────────────────────────────
-// LS "DELETE subscription" = dönem sonunda yenilemeyi durdur (cancel-at-period-end),
-// anında sonlandırma/iade DEĞİL. Hesap silme için doğru davranış budur: kullanıcı
-// bir daha ücretlendirilmez, ödediği dönem sonuna kadar teknik olarak "cancelled"
-// kalır ama Cogletta hesabı zaten silinmiş olur.
+// ─── Polar abonelik sonlandırma ───────────────────────────────────────────────
+// Hesap silinince erişim zaten anında bitiyor (Settings metni de bunu söylüyor),
+// bu yüzden abonelik dönem sonunu beklemeden REVOKE edilir: kullanıcı bir daha
+// ücretlendirilmez. İade yapılmaz.
 //
-// Dönüş:
-//   "cancelled" → LS aboneliği iptal edildi (veya zaten iptalliydi)
-//   "gone"      → abonelik LS'te bulunamadı (404) — silmeye devam güvenli
-// Gerçek bir hata (auth, 5xx, ağ) durumunda EXCEPTION fırlatır; çağıran hesabı
-// silmeyi durdurmalıdır — aksi halde "silindi ama LS'te aktif" durumu doğar.
-type CancelResult = "cancelled" | "gone";
+// Hem profildeki ID hem de Polar'da bu kullanıcıya (external_customer_id) ait
+// tüm aktif abonelikler sonlandırılır: webhook gecikmişse profil ID'yi henüz
+// bilmiyor olabilir.
+//
+// Gerçek bir hata (auth, 5xx, ağ, timeout) → EXCEPTION. Çağıran hesabı silmeyi
+// durdurmalı; aksi halde "hesap silindi ama Polar'da abonelik aktif" durumu doğar.
+// revokeSubscription idempotent: zaten bitmiş (403) ya da yok (404) → sorun değil.
+async function revokeAllSubscriptions(userId: string, profileSubId: string): Promise<string[]> {
+  const ids = new Set<string>();
+  if (profileSubId) ids.add(profileSubId);
 
-async function cancelLemonSubscription(subscriptionId: string): Promise<CancelResult> {
-  if (!LEMONSQUEEZY_API_KEY) {
-    throw new Error("LEMONSQUEEZY_API_KEY is not configured; refusing to delete account with an active subscription");
+  // Token yoksa polarRequest hata fırlatır → silme durur (502). Bu bilinçli:
+  // abonelik durumu doğrulanamadan hesap silinmez.
+  for (const sub of await listActiveSubscriptions(userId)) {
+    if (sub?.id) ids.add(String(sub.id));
   }
-
-  const res = await fetch(`https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`, {
-    method: "DELETE",
-    headers: {
-      Accept: "application/vnd.api+json",
-      "Content-Type": "application/vnd.api+json",
-      Authorization: `Bearer ${LEMONSQUEEZY_API_KEY}`,
-    },
-    signal: AbortSignal.timeout(LS_TIMEOUT_MS),
-  });
-
-  if (res.ok) return "cancelled";
-  if (res.status === 404) return "gone";
-
-  const payload: any = await res.json().catch(() => null);
-  const detail = payload?.errors?.[0]?.detail ?? payload?.errors?.[0]?.title ?? `HTTP ${res.status}`;
-  throw new Error(`Lemon Squeezy cancel failed: ${detail}`);
+  for (const id of ids) {
+    await revokeSubscription(id);
+  }
+  return [...ids];
 }
 
 // ─── DynamoDB yardımcıları ────────────────────────────────────────────────────
@@ -145,59 +135,66 @@ export const handler = async (
       return { statusCode: 401, headers, body: JSON.stringify({ message: "Unauthorized" }) };
     }
 
-    // 1. Profili oku (silmeden ÖNCE — lsSubscriptionId'ye ihtiyacımız var)
+    // 1. Profili oku (silmeden ÖNCE — subscriptionId'ye ihtiyacımız var)
     const profile = await getProfile(userId);
-    const subscriptionId = profile?.lsSubscriptionId ? String(profile.lsSubscriptionId) : "";
+    const subscriptionId = profile?.subscriptionId ? String(profile.subscriptionId) : "";
 
-    // 2. Abonelik ID'si varsa HER ZAMAN LS'te iptal etmeyi dene. Yerel status
-    //    (lsSubscriptionStatus) webhook gecikmesi yüzünden BAYAT olabilir; ona güvenip
-    //    iptali atlarsak "silindi ama LS'te aktif → tekrar ücretlendirildi" riski doğar.
-    //    cancelLemonSubscription zaten idempotent: zaten iptal/expired → 200, yok → 404.
-    //    Gerçek hata (auth/5xx/ağ/timeout) → hesabı SİLME, 502 dön.
-    if (subscriptionId) {
-      try {
-        await cancelLemonSubscription(subscriptionId);
-      } catch (cancelErr: any) {
-        console.error("delete-account: LS cancel failed, aborting deletion:", cancelErr);
-        return {
-          statusCode: 502,
-          headers,
-          body: JSON.stringify({
-            message:
-              "We could not cancel your subscription with the payment provider, so your account was not deleted. Please try again shortly or contact support.",
-          }),
-        };
-      }
+    // 2. Polar'daki abonelikleri HER ZAMAN sonlandırmayı dene. Yerel durum
+    //    (subscriptionStatus) webhook gecikmesi yüzünden BAYAT olabilir; ona güvenip
+    //    atlarsak "silindi ama Polar'da aktif → tekrar ücretlendirildi" riski doğar.
+    //    Gerçek hata → hesabı SİLME, 502 dön.
+    let revokedIds: string[] = [];
+    try {
+      revokedIds = await revokeAllSubscriptions(userId, subscriptionId);
+    } catch (cancelErr: any) {
+      console.error("delete-account: Polar revoke failed, aborting deletion:", cancelErr);
+      return {
+        statusCode: 502,
+        headers,
+        body: JSON.stringify({
+          message:
+            "We could not cancel your subscription with the payment provider, so your account was not deleted. Please try again shortly or contact support.",
+        }),
+      };
     }
 
     // 3. subscriptionId → userId eşlemesini TOMBSTONE'a çevir (tamamen silme).
     //    Tamamen silersek, silinen kullanıcıya gelen gecikmeli bir webhook userId'yi
-    //    çözemeyip 500 döner → LS aynı webhook'u tekrar tekrar dener (retry storm).
+    //    çözemeyip 500 döner → Polar aynı webhook'u tekrar tekrar dener (retry storm)
+    //    ve 10 ardışık hatada endpoint'i kapatır.
     //    Tombstone ile webhook "silinmiş kullanıcı" olduğunu görüp 200/ignore döner;
     //    ayrıca hayalet kullanıcı diriltmesi de engellenir. Kayıt ~90 gün sonra TTL
     //    ile temizlenir.
-    // Profilde lsSubscriptionId YOKSA da esleme kalmis olabilir: abonelik daha
-    // once sona erip webhook alani temizlediyse, silme sirasinda LSSUB# kaydi
-    // sahipsiz kaliyor ve userId'si duruyordu. Bu durumda tombstone hic
-    // yazilmiyordu. Tabloda az sayida LSSUB# kaydi var, tarama ucuz.
-    let orphanIds: string[] = [];
-    if (!subscriptionId) {
-      try {
+    // Profilde olmayan eslemeler de olabilir (ör. eski bir abonelik, ya da webhook'u
+    // profile yazilamamis yeni bir abonelik). Hepsi tombstone'a cevrilir.
+    // Tabloda az sayida eşleme kaydi var, tarama ucuz.
+    // Scan 1 MB sayfalarla döner; filtre sayfa İÇİNDE uygulanır → tüm sayfalar gezilir.
+    const orphanIds: string[] = [];
+    try {
+      let lastKey: Record<string, any> | undefined;
+      do {
         const scan = await dynamo.send(new ScanCommand({
           TableName: USERS_TABLE_NAME,
-          FilterExpression: "SK = :map AND userId = :uid AND attribute_not_exists(deleted)",
-          ExpressionAttributeValues: { ":map": "MAP", ":uid": userId },
+          FilterExpression: "SK = :map AND begins_with(PK, :prefix) AND userId = :uid AND attribute_not_exists(deleted)",
+          ExpressionAttributeValues: { ":map": "MAP", ":prefix": SUBMAP_PREFIX, ":uid": userId },
           ProjectionExpression: "PK",
+          ExclusiveStartKey: lastKey,
         }));
-        orphanIds = (scan.Items ?? [])
-          .map(i => String(i.PK ?? "").replace("LSSUB#", ""))
-          .filter(Boolean);
-        if (orphanIds.length) {
-          console.log(`Found ${orphanIds.length} orphan LSSUB mapping(s) for user=${userId}`);
+        for (const item of scan.Items ?? []) {
+          const id = String(item.PK ?? "").replace(SUBMAP_PREFIX, "");
+          if (id) orphanIds.push(id);
         }
-      } catch (err) {
-        console.warn("Orphan LSSUB scan failed:", err);
-      }
+        lastKey = scan.LastEvaluatedKey;
+      } while (lastKey);
+    } catch (err) {
+      console.warn("Subscription mapping scan failed:", err);
+    }
+    // Revoke edilen abonelikler de (eşleme kaydı henüz yazılmamış olsa bile) tombstone alsın.
+    for (const id of [subscriptionId, ...revokedIds]) {
+      if (id && !orphanIds.includes(id)) orphanIds.push(id);
+    }
+    if (orphanIds.length) {
+      console.log(`Tombstoning ${orphanIds.length} subscription mapping(s) for user=${userId}`);
     }
 
     // Tombstone yazimi BEST-EFFORT: basarisiz olursa hesap silme akisi
@@ -210,39 +207,14 @@ export const handler = async (
         await dynamo.send(new PutCommand({
           TableName: USERS_TABLE_NAME,
           Item: {
-            PK: `LSSUB#${orphanId}`, SK: "MAP",
+            PK: `${SUBMAP_PREFIX}${orphanId}`, SK: "MAP",
             deleted: true,
             deletedAt: new Date().toISOString(),
             ttl: Math.floor(Date.now() / 1000) + TTL_90_DAYS,
           },
         }));
       } catch (err) {
-        console.warn(`Orphan LSSUB tombstone failed for ${orphanId}:`, err);
-      }
-    }
-
-    if (subscriptionId) {
-      // BEST-EFFORT. Abonelik LS tarafinda ZATEN iptal edildi (yukarida, hata
-      // durumunda 502 ile cikiliyor). Bu yazim yalnizca eslemeyi tombstone'a
-      // ceviriyor; basarisiz olursa hesabi silmemek kullaniciyi "aboneligim
-      // iptal ama hesabim duruyor" durumunda birakirdi — daha kotusu.
-      // Kalan esleme zararsiz: webhook profil yoksa yazmiyor.
-      const TTL_90_DAYS = 90 * 24 * 60 * 60;
-      try {
-        await dynamo.send(
-          new PutCommand({
-            TableName: USERS_TABLE_NAME,
-            Item: {
-              PK: `LSSUB#${subscriptionId}`,
-              SK: "MAP",
-              deleted: true,
-              deletedAt: new Date().toISOString(),
-              ttl: Math.floor(Date.now() / 1000) + TTL_90_DAYS,
-            },
-          })
-        );
-      } catch (err) {
-        console.warn(`LSSUB tombstone failed for ${subscriptionId}:`, err);
+        console.warn(`Subscription tombstone failed for ${orphanId}:`, err);
       }
     }
 
@@ -274,7 +246,7 @@ export const handler = async (
     );
 
     console.log(
-      `delete-account: user=${userId} sub=${subscriptionId || "none"} cancelled=${!!subscriptionId} articles=${deletedArticles}`
+      `delete-account: user=${userId} sub=${subscriptionId || "none"} revoked=${revokedIds.join(",") || "none"} articles=${deletedArticles}`
     );
 
     return {

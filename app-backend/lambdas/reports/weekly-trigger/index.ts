@@ -37,7 +37,7 @@ export const handler = async (event: { region?: string } = {}): Promise<void> =>
         // `plan === "pro"` bakiliyordu; daily-trigger kullaniciyi Free yapmadan
         // hemen once bu Lambda onu okursa, denemesi BITMIS kullanici Pazar Eki
         // aliyordu. Sira EventBridge'e birakilamaz — efektif plan hesaplanir.
-        ProjectionExpression:      "PK, interests, email, #plan, #region, planSource, trialEndsAt, trialStartedAt, trialConsumedAt, lsSubscriptionId",
+        ProjectionExpression:      "PK, interests, email, #plan, #region, planSource, trialEndsAt, trialStartedAt, trialConsumedAt, subscriptionId",
         ExclusiveStartKey:         lastEvaluatedKey,
       })
     );

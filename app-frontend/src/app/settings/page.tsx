@@ -16,7 +16,7 @@ const mutedPill: React.CSSProperties = {
   fontSize: "0.8125rem", fontWeight: 600, color: "var(--ink-muted)",
 };
 
-// Lemon Squeezy checkout linkleri build sırasında inline edilir. Prod'da bu
+// Checkout URL'leri backend'de (POST /me/checkout → Polar Checkout Session) üretilir.
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -260,13 +260,13 @@ function SettingsContent() {
   }, [user]);
 
   useEffect(() => {
-    // Deneme sirasinda Lemon Squeezy aboneligi YOK: cagri bosuna hata doner
+    // Deneme sirasinda Polar aboneligi YOK: cagri bosuna 404 doner
     // ve "Couldn't load your billing details" gorunurdu.
     if (!user?.accessToken || plan !== "pro" || isTrial) return;
     void loadBilling();
   }, [user, plan, loadBilling]);
 
-  // Lemon Squeezy Checkout dönüşü: ?checkout=success | ?checkout=cancel
+  // Checkout dönüşü: ?checkout=success | ?checkout=cancel (Polar'daki geri butonu cancel'a döner)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get("checkout");
@@ -300,7 +300,7 @@ function SettingsContent() {
 
   function handleUpgrade(billing: "monthly" | "yearly") {
     if (!user || billingBusy) return;
-    // Checkout'u cogletta içindeki hub'a taşı: hub, LS'i yeni sekmede açar ve
+    // Checkout'u cogletta içindeki hub'a taşı: hub, Polar checkout'unu yeni sekmede açar ve
     // bu (settings) sekmesi cogletta'da kalır. Popup engeli hub'daki tıklamayla aşılır.
     router.push(`/checkout-complete?plan=${billing}`);
   }
@@ -333,15 +333,15 @@ function SettingsContent() {
     }
   }
 
-  // Aylık↔Yıllık geçiş: LS variant-swap (PATCH /me/subscription). Aynı abonelik ID
-  // korunur, proration LS'te otomatik. Eski "önce iptal et, yeni checkout aç" akışı
+  // Aylık↔Yıllık geçiş: Polar ürün değişimi (PATCH /me/subscription). Aynı abonelik ID
+  // korunur; fiyat farkı oransal hesaplanıp hemen tahsil edilir (proration_behavior=invoice). Eski "önce iptal et, yeni checkout aç" akışı
   // yok — çift abonelik / iade riski ortadan kalktı.
   async function handleSwitchBillingCycle(target: "monthly" | "yearly") {
     if (!user?.accessToken || billingBusy) return;
     const priceLine = target === "yearly" ? "$58/year" : "$5.80/month";
     const confirmed = window.confirm(
-      `Switch to ${target} billing (${priceLine})? Your plan changes right away and the price ` +
-      "difference is prorated automatically."
+      `Switch to ${target} billing (${priceLine})? Your plan changes right away and the prorated ` +
+      "price difference is charged now."
     );
     if (!confirmed) return;
 

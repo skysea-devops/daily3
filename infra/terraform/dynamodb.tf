@@ -15,7 +15,7 @@ resource "aws_dynamodb_table" "users" {
     type = "S"
   }
 
-  # Tombstone kayıtları (silinen kullanıcıların LSSUB# eşlemesi) ~90 gün sonra
+  # Tombstone kayıtları (silinen kullanıcıların BILLSUB# abonelik eşlemesi) ~90 gün sonra
   # otomatik temizlensin. TTL yalnızca "ttl" alanı OLAN item'ları siler; normal
   # profil/eşleme kayıtlarında bu alan yoktur, etkilenmezler.
   ttl {

@@ -95,8 +95,11 @@ export const handler = async (
         subTopics:   expired ? {} : (result.Item.subTopics ?? {}),
         email:       result.Item.email ?? null,
         plan:        entitlement.plan,
-        lsPortalUrl: result.Item.lsPortalUrl ?? null,
-        lsVariantId: result.Item.lsVariantId ?? null,
+        // Faturalama özeti (Polar webhook'u yazar). Portal linki kısa ömürlü olduğu
+        // için burada DÖNMEZ; Settings onu GET /me/subscription ile anlık alır.
+        billingCycle:      result.Item.billingCycle ?? null,
+        cancelAtPeriodEnd: result.Item.cancelAtPeriodEnd === true,
+        currentPeriodEnd:  result.Item.currentPeriodEnd ?? null,
         // Deneme durumu: arayuz kalan gunu gosterebilsin.
         planSource:  entitlement.source,
         trialEndsAt: entitlement.trial.status === "active" ? entitlement.trial.endsAt : null,

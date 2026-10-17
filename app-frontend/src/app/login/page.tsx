@@ -111,7 +111,7 @@ function LoginForm() {
 
       // Register'da Pro seçildiyse: kullanıcıyı Free onboarding'e hiç uğratmadan,
       // cogletta İÇİNDEKİ checkout hub'ına (/checkout-complete) götür. Oradaki
-      // butonla LS yeni sekmede açılır; bu sekme cogletta'da kalır.
+      // butonla Polar checkout'u yeni sekmede açılır; bu sekme cogletta'da kalır.
       // NOT: Bunu refreshSession'DAN ÖNCE ve window.location ile (hard-nav) yapıyoruz.
       // - refreshSession'dan önce: auth-context user set olmaz, RequireGuest tetiklenmez.
       // - hard-nav: hub taze yüklenip user'ı Cognito session'dan çözer; client push'un
