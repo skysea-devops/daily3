@@ -11,8 +11,9 @@
 #      (ilk apply'da SSM'e yazılır; sonrası için aşağıdaki "Rotasyon" notu)
 #   3. Apply → output "polar_webhook_url" adresini Polar → Settings → Webhooks'a gir.
 #      ASLA frontend domain'i girme: Next.js HTML + 200 döner, teslim edildi sanılır.
-#      Format: Raw. Event'ler: subscription.* (created, active, updated, canceled,
-#      uncanceled, revoked, past_due).
+#      Format: Raw. API Version: 2026-10 (shared/polar.ts → POLAR_API_VERSION ile aynı).
+#      Event'ler: Subscription grubunun tamamı (created, active, updated, canceled,
+#      uncanceled, revoked, past_due, ...). Diğer gruplar gerekmez.
 #   4. Polar'ın verdiği webhook secret → GitHub secret POLAR_WEBHOOK_SECRET ve/veya
 #      doğrudan SSM'e (aşağıdaki komut).
 #
