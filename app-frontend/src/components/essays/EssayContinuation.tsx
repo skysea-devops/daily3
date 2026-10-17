@@ -9,9 +9,11 @@
 //   403 → önizlemenin sonunda solan geçiş + paywall kutusu
 // Yetki kararını SUNUCU verir; burada yalnızca sonucu gösteriyoruz.
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import RegisterModal from "@/components/RegisterModal";
 import { essayBodyUrl } from "@/lib/essay-access";
 import type { EssayBlock } from "@/lib/essays";
 import EssayBlocks from "./EssayBlocks";
@@ -91,10 +93,23 @@ export default function EssayContinuation({ slug }: { slug: string }) {
     );
   }
 
-  return <Paywall signedIn={Boolean(user)} />;
+  return <Paywall signedIn={Boolean(user)} authLoading={loading} />;
 }
 
-function Paywall({ signedIn }: { signedIn: boolean }) {
+function Paywall({ signedIn, authLoading }: { signedIn: boolean; authLoading: boolean }) {
+  const router = useRouter();
+  const [showModal, setShowModal] = useState(false);
+
+  // Ana sayfadaki handleSignupCta ile aynı mantık: misafir sayfadan ayrılmadan
+  // kayıt penceresini açar; oturum durumu henüz bilinmiyorsa /register'a gider.
+  // Orta tık / yeni sekme varsayılan link davranışını korur.
+  function handleTrialCta(e: ReactMouseEvent<HTMLAnchorElement>) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    if (authLoading) { router.push("/register"); return; }
+    setShowModal(true);
+  }
+
   return (
     <>
       {/* Önizlemenin son satırları kağıt rengine doğru solar */}
@@ -143,9 +158,9 @@ function Paywall({ signedIn }: { signedIn: boolean }) {
           </Link>
         ) : (
           <>
-            <Link href="/register/" style={buttonStyle}>
+            <a href="/register/" style={buttonStyle} onClick={handleTrialCta}>
               Start your 14-day free trial →
-            </Link>
+            </a>
             <p style={{ margin: "14px 0 0", fontSize: "0.8125rem", color: "var(--ink-muted)" }}>
               Already a member?{" "}
               <Link href="/login/" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}>
@@ -155,6 +170,7 @@ function Paywall({ signedIn }: { signedIn: boolean }) {
           </>
         )}
       </aside>
+      {showModal && <RegisterModal onClose={() => setShowModal(false)} />}
     </>
   );
 }
