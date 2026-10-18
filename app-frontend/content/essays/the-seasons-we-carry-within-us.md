@@ -130,76 +130,56 @@ Over time, unfamiliar routines become familiar. The effort of starting again bec
 
 And one day, almost without noticing, we may find ourselves living in a new season.
 
-## The Summers That Still Remember Winter
+## The Summers We Find Along the Way
 
 Summer brings a different feeling.
 
-The trees are full again. Days are longer, life seems more open, and the landscape that stood bare during winter is now filled with colour.
+The trees are full again. Days are longer, the landscape is filled with colour, and life seems to open up in ways that were difficult to imagine during winter.
 
 There are summers in our lives, too.
 
-A new routine begins to feel natural. We find enjoyment in our work, establish relationships, discover new interests, or simply experience the quiet satisfaction of having built a life that once seemed uncertain.
+A new routine begins to feel natural. We discover new interests, meet people who bring different perspectives into our lives, and sometimes find ourselves following paths we had never considered before.
 
-We begin to feel at home in circumstances that were once unfamiliar.
+There is a particular satisfaction in realizing that we have built something new. Not necessarily something better than what came before, but something different, with its own possibilities and pleasures.
 
-But does the arrival of summer mean that we have forgotten winter?
+Life can surprise us. An unexpected opportunity may lead to meaningful work, a conversation may become a lasting friendship, and ordinary days gradually fill with new memories.
 
-I do not think so.
+Yet these experiences do not require us to forget the old ones.
 
-Building a new life has not erased the sadness of what I left behind. I live differently now, and the experiences I have gained have changed the way I see many things. But there are still memories of my former life that carry a certain melancholy.
+Building a different life has not erased my affection for the one I left behind. I live differently now, and the experiences I have gained have broadened the way I see the world. But I can still remember my former life with warmth, sometimes with nostalgia, and appreciate what those years meant to me.
 
-That sadness does not mean I am unhappy with the present.
-
-We sometimes assume that moving forward requires leaving the past completely behind, as though appreciating our current lives means no longer missing what came before.
-
-Human feelings are rarely so simple.
-
-We can miss an old home while feeling settled in a new one. We can remember a relationship with affection even after accepting that it has ended. We can feel grateful for new opportunities while still wishing that some earlier circumstances had been different.
-
-The Lebanese writer Kahlil Gibran explored this relationship between happiness and sadness in The Prophet. In the chapter "On Joy and Sorrow," he wrote:
+The Lebanese writer Kahlil Gibran reflected on the relationship between happiness and sadness in The Prophet:
 
 > Your joy is your sorrow unmasked.
 >
-> — Kahlil Gibran, The Prophet, "On Joy and Sorrow," 1923.
+> — Kahlil Gibran, The Prophet, “On Joy and Sorrow,” 1923.
 
-Gibran's reflections suggest that joy and sorrow are not always separate experiences. Sometimes the very things that once brought us happiness become sources of sadness precisely because they mattered so much.
+Perhaps joy and sorrow are not always opposites. An old friendship can bring a smile even when we miss the days we shared. A place we once called home may remain dear to us long after we have found another.
 
-An old photograph may make us smile and leave us feeling sad at the same time. A familiar place may remind us of wonderful days that cannot be repeated. The memory of someone we have lost may bring affection alongside grief.
+We do not have to choose between appreciating the past and enjoying the present.
 
-These feelings do not necessarily cancel each other out.
-
-Perhaps growing older and gaining experience involve learning to live with these different emotions, rather than expecting one to replace another.
-
-It is tempting to imagine that a successful new beginning should make us forget our difficulties. We like stories in which someone loses everything, struggles for a while, and eventually finds a better life. The ending gives meaning to everything that came before.
-
-But real lives are seldom so neatly arranged.
-
-A person can rebuild a career without ceasing to miss the one they lost. Someone can find happiness after a painful separation without deciding that the separation was somehow fortunate. We can become more experienced without being grateful for every hardship that taught us something.
-
-Our summers can be full of warmth, even while memories of winter remain.
+A new summer does not erase the seasons that came before it. It simply adds new experiences, relationships, and memories to the life we carry within us.
 
 ## All the Seasons Within Us
 
-Looking again at the trees outside my window, I see the familiar signs of autumn. Leaves are falling, colours are changing, and the landscape is preparing for winter.
+Looking again at the trees outside my window, I see the familiar signs of autumn. The leaves are changing colour, some are beginning to fall, and the landscape is slowly preparing for winter.
 
-Before long, the branches will be bare. Then, months later, the first signs of spring will appear. The trees will grow green again, and another summer will follow.
+Before long, the branches will be bare. Then spring will arrive, followed by another summer. The same trees will take on different colours and shapes, each season revealing something new.
 
-Nature moves through these seasons in a recognizable rhythm.
+Our lives move through seasons, too, though rarely according to a predictable calendar.
 
-Human life follows no such reliable calendar.
+We may experience an unexpected beginning at forty, discover a new passion at sixty, or find ourselves reconsidering everything we thought we knew at twenty. Some changes come through our own decisions; others arrive without asking our permission.
 
-We may experience a spring at twenty, a winter at thirty, another beginning at fifty, or an unexpected autumn at any age. We may pass through several such changes in the course of a single decade.
+Each experience adds something to the life we carry within us.
 
-And unlike the seasons outside our windows, the seasons within us do not necessarily end when another begins.
+There are winters that remind us of our vulnerabilities, but also springs that awaken our curiosity. There are autumns when we must leave familiar things behind, and summers filled with friendships, discoveries, affection, and moments of simple happiness.
 
-We carry memories of people who are no longer with us, places we once called home, careers we left behind, and versions of ourselves that no longer exist in quite the same way.
+We are shaped by more than our difficulties. We are also shaped by the people who have loved us, the places that have welcomed us, the things we have learned, and the unexpected moments that made us glad to be alive.
 
-Alongside them, we carry the happiness of new friendships, the excitement of fresh beginnings, the satisfaction of overcoming difficulties, and the ordinary pleasures of the lives we have built.
+Unlike the trees outside my window, we do not entirely leave one season behind when the next arrives. A memory from an earlier summer can still bring warmth years later. A difficult winter may change how we appreciate an ordinary spring morning.
 
-Some memories still hurt. Others bring warmth. Some do both.
+Perhaps that is why a single lifetime can feel like so many different lives. We change, we begin again, we discover things about ourselves, and we keep adding new experiences to the ones we already have.
 
-Perhaps this is what makes the human experience so different from the turning of the natural year. We do not simply leave one season behind and enter another. We take something of each season with us.
-
-The autumn outside my window will eventually give way to winter. But the seasons we have lived through do not disappear quite so easily.
+And as I watch the autumn leaves outside my window, I find myself wondering:
 
 How many winters and springs do we carry within us?
