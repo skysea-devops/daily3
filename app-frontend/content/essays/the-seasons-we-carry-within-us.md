@@ -170,16 +170,20 @@ Our lives move through seasons, too, though rarely according to a predictable ca
 
 We may experience an unexpected beginning at forty, discover a new passion at sixty, or find ourselves reconsidering everything we thought we knew at twenty. Some changes come through our own decisions; others arrive without asking our permission.
 
-Each experience adds something to the life we carry within us.
+Each season leaves something with us. Not only memories, but new ways of looking at ourselves and the world.
 
-There are winters that remind us of our vulnerabilities, but also springs that awaken our curiosity. There are autumns when we must leave familiar things behind, and summers filled with friendships, discoveries, affection, and moments of simple happiness.
+After living through different chapters of life, we may come to realize that who we are is not limited to a profession, a place, or a particular period of our past. We can become different people without denying who we once were.
 
-We are shaped by more than our difficulties. We are also shaped by the people who have loved us, the places that have welcomed us, the things we have learned, and the unexpected moments that made us glad to be alive.
+Our experiences may also change how we see others. Having known uncertainty ourselves, we might better understand someone struggling to find their way. Having experienced the excitement of a new beginning, we may more easily recognize that same joy in another person.
 
-Unlike the trees outside my window, we do not entirely leave one season behind when the next arrives. A memory from an earlier summer can still bring warmth years later. A difficult winter may change how we appreciate an ordinary spring morning.
+None of this means that every difficult experience makes us wiser or stronger. But the more seasons we live through, the more possibilities we may discover for understanding life beyond our own familiar circumstances.
 
-Perhaps that is why a single lifetime can feel like so many different lives. We change, we begin again, we discover things about ourselves, and we keep adding new experiences to the ones we already have.
+Perhaps that is why a single lifetime can feel like so many different lives. We change, we begin again, we form new relationships, and we discover interests and possibilities we could never have imagined before.
 
-And as I watch the autumn leaves outside my window, I find myself wondering:
+Yet through all these changes, we carry something of our past with us. The moments that made us happy, the difficulties we faced, the people and places we left behind. Each becomes part of who we are today, just as a tree continues to grow through the changing seasons.
+
+The trees outside my window are passing through another autumn. And I find myself thinking of the autumns I have left behind, the winters I have lived through, and the springs that brought new beginnings.
+
+Perhaps it is a question worth asking ourselves:
 
 How many winters and springs do we carry within us?
