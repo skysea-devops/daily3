@@ -225,6 +225,12 @@ export function loadEssayFile(filePath, categoryIds) {
 
   const coverImage = data.coverImage ? String(data.coverImage) : undefined;
   const coverCredit = data.coverCredit ? String(data.coverCredit) : undefined;
+  // Opsiyonel sosyal paylaşım görseli (1200×630). Kapak 1,91:1'den çok farklıysa
+  // (ör. çok geniş ya da kareye yakın bir eser) paylaşımda kırpılmasın diye.
+  const ogImage = data.ogImage ? String(data.ogImage) : undefined;
+  if (ogImage && !ogImage.startsWith("/essays/")) {
+    throw new EssayError(file, `ogImage must be a site path under /essays/ (got "${ogImage}")`);
+  }
   if (coverImage && !coverCredit) {
     // Uyarı, hata değil: kendi ürettiğin görsellerde kredi gerekmeyebilir.
     // Başkasına ait (kamu malı dahil) her görselde coverCredit YAZILMALI (README).
@@ -289,6 +295,7 @@ export function loadEssayFile(filePath, categoryIds) {
           coverInBody: blocks.some((b) => b.type === "img" && b.src === coverImage),
         }
       : {}),
+    ...(ogImage ? { ogImage } : {}),
     ...(author ? { author } : {}),
     tags,
     ...(series ? { series, seriesSlug: slugify(series), seriesPart } : {}),

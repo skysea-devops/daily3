@@ -40,6 +40,8 @@ export interface Essay {
   readingMinutes: number;
   coverImage?: string;
   coverCredit?: string;
+  /** Opsiyonel sosyal paylaşım görseli (1200×630); yoksa kapak, o da yoksa üretilen PNG. */
+  ogImage?: string;
   /** Kapak gövdede de kullanılıyor mu (öyleyse deneme sayfasında üstte gösterilmez). */
   coverInBody?: boolean;
   author?: Author;
@@ -177,9 +179,9 @@ export function archiveGroups(list: Essay[] = ESSAYS): { year: string; months: {
   return years;
 }
 
-/** OG görseli: kapak varsa kapak, yoksa build'de başlıktan üretilen PNG. */
+/** OG görseli: ogImage → kapak → build'de başlıktan üretilen PNG. */
 export function ogImageFor(essay: Essay): string {
-  return essay.coverImage ?? `/essays/og/${essay.slug}.png`;
+  return essay.ogImage ?? essay.coverImage ?? `/essays/og/${essay.slug}.png`;
 }
 
 /** Düz metin (RSS ve JSON-LD için). */
