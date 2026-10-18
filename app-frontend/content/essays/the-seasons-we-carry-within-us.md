@@ -32,7 +32,7 @@ And I wonder: Are the seasons of human life as clearly defined as those of natur
 
 ## When Our Own Autumn Arrives
 
-Autumn does not always arrive with falling leaves. In our lives, it can take the form of sorrow, disappointment, unexpected difficulties, or changes that disturb the world we have grown accustomed to.
+Autumn does not always arrive with falling leaves. In our lives, it can come through sorrow, disappointment, unexpected difficulties, or changes that unsettle the life we know.
 
 Sometimes it is the loss of someone we love, an unwanted separation, or a failure we did not expect. Other times, it is leaving a city we have called home for years or having to walk away from a career we once imagined would last a lifetime.
 
