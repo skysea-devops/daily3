@@ -44,7 +44,7 @@ The loss of a job can bring a similar transformation. Beyond financial uncertain
 
 We often describe ourselves through what we do, what we own, where we live, and the roles we have acquired. These things help us understand our place in the world. Over time, however, they can become so closely connected to our identity that losing them feels like losing a part of ourselves.
 
-The Persian poet and mystic Rumi explored the difference between outward appearances and a person's deeper nature. In the Masnavi, he questions the judgments people make through clothing and visible signs of status. The thought invites a question that remains relevant today: how much of who we believe ourselves to be depends on the roles we occupy?
+The poet and mystic Rumi explored the difference between outward appearances and a person's deeper nature. In the Masnavi, he questions the judgments people make through clothing and visible signs of status. The thought invites a question that remains relevant today: how much of who we believe ourselves to be depends on the roles we occupy?
 
 A profession, a title, or a familiar way of life can tell others something about us. But does it tell the whole story?
 
