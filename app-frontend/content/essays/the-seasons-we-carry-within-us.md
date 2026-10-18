@@ -116,12 +116,6 @@ And one day, almost without noticing, we may find ourselves living in a new seas
 
 ## The Summers We Find Along the Way
 
-Summer brings a different feeling.
-
-The trees are full again. Days are longer, the landscape is filled with colour, and life seems to open up in ways that were difficult to imagine during winter.
-
-There are summers in our lives, too.
-
 A new routine begins to feel natural. We discover new interests, meet people who bring different perspectives into our lives, and sometimes find ourselves following paths we had never considered before.
 
 There is a particular satisfaction in realizing that we have built something new. Not necessarily something better than what came before, but something different, with its own possibilities and pleasures.
