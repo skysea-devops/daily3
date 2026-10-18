@@ -204,6 +204,8 @@ export default function Navbar() {
             </>
           ) : (
             <>
+              {/* Misafir de denemeleri gezebilir; kilitli olanlarda paywall çıkar. */}
+              <Link href="/essays" style={navLink}>Essays</Link>
               <Link href="/login" style={navLink}>Sign in</Link>
               <Link href="/register" style={navBtn}>Start reading</Link>
             </>
