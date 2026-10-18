@@ -90,8 +90,6 @@ We do not wake up one morning to discover that everything has changed. The first
 
 ![Flowering fruit trees in a spring landscape painted by Claude Monet.](/essays/the-seasons-we-carry-within-us/spring-fruit-trees-in-bloom.jpg "Spring (Fruit Trees in Bloom), Claude Monet, 1873 — The Metropolitan Museum of Art. Public Domain (CC0).")
 
-None of these things, taken separately, necessarily represents a turning point. Together, however, they can begin to form a different way of living.
-
 A new life rarely arrives fully formed. We build it through decisions, experiments, mistakes, and repeated attempts to find our place.
 
 The Roman emperor and Stoic philosopher Marcus Aurelius reflected on the place of change in the natural world. In his Meditations, he wrote:
@@ -110,11 +108,7 @@ This does not mean that every loss was necessary or that suffering must have a p
 
 Spring does not justify winter. It simply follows it.
 
-Nor does a new beginning mean returning to the person we were before. Someone who finds another job after losing a career may discover different ambitions and a different understanding of work. Someone who moves to another city may create new friendships without losing affection for the place they left behind.
-
-Even returning to an old home cannot always restore the life we once had there. Places may remain familiar, but time has passed, and we have changed.
-
-This is perhaps one of the more difficult things to accept about beginning again: we cannot always recover what we have lost, but we may still find ways to live meaningfully with what remains.
+Nor does a new beginning mean returning to the person we were before. This is perhaps one of the more difficult things to accept about beginning again: we cannot always recover what we have lost, but we may still find ways to live meaningfully with what remains.
 
 Over time, unfamiliar routines become familiar. The effort of starting again becomes part of ordinary life. What once seemed uncertain gradually begins to feel like a place where we belong.
 
