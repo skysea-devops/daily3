@@ -32,27 +32,17 @@ And I wonder: Are the seasons of human life as clearly defined as those of natur
 
 ## When Our Own Autumn Arrives
 
-Autumn does not always arrive with falling leaves. Sometimes it begins when we leave a city we have called home for years. Sometimes it comes through an unwanted separation, the loss of someone we love, a failure we did not expect, or the sudden end of a career.
+Autumn does not always arrive with falling leaves. In our lives, it can take the form of sorrow, disappointment, unexpected difficulties, or changes that disturb the world we have grown accustomed to.
 
-These experiences may seem very different, but they share something important: they interrupt the continuity of a familiar life.
-
-Leaving a city, for example, means more than changing an address. We leave behind streets we know, faces we recognize, places that hold memories, and countless small habits that have become part of our days. Even if the move promises something better, there can still be sadness in leaving.
-
-The same is true of relationships. When someone is no longer part of our life, we do not simply lose their presence. We lose the conversations we expected to have, the plans we imagined, and a part of our everyday world.
-
-The loss of a job can bring a similar transformation. Beyond financial uncertainty, it may affect our sense of purpose, our social identity, and the future we had imagined for ourselves.
-
-We often describe ourselves through what we do, what we own, where we live, and the roles we have acquired. These things help us understand our place in the world. Over time, however, they can become so closely connected to our identity that losing them feels like losing a part of ourselves.
-
-The poet and mystic Rumi explored the difference between outward appearances and a person's deeper nature. In the Masnavi, he questions the judgments people make through clothing and visible signs of status. The thought invites a question that remains relevant today: how much of who we believe ourselves to be depends on the roles we occupy?
+Sometimes it is the loss of someone we love, an unwanted separation, or a failure we did not expect. Other times, it is leaving a city we have called home for years or having to walk away from a career we once imagined would last a lifetime.
 
 ![A woman in black walking alone down an autumn park path strewn with fallen leaves, under a grey sky.](/essays/the-seasons-we-carry-within-us/autumn-day-sokolniki.jpg "Autumn Day. Sokolniki, Isaac Levitan, 1879 — State Tretyakov Gallery, Moscow. Public Domain.")
 
-A profession, a title, or a familiar way of life can tell others something about us. But does it tell the whole story?
+What these experiences share is the way they change something familiar about our lives, often leaving us uncertain about what comes next.
 
-Perhaps one of the most difficult aspects of change is discovering that the things we once used to define ourselves are no longer there.
+Leaving a city, for example, means more than changing an address. We leave behind familiar streets, friendships, routines, and memories. Similarly, losing a job can affect more than our financial security. It may change our sense of purpose, our identity, and the future we had imagined for ourselves.
 
-Our autumn begins when the life we know starts to lose its familiar shape.
+We often define ourselves through the lives we have built, the roles we occupy, and the things we have achieved. When these change or disappear, we may find ourselves questioning not only what we have lost, but also who we are without them.
 
 ## The Winters We Live Through
 
