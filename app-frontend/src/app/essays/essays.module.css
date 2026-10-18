@@ -88,10 +88,11 @@
 .featuredNoCover {
   grid-template-columns: 1fr;
 }
+/* Kapak kendi oranında gösterilir, KIRPILMAZ: sanat eserlerinin bir kısmı
+   (ör. dört mevsimli paravanlar) kesilmesin. 16:9 kapaklar aynı görünür. */
 .cover {
   width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
+  height: auto;
   border-radius: 12px;
   display: block;
 }
