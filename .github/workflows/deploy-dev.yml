@@ -165,7 +165,7 @@ jobs:
           # Tanimsiz bir TF_VAR_ Terraform tarafindan SESSIZCE yok sayilir — yanlis
           # isim hata vermez, sadece Lambda baska bir anahtar kullanir.
           TF_VAR_trial_ledger_secret: ${{ secrets.TRIAL_IDENTITY_HMAC_SECRET }}
-        run: terraform plan -var-file=dev.tfvars -out=tfplan
+        run: terraform plan -lock-timeout=10m -var-file=dev.tfvars -out=tfplan
 
       - name: Terraform Apply
         if: github.event.pull_request.merged == true
@@ -180,7 +180,7 @@ jobs:
           # Tanimsiz bir TF_VAR_ Terraform tarafindan SESSIZCE yok sayilir — yanlis
           # isim hata vermez, sadece Lambda baska bir anahtar kullanir.
           TF_VAR_trial_ledger_secret: ${{ secrets.TRIAL_IDENTITY_HMAC_SECRET }}
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -lock-timeout=10m -auto-approve tfplan
 
   deploy-frontend:
     name: Deploy frontend
