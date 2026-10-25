@@ -44,5 +44,6 @@ next-env.d.ts
 * [0-9].*
 # essays: üretilen veri (scripts/essays/build.mjs)
 /src/generated/
+/public/essays/thumbs/
 # KİLİTLİ deneme bölümleri — asla commit'lenmez, asla out/ altına girmez
 /.essays-private/
