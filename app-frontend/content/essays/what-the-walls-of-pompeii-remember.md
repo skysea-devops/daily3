@@ -2,8 +2,8 @@
 title: "What the Walls of Pompeii Remember"
 description: "Love notes, insults, complaints, and campaign slogans scratched into Pompeii's walls reveal ordinary lives and feelings that still seem familiar."
 date: "2026-10-25"
-coverImage: "/essays/what-the-walls-of-pompeii-remember/pompeii-duncanson.jpg"
-coverCredit: "Pompeii, Robert S. Duncanson, 1871 — Smithsonian American Art Museum (CC0)"
+coverImage: "/essays/what-the-walls-of-pompeii-remember/vesuvius-and-pompeii-duncanson.jpg"
+coverCredit: "Vesuvius and Pompeii, Robert S. Duncanson, 1870 — Smithsonian American Art Museum (CC0)"
 tags: [history]
 access: pro
 ---
