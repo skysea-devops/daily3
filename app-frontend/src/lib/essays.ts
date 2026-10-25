@@ -40,6 +40,8 @@ export interface Essay {
   readingMinutes: number;
   coverImage?: string;
   coverCredit?: string;
+  /** Arşiv satırı için küçük görsel (build üretir; kapak yoksa tanımsız). */
+  thumbImage?: string;
   /** Opsiyonel sosyal paylaşım görseli (1200×630); yoksa kapak, o da yoksa üretilen PNG. */
   ogImage?: string;
   /** Kapak gövdede de kullanılıyor mu (öyleyse deneme sayfasında üstte gösterilmez). */
