@@ -178,7 +178,7 @@ export function previewLength(blocks, paywallIndex, file) {
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 /** /essays/<bu>/ altında başka sayfalar var: deneme slug'ı olamaz. */
-const RESERVED_SLUGS = new Set(["tag", "series", "og"]);
+const RESERVED_SLUGS = new Set(["tag", "series", "og", "thumbs"]);
 
 function req(data, key, file) {
   const value = data[key];

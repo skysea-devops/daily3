@@ -51,14 +51,14 @@ Bu satırdan sonrası Pro okurlara açılır.
 | `description` | ✔ | Liste sayfası, `<meta description>`, RSS. ~160 karakter. |
 | `date` | ✔ | `YYYY-MM-DD`. 7 günlük açık pencere bu tarihten (00:00 UTC) sayılır. |
 | `tags` | ✔ | Kategori id'leri, en az bir tane: `technology`, `geopolitics`, `business_economics`, `science_environment`, `life_work`, `culture_style`, `philosophy`, `history`, `health`. Başka bir değer build'i durdurur. |
-| `coverImage` | | Liste sayfasında öne çıkan görsel, deneme başında kapak ve paylaşım görseli. Yoksa başlıktan otomatik OG görseli üretilir. |
+| `coverImage` | | Liste sayfasında öne çıkan görsel, arşiv satırındaki küçük görsel (build otomatik küçültür), deneme başında kapak ve paylaşım görseli. Yoksa başlıktan otomatik OG görseli üretilir. |
 | `coverCredit` | Başkasına ait görselde ✔ | Kapağın altında görünür. Kaynağı ve lisansı yaz. Kendi ürettiğin görselde (ör. Canva) boş bırakabilirsin; build yalnızca uyarı verir. |
 | `series` / `seriesPart` | | Aynı seri adındaki denemeler `/essays/series/<seri-adı>/` sayfasında sırayla listelenir. Aynı bölüm numarası iki kez kullanılamaz. |
 | `access` | | `pro` (varsayılan) veya `free`. Aşağıya bak. |
 | `readingMinutes` | | Yazılmazsa dakikada 225 kelimeden hesaplanır. |
 | `author` | | Boş bırakılırsa Ismail Gokdeniz. |
 
-Dosya adı (slug) küçük harf, rakam ve tire olmalı; `tag`, `series`, `og` kullanılamaz.
+Dosya adı (slug) küçük harf, rakam ve tire olmalı; `tag`, `series`, `og`, `thumbs` kullanılamaz.
 
 ## 3. Erişim: `access` ve paywall işareti
 

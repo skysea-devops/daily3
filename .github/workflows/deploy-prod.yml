@@ -150,7 +150,7 @@ jobs:
           # (polar.tf, ignore_changes = all). Sonrasi: aws ssm put-parameter.
           TF_VAR_polar_access_token: ${{ secrets.POLAR_ACCESS_TOKEN }}
           TF_VAR_polar_webhook_secret: ${{ secrets.POLAR_WEBHOOK_SECRET }}
-        run: terraform plan -var-file=prod.tfvars -out=tfplan
+        run: terraform plan -lock-timeout=10m -var-file=prod.tfvars -out=tfplan
 
       - name: Terraform Apply
         if: github.event.pull_request.merged == true
@@ -161,7 +161,7 @@ jobs:
           # (polar.tf, ignore_changes = all). Sonrasi: aws ssm put-parameter.
           TF_VAR_polar_access_token: ${{ secrets.POLAR_ACCESS_TOKEN }}
           TF_VAR_polar_webhook_secret: ${{ secrets.POLAR_WEBHOOK_SECRET }}
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -lock-timeout=10m -auto-approve tfplan
 
   deploy-frontend:
     name: Deploy frontend
