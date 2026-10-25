@@ -19,7 +19,7 @@ We know this partly because of what they left on their walls.
 
 Across the city, people scratched messages into plaster, wrote poems, declared their love, traded insults, and complained about whatever was bothering them. Some left nothing more than a name. Others wanted to be admired, remembered, or perhaps simply noticed.
 
-![Drawings of inscriptions and gladiator graffiti recorded at Pompeii in the nineteenth century.](/essays/what-the-walls-of-pompeii-remember/pompeii-graffiti-garrucci.jpg "Drawings of Pompeii graffiti, from Graffiti de Pompéi, Raffaele Garrucci, 1856 — Wikimedia Commons. Public Domain. A selection of inscriptions, not the specific messages discussed below.")
+![Drawings of inscriptions and gladiator graffiti recorded at Pompeii in the nineteenth century.](/essays/what-the-walls-of-pompeii-remember/pompeii-graffiti-garrucci.jpg "Graffiti from ancient Pompeii, documented by Raffaele Garrucci in 1856. These inscriptions offer glimpses into the everyday lives of the city's inhabitants. Graffiti de Pompéi, Raffaele Garrucci, 1856 — Wikimedia Commons. Public Domain.")
 
 ## Love, Admiration, and Heartbreak
 
@@ -45,7 +45,7 @@ A gladiator named Celadus was praised in an inscription as suspirium puellarum�
 
 We cannot tell whether the words came from admirers or were written to build his reputation. Either way, someone thought his appeal was worth recording.
 
-![Roman fresco showing Cupid and Psyche, from Pompeii.](/essays/what-the-walls-of-pompeii-remember/amor-and-psyche.jpg "Amor and Psyche, unknown Roman artist, c. AD 60–79, fresco from Pompeii — Wikimedia Commons. Public Domain. A mythological scene, not a depiction of Methe, Chrestus, or Iris.")
+![Roman fresco showing Cupid and Psyche, from Pompeii.](/essays/what-the-walls-of-pompeii-remember/amor-and-psyche.jpg "Cupid and Psyche in a Roman fresco from Pompeii, reflecting the place of love and romance in ancient art. Amor and Psyche, Unknown Roman Artist, AD 60–79 — Wikimedia Commons. Public Domain.")
 
 <!-- paywall -->
 
@@ -101,7 +101,7 @@ It is difficult to read about their activities without remembering what happened
 
 The people making those plans did not.
 
-![Ancient painted election notices on a wall in Pompeii.](/essays/what-the-walls-of-pompeii-remember/pompeii-election-notices.jpg "Campaign inscriptions on the wall of the House of Trebius Valens, Pompeii. Photograph by Yair Haklai, 2023 — Wikimedia Commons, CC BY-SA 4.0. Examples of election notices, not necessarily the Polybius inscription described above.")
+![Ancient painted election notices on a wall in Pompeii.](/essays/what-the-walls-of-pompeii-remember/pompeii-election-notices.jpg "Electoral campaign notices painted on the walls of Pompeii, showing how political ambitions became part of the city's everyday streets. Campaign Inscriptions in Pompeii — Photograph by Yair Haklai, 2023. Wikimedia Commons, CC BY-SA 4.0 (creativecommons.org/licenses/by-sa/4.0). Resized for the web.")
 
 ## The Things They Hoped For
 
