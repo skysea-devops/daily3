@@ -76,7 +76,7 @@ Meanwhile, door-to-door visiting already had a history of its own. In Scotland a
 
 During the first half of the twentieth century, American children increasingly began going from door to door in costume. Trick-or-treating became especially widespread after the Second World War. Wartime sugar restrictions had ended, growing suburbs provided neighbourhood routes, and families with young children took part in organised local celebrations. Individually wrapped sweets made it simple to offer something to visitors without preparing a special game or performance.
 
-![A child in a cardboard box costume carrying a bag up a driveway past Halloween decorations.](/essays/how-halloween-crossed-the-atlantic/trick-or-treater.jpg "A trick-or-treater on Halloween — Wikimedia Commons.")
+![A child in a cardboard box costume carrying a bag up a driveway past Halloween decorations.](/essays/how-halloween-crossed-the-atlantic/trick-or-treater.jpg "A trick-or-treater dressed as a box, photograph by 3steph14, 2022 — Wikimedia Commons, CC BY-SA 4.0 (creativecommons.org/licenses/by-sa/4.0). Resized for the web.")
 
 Businesses recognised the opportunity. Sweet manufacturers promoted products for Halloween, while costume makers supplied outfits that families could buy rather than make at home. Over time, commercial products became a familiar part of the celebration.
 
