@@ -156,6 +156,16 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "World Resources Institute",  url: "https://www.wri.org/insights/rss.xml" },
     { name: "The Nature Conservancy",     url: "https://blog.nature.org/feed/" },
     { name: "Yale News (Science & Technology)", url: "https://news.yale.edu/topics/science-technology/rss" },
+
+    // 2026-11-08: Agriculture & Food / Livestock & Animals / Plants & Botany
+    // alt konulari icin. Ambrook Research (artik Offrange) RSS vermiyor —
+    // TheCollector gibi eklenmedi. check-feeds ile elenenler: Modern Farmer
+    // (181 gun bayat + 403), On Pasture (feed 0 item), In Defense of Plants
+    // blogu (2021'den beri yazi yok; podcast'i asagida aktif).
+    { name: "Civil Eats",                 url: "https://civileats.com/feed/" },
+    { name: "Our World in Data",          url: "https://ourworldindata.org/atom.xml" },
+    { name: "Hobby Farms",                url: "https://www.hobbyfarms.com/feed/" },
+    { name: "Botany One",                 url: "https://www.botany.one/rss/" },
   ],
 
   // Life, Work & Wellbeing
@@ -335,6 +345,12 @@ export const PODCAST_SOURCES: Record<string, { name: string; url: string }[]> = 
     { name: "The Climate Question (BBC)",              url: "https://podcasts.files.bbci.co.uk/w13xtvb6.rss" },
     { name: "Mongabay Newscast",                       url: "https://rss.libsyn.com/shows/87224/destinations/424646.xml" },
     { name: "Stockholm Environment Institute Podcast", url: "https://anchor.fm/s/fef3bdcc/podcast/rss" },
+
+    // 2026-11-08: tarim / botanik. Gastropod ve The Sporkful Pazar Eki'nde,
+    // buraya eklenemez (SUNDAY kurali).
+    { name: "In Defense of Plants Podcast",            url: "https://rss.art19.com/in-defense-of-plants" },
+    { name: "The Food Programme (BBC)",                url: "https://podcasts.files.bbci.co.uk/b006qnx3.rss" },
+    { name: "Farmerama",                               url: "https://feeds.soundcloud.com/users/soundcloud:users:294272020/sounds.rss" },
   ],
 
   // Life, Work & Wellbeing

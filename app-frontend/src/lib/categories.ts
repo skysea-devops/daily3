@@ -56,6 +56,7 @@ export interface CategoryDefinition {
  *
  * Alt konu sayısı 6'da tutulur: poolSizeFor = min(20, max(10, altKonu + 4))
  * olduğu için 6 alt konu 10 öğelik havuza rahat sığar, 8 sıkıştırır.
+ * Tek istisna science_environment (7 → havuz 11).
  */
 export const CATEGORIES: CategoryDefinition[] = [
   {
@@ -105,16 +106,23 @@ export const CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: "science_environment",
-    label: "Science & Environment",
+    label: "Science & the Natural World",
     emoji: "🔬",
-    description: "Research, discovery, climate, and the natural world",
+    description: "Research, climate, farming, and the living world",
+    // 2026-11-08: tarim/hayvancilik/botanik eklendi. Ayri ana kategori yerine
+    // alt konu: free rotasyonda nis kalirlardi. 7 alt konu (istisna, bkz. ust
+    // not) — Space + Physics birlestirildi; Biology & Life Sciences cikarildi,
+    // icerigi "Science", "Plants & Botany" ve "Livestock & Animals"a dagiliyor.
+    // Bu ikisini secmis Pro kullanicilarin kaydi sessizce elenir
+    // (sanitiseSubTopics), veri migrasyonu gerekmez.
     subTopics: [
       "Science",
       "Environment",
-      "Space & Astronomy",
-      "Biology & Life Sciences",
+      "Space & Physics",
       "Climate & Energy",
-      "Physics & Mathematics",
+      "Agriculture & Food",
+      "Livestock & Animals",
+      "Plants & Botany",
     ],
     maxAgeDays: 45,
   },
