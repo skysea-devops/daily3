@@ -106,7 +106,7 @@ export const CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: "science_environment",
-    label: "Science & the Natural World",
+    label: "Science, Environment & Agriculture",
     emoji: "🔬",
     description: "Research, climate, farming, and the living world",
     // 2026-11-08: tarim/hayvancilik/botanik eklendi. Ayri ana kategori yerine
