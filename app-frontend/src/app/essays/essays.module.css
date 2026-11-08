@@ -96,6 +96,26 @@
   border-radius: 12px;
   display: block;
 }
+.sources {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+}
+.sources ol {
+  margin: 0;
+  padding-left: 1.25em;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+.sources li + li {
+  margin-top: 8px;
+}
+.sources a {
+  color: var(--accent);
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
 .credit {
   margin: 8px 0 0;
   font-size: 0.75rem;

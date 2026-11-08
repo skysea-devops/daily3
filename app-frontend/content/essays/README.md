@@ -57,6 +57,8 @@ Bu satırdan sonrası Pro okurlara açılır.
 | `access` | | `pro` (varsayılan) veya `free`. Aşağıya bak. |
 | `readingMinutes` | | Yazılmazsa dakikada 225 kelimeden hesaplanır. |
 | `author` | | Boş bırakılırsa Ismail Gokdeniz. |
+| `ogImage` | | Sosyal paylaşım görseli (1200×630, `/essays/...` yolu). Kapak bu orana uymuyorsa kullan. |
+| `sources` | | Kaynakça listesi; her madde `title` (zorunlu), `author`, `url` (https), `note`. Sayfanın sonunda herkese açık "Sources" bölümü olarak çıkar. Metin içinde link kullanılamadığı için kaynaklar buraya yazılır. |
 
 Dosya adı (slug) küçük harf, rakam ve tire olmalı; `tag`, `series`, `og`, `thumbs` kullanılamaz.
 

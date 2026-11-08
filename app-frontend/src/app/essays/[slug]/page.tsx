@@ -234,6 +234,29 @@ export default async function EssayPage({ params }: Props) {
           )}
         </article>
 
+        {essay.sources && (
+          <section aria-labelledby="sources-label" className={styles.sources}>
+            <p style={sectionLabel} id="sources-label">
+              Sources
+            </p>
+            <ol>
+              {essay.sources.map((s, i) => (
+                <li key={i}>
+                  {s.author && <>{s.author}. </>}
+                  {s.url ? (
+                    <a href={s.url} target="_blank" rel="noopener noreferrer">
+                      {s.title}
+                    </a>
+                  ) : (
+                    s.title
+                  )}
+                  {s.note && <>. {s.note}</>}
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
         {(prev || next) && (
           <nav aria-label="Series" style={{ marginTop: 56 }}>
             <p style={sectionLabel}>{essay.series}</p>

@@ -263,6 +263,29 @@ export function loadEssayFile(filePath, categoryIds) {
     };
   }
 
+  // Kaynakça: metin içinde link yok (stil kuralı); kaynaklar frontmatter'da
+  // listelenir ve sayfanın sonunda, kilitli bölümün dışında gösterilir.
+  let sources;
+  if (data.sources !== undefined) {
+    if (!Array.isArray(data.sources) || data.sources.length === 0) {
+      throw new EssayError(file, "sources must be a non-empty list");
+    }
+    sources = data.sources.map((s, i) => {
+      if (!s || typeof s !== "object" || !s.title) {
+        throw new EssayError(file, `sources[${i}] needs at least a title`);
+      }
+      if (s.url !== undefined && !/^https:\/\//.test(String(s.url))) {
+        throw new EssayError(file, `sources[${i}].url must start with https://`);
+      }
+      return {
+        ...(s.author ? { author: String(s.author) } : {}),
+        title: String(s.title),
+        ...(s.url ? { url: String(s.url) } : {}),
+        ...(s.note ? { note: String(s.note) } : {}),
+      };
+    });
+  }
+
   const { blocks, paywallIndex } = parseBody(content, file);
   if (access === "free" && paywallIndex !== null) {
     throw new EssayError(file, "<!-- paywall --> has no effect on a free essay; remove it or set access: pro");
@@ -296,6 +319,7 @@ export function loadEssayFile(filePath, categoryIds) {
         }
       : {}),
     ...(ogImage ? { ogImage } : {}),
+    ...(sources ? { sources } : {}),
     ...(author ? { author } : {}),
     tags,
     ...(series ? { series, seriesSlug: slugify(series), seriesPart } : {}),

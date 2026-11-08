@@ -6,6 +6,19 @@ readingMinutes: 6
 coverImage: "/essays/when-machines-invent-bureaucracy/agents-building-civilization.jpg"
 ogImage: "/essays/when-machines-invent-bureaucracy/og.jpg"
 tags: [technology, philosophy]
+sources:
+  - author: "Y Combinator Labs & Olam Labs"
+    title: "Agents in Games — Civ50"
+    url: "https://labs.ycombinator.com/projects/games/"
+    note: "October 2026. The original research behind the Minecraft experiment."
+  - author: "Max Weber"
+    title: "Economy and Society (1922), sections on bureaucracy"
+    url: "https://www.d.umn.edu/cla/faculty/jhamlin/4111/2111-home/CD/TheoryClass/Weber_Lec_Readings/Weber%20-%20Bureaucracy.htm"
+    note: "Selected text."
+  - author: "Robert K. Merton"
+    title: "Bureaucratic Structure and Personality"
+    url: "https://www.d.umn.edu/cla/faculty/jhamlin/4111/Merton/Social%20Theory%20and%20Social%20Structure%20Bureaucratic%20Structure%20a.htm"
+    note: "Social Forces, Vol. 18, No. 4 (1940), pp. 560–568."
 access: pro
 ---
 In October 2026, an unusual experiment took place. Fifty AI agents, working independently, were placed in the virtual world of Minecraft. There were the familiar trees, mines, monsters, and landscapes. But this time, there were no human players. The agents were given just one shared goal: “Build a thriving civilization.”

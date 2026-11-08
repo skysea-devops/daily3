@@ -31,6 +31,13 @@ export interface Author {
 
 export type EssayAccess = "free" | "pro";
 
+export interface EssaySource {
+  author?: string;
+  title: string;
+  url?: string;
+  note?: string;
+}
+
 export interface Essay {
   slug: string;
   title: string;
@@ -44,6 +51,8 @@ export interface Essay {
   thumbImage?: string;
   /** Opsiyonel sosyal paylaşım görseli (1200×630); yoksa kapak, o da yoksa üretilen PNG. */
   ogImage?: string;
+  /** Kaynakça (frontmatter'dan); sayfanın sonunda herkese açık gösterilir. */
+  sources?: EssaySource[];
   /** Kapak gövdede de kullanılıyor mu (öyleyse deneme sayfasında üstte gösterilmez). */
   coverInBody?: boolean;
   author?: Author;
