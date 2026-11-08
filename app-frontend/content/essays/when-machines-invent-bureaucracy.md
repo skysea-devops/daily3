@@ -3,8 +3,7 @@ title: "When Machines Invent Bureaucracy"
 description: "Fifty AI agents tried to build a civilization in Minecraft. They created rules on their own, revealing both the need for organization and its costs."
 date: "2026-11-08"
 readingMinutes: 6
-coverImage: "/essays/when-machines-invent-bureaucracy/tower-of-babel-bruegel.jpg"
-coverCredit: "The Tower of Babel, Pieter Bruegel the Elder, 1563 — Kunsthistorisches Museum, Vienna. Public Domain."
+coverImage: "/essays/when-machines-invent-bureaucracy/agents-building-civilization.jpg"
 ogImage: "/essays/when-machines-invent-bureaucracy/og.jpg"
 tags: [technology, philosophy]
 access: pro
@@ -72,6 +71,8 @@ So was bureaucracy really the reason the Minecraft experiment failed?
 When the three-hour experiment ended, the agents had not achieved their goal of building a thriving civilization. They had failed to establish a sustainable food supply and had spent much of their time in crowded shelters, trying to ration limited food.
 
 There was no developed city. There were, however, written rules, job descriptions, food records, and a management system.
+
+![A vast, unfinished tower under construction, with workers and scaffolding around it and a harbour city below.](/essays/when-machines-invent-bureaucracy/tower-of-babel-bruegel.jpg "The Tower of Babel, Pieter Bruegel the Elder, 1563 — Kunsthistorisches Museum, Vienna. Public Domain.")
 
 Why, with all that organization, had they failed?
 
