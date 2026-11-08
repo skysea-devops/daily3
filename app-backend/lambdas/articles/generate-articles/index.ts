@@ -157,7 +157,7 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "The Nature Conservancy",     url: "https://blog.nature.org/feed/" },
     { name: "Yale News (Science & Technology)", url: "https://news.yale.edu/topics/science-technology/rss" },
 
-    // 2026-11-08: Agriculture & Food / Livestock & Animals / Plants & Botany
+    // 2026-11-08: Agriculture / Livestock & Animals / Plants & Botany
     // alt konulari icin. Ambrook Research (artik Offrange) RSS vermiyor —
     // TheCollector gibi eklenmedi. check-feeds ile elenenler: Modern Farmer
     // (181 gun bayat + 403), On Pasture (feed 0 item), In Defense of Plants
