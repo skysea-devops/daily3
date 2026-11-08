@@ -420,7 +420,7 @@ function InterestsForm() {
                   >
                     <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--accent)", flex: 1, textAlign: "left" }}>
                       {hasSubTopics
-                        ? catSubTopics.slice(0, 2).join(", ") + (catSubTopics.length > 2 ? ` +${catSubTopics.length - 2}` : "")
+                        ? catSubTopics.join(", ")
                         : "Add sub-topics"}
                     </span>
                     {isPro ? (

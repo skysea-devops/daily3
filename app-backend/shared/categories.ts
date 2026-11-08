@@ -56,6 +56,7 @@ export interface CategoryDefinition {
  *
  * Alt konu sayısı 6'da tutulur: poolSizeFor = min(20, max(10, altKonu + 4))
  * olduğu için 6 alt konu 10 öğelik havuza rahat sığar, 8 sıkıştırır.
+ * Tek istisna science_environment (9 → havuz 13): uc ana alan x iki alt konu.
  */
 export const CATEGORIES: CategoryDefinition[] = [
   {
@@ -105,16 +106,25 @@ export const CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: "science_environment",
-    label: "Science & Environment",
+    label: "Science, Environment & Agriculture",
     emoji: "🔬",
-    description: "Research, discovery, climate, and the natural world",
+    description: "Research, climate, farming, and the living world",
+    // 2026-11-08: uc ana alan (Science / Environment / Agriculture), her
+    // birinin altinda iki dar alt konu — toplam 9. Liste duz; hiyerarsi
+    // yalnizca siralamada. Ana alan etiketi genis, alt etiketler kaynak
+    // eslemesi bilinen dar konular (Bedrock baslik/URL'den ayirabiliyor).
+    // Kaldirilan "Agriculture & Food" ve eski alt konulari secmis Pro
+    // kullanicilarin kaydi sanitiseSubTopics ile sessizce elenir.
     subTopics: [
       "Science",
+      "Space & Physics",
+      "Biology & Genetics",
       "Environment",
-      "Space & Astronomy",
-      "Biology & Life Sciences",
       "Climate & Energy",
-      "Physics & Mathematics",
+      "Nature & Conservation",
+      "Agriculture",
+      "Livestock & Animals",
+      "Plants & Botany",
     ],
     maxAgeDays: 45,
   },
