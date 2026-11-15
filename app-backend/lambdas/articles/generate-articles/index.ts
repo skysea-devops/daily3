@@ -166,6 +166,15 @@ export const RSS_SOURCES: Record<string, { name: string; url: string }[]> = {
     { name: "Our World in Data",          url: "https://ourworldindata.org/atom.xml" },
     { name: "Hobby Farms",                url: "https://www.hobbyfarms.com/feed/" },
     { name: "Botany One",                 url: "https://www.botany.one/rss/" },
+    // 2026-11-08 ikinci tur (check-feeds ile dogrulanacak):
+    // Agriculture — uluslararasi denge icin (Civil Eats ABD odakli)
+    { name: "Food Tank",                  url: "https://foodtank.com/feed/" },
+    { name: "CGIAR",                      url: "https://www.cgiar.org/feed/" },
+    { name: "Agricology",                 url: "https://agricology.co.uk/feed/" },
+    // Livestock & Animals
+    { name: "Mother Earth News",          url: "https://www.motherearthnews.com/feed/" },
+    { name: "Grit",                       url: "https://www.grit.com/feed/" },
+    { name: "Countryside",                url: "https://www.iamcountryside.com/feed/" },
   ],
 
   // Life, Work & Wellbeing
