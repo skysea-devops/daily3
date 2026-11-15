@@ -23,6 +23,8 @@ One of the clearest examples comes from ancient Mesopotamia. A collection of ast
 
 By observing these appearances, Mesopotamian skywatchers could follow the turning of the year. Their records also helped them relate the lunar calendar to the solar year. For societies whose lives depended on seasonal work, this knowledge mattered. Knowing when a season was approaching could help people plan the work of planting and harvesting.
 
+![A clay tablet pieced together from several fragments, covered in dense columns of cuneiform script.](/essays/why-we-never-stopped-looking-at-the-stars/mul-apin-tablet.jpg "MUL.APIN astronomical tablet from Assur (VAT 9412) — Neues Museum, Berlin. Photograph by Bautsch, Wikimedia Commons (CC0).")
+
 The stars were not simply distant points of light. They were part of the way people understood the passage of time.
 
 ## When the Sky Carried Meaning
@@ -38,6 +40,8 @@ The sky had counterparts to an imperial palace, advisers, soldiers, markets, and
 <!-- paywall -->
 
 In Chinese political thought, an emperor's right to rule was associated with the Mandate of Heaven. An unexpected comet or a solar eclipse could therefore be interpreted as more than an astronomical event. It might also be read as a warning to the ruler. The sky was observed, mapped, and given meaning within the same culture.
+
+![Ink drawings of seven comets with different tails, each labelled with a short Chinese inscription.](/essays/why-we-never-stopped-looking-at-the-stars/mawangdui-comet-atlas.jpg "Comets from the Mawangdui silk manuscript Divination by Astrological and Meteorological Phenomena, Western Han dynasty, 2nd century BCE — Hunan Provincial Museum, via Wikimedia Commons. Public Domain.")
 
 ## The Desire to Measure the Sky
 
