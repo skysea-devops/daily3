@@ -58,7 +58,7 @@ The Food in Wells's novel opens the door to a different kind of human life. The 
 
 I see a similar tension in the promises made about AI. It could improve research, education, healthcare, and the way we work. But the resources needed to develop the most powerful systems are not equally accessible to everyone.
 
-A 2026 OECD report on artificial intelligence markets presents a mixed picture. In some parts of the market, especially foundation models, there is competition from new and specialised providers. Yet structural risks remain in areas such as computing infrastructure, hardware, and data. These advantages can be difficult for new players to replicate and may further strengthen companies and countries that are already in powerful positions.
+Structural risks remain in areas such as computing infrastructure, hardware, and data. These advantages can be difficult for new players to replicate and may further strengthen companies and countries that are already in powerful positions.
 
 ![The Summit supercomputer at Oak Ridge National Laboratory in 2018.](/essays/we-built-it-but-do-we-know-where-it-leads/summit-supercomputer-2018.jpg "Summit supercomputer, Oak Ridge National Laboratory, 2018 — Carlos Jones / ORNL, CC BY 2.0.")
 
