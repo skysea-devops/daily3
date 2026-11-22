@@ -4,7 +4,7 @@ description: "Reading H. G. Wells's The Food of the Gods alongside AI, on progre
 date: "2026-11-21"
 readingMinutes: 6
 coverImage: "/essays/we-built-it-but-do-we-know-where-it-leads/cover.jpg"
-coverCredit: "Illustration: Ismail Gokdeniz (made with Canva)"
+coverCredit: "Illustration: Ismail Gokdeniz"
 tags: [technology, philosophy]
 access: pro
 ---
@@ -23,6 +23,8 @@ We have built something extraordinary, and its development is moving fast. Yet B
 ## The Promise of a Discovery
 
 The two scientists in Wells's story develop a substance called Herakleophorbia IV, which allows living things to grow far beyond their normal size. Bensington calls it the Food of the Gods. The discovery brings genuine excitement. What had seemed to be a biological limit has been overcome.
+
+![Students working in a bacteriology laboratory at Howard University around 1900.](/essays/we-built-it-but-do-we-know-where-it-leads/howard-bacteriology-1900.jpg "A bacteriology class at Howard University, Washington, D.C., around 1900 — Library of Congress. Public domain.")
 
 Even imagining the possible benefits of this Food is extraordinary. Chickens and crops could grow to enormous sizes, and farms could produce much more food. Far stronger human beings might reshape the world.
 
@@ -56,7 +58,9 @@ The Food in Wells's novel opens the door to a different kind of human life. The 
 
 I see a similar tension in the promises made about AI. It could improve research, education, healthcare, and the way we work. But the resources needed to develop the most powerful systems are not equally accessible to everyone.
 
-A 2026 OECD report on artificial intelligence markets presents a mixed picture. In some parts of the market, especially foundation models, there is competition from new and specialised providers. Yet structural risks remain in areas such as computing infrastructure, hardware, and data. These advantages can be difficult for new players to replicate and may further strengthen companies and countries that are already in powerful positions.
+Structural risks remain in areas such as computing infrastructure, hardware, and data. These advantages can be difficult for new players to replicate and may further strengthen companies and countries that are already in powerful positions.
+
+![The Summit supercomputer at Oak Ridge National Laboratory in 2018.](/essays/we-built-it-but-do-we-know-where-it-leads/summit-supercomputer-2018.jpg "Summit supercomputer, Oak Ridge National Laboratory, 2018 — Carlos Jones / ORNL, CC BY 2.0.")
 
 New tools can widen access to knowledge and productive work, while the resources behind those tools remain concentrated in a few hands. The same progress that gives one person more independence may make another more dependent on systems they do not own or control.
 
