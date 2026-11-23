@@ -24,7 +24,7 @@ We have built something extraordinary, and its development is moving fast. Yet B
 
 The two scientists in Wells's story develop a substance called Herakleophorbia IV, which allows living things to grow far beyond their normal size. Bensington calls it the Food of the Gods. The discovery brings genuine excitement. What had seemed to be a biological limit has been overcome.
 
-![Students working in a bacteriology laboratory at Howard University around 1900.](/essays/we-built-it-but-do-we-know-where-it-leads/howard-bacteriology-1900.jpg "A bacteriology class at Howard University, Washington, D.C., around 1900 — Library of Congress. Public domain.")
+![Title page of H. G. Wells's The Food of the Gods and How It Came to Earth, 1904.](/essays/we-built-it-but-do-we-know-where-it-leads/food-of-the-gods-title-page-1904.jpg "Title page of H. G. Wells's The Food of the Gods and How It Came to Earth, originally published in 1904 — Wikimedia Commons.")
 
 Even imagining the possible benefits of this Food is extraordinary. Chickens and crops could grow to enormous sizes, and farms could produce much more food. Far stronger human beings might reshape the world.
 
